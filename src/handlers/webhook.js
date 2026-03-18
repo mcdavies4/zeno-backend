@@ -22,13 +22,14 @@ router.get('/', (req, res) => {
 });
 
 // ─── INCOMING MESSAGES ────────────────────────────────
-router.post('/', verifySignature, async (req, res) => {
+router.post('/', async (req, res) => {
   // Respond 200 immediately — WhatsApp requires fast acknowledgement
   // (it will retry if you don't respond within 20s)
   res.sendStatus(200);
 
   try {
-    const body = JSON.parse(req.body.toString());
+    const body = typeof req.body === 'string' ? JSON.parse(req.body) : 
+                 Buffer.isBuffer(req.body) ? JSON.parse(req.body.toString()) : req.body;
 
     // Only handle whatsapp_business_account events
     if (body.object !== 'whatsapp_business_account') return;

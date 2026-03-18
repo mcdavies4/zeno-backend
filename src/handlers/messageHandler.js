@@ -2,6 +2,8 @@ const whatsappService = require('../services/whatsapp');
 const claudeService = require('../services/claude');
 const sessionStore = require('../services/sessionStore');
 const transferService = require('../services/transfer');
+const { checkAndHandleOnboarding } = require('../services/onboarding');
+const { verifyPin } = require('../utils/pinUtils');
 const logger = require('../utils/logger');
 
 /**
@@ -44,6 +46,10 @@ async function handle({ from, contactName, message, phoneNumberId }) {
 // ─── TEXT MESSAGES ────────────────────────────────────
 async function handleText({ from, contactName, message, session }) {
   const text = message.text.body.trim();
+
+  // Check onboarding first — new users must register before anything else
+  const onboardingHandled = await checkAndHandleOnboarding(from, session, text);
+  if (onboardingHandled) return;
 
   // Show typing indicator while processing
   await whatsappService.sendTypingOn(from);
@@ -124,11 +130,11 @@ async function handleInteractive({ from, contactName, message, session }) {
 
 // ─── PIN CONFIRMATION FLOW ────────────────────────────
 async function handlePinConfirmation({ from, pin, session }) {
-  // In production: compare against securely hashed PIN stored per user
-  // For now we simulate PIN validation
-  const validPin = session.userPin || '1234'; // replace with DB lookup
+  const storedHash = session.userPin;
 
-  if (pin !== validPin) {
+  const isValid = await verifyPin(pin, storedHash);
+
+  if (!isValid) {
     const attempts = (session.pinAttempts || 0) + 1;
     await sessionStore.update(from, { pinAttempts: attempts });
 

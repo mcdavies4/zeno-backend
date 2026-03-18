@@ -37,9 +37,7 @@ async function processMessage({ userMessage, contactName, session, from }) {
       { role: 'assistant', content: rawText },
     ];
 
-    // Save history to session (don't await — non-blocking)
-    const { sessionStore } = require('./sessionStoreRef');
-    sessionStore?.update(from, { conversationHistory: updatedHistory });
+   // history saved via messageHandler
 
     return parseAIResponse(rawText);
 

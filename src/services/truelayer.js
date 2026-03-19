@@ -41,9 +41,9 @@ function generateAuthLink(phoneNumber) {
   const params = new URLSearchParams({
     response_type: 'code',
     client_id: CLIENT_ID,
-    scope: 'info accounts balance transactions',
+    scope: 'info accounts balance transactions offline_access',
     redirect_uri: REDIRECT_URI,
-    providers: 'uk-ob-all uk-oauth-all',
+    providers: 'mock',
     state,
   });
 

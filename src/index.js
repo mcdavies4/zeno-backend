@@ -57,7 +57,6 @@ async function start() {
 
   app.listen(PORT, () => {
     logger.info(`Zeno backend running on port ${PORT}`);
-    logger.info(`Database: ${database.isReady() ? 'SQLite connected' : 'in-memory fallback'}`);
     logger.info(`Webhook URL: POST /webhook`);
     logger.info(`Verify URL:  GET  /webhook`);
   });

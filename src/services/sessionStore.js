@@ -1,25 +1,15 @@
 /**
- * Session Store
- *
- * Manages per-user conversation state including:
- * - Conversation history (for Claude context)
- * - Pending transfers awaiting confirmation
- * - PIN attempt counters
- * - Cached balance and transactions
- *
- * Uses in-memory storage by default.
- * Set REDIS_URL in .env to upgrade to Redis for multi-instance deployments.
+ * Session Store — Database backed with in-memory cache
+ * 
+ * Persists user sessions to SQLite so data survives restarts.
+ * Falls back to in-memory if database isn't available.
  */
 
 const logger = require('../utils/logger');
 
-// ─── IN-MEMORY STORE (for single-instance / development) ──
 const memoryStore = new Map();
+const SESSION_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
-// Session TTL: 30 minutes of inactivity clears session
-const SESSION_TTL_MS = 30 * 60 * 1000;
-
-// ─── DEFAULT SESSION SHAPE ────────────────────────────
 function defaultSession(phoneNumber) {
   return {
     phoneNumber,
@@ -28,45 +18,110 @@ function defaultSession(phoneNumber) {
     conversationHistory: [],
     pendingTransfer: null,
     awaitingPin: false,
+    awaitingField: null,
     pinAttempts: 0,
-    userPin: null,       // set during onboarding — hash this in production!
-    balance: null,       // fetched from banking API and cached
+    userPin: null,
+    userName: null,
+    userEmail: null,
+    balance: null,
     recentTransactions: [],
-    isOnboarded: false,  // set to true once user has registered
-    accountId: null,     // Modulr/banking account ID
+    isOnboarded: false,
+    bankConnected: false,
+    truelayerAccessToken: null,
+    truelayerRefreshToken: null,
+    truelayerExpiresAt: null,
+    onboardingStep: null,
+    onboardingData: null,
   };
 }
 
-// ─── GET OR CREATE SESSION ────────────────────────────
 async function get(phoneNumber) {
-  let session = memoryStore.get(phoneNumber);
+  let db;
+  try { db = require('./database'); } catch(e) {}
 
+  // Try loading from database first
+  if (db?.isReady()) {
+    let user = db.getUser(phoneNumber);
+    if (!user) user = db.createUser(phoneNumber);
+
+    // Merge DB user data with in-memory session
+    const memSession = memoryStore.get(phoneNumber) || defaultSession(phoneNumber);
+    
+    if (user) {
+      memSession.isOnboarded = !!user.is_onboarded;
+      memSession.userName = user.name || memSession.userName;
+      memSession.userEmail = user.email || memSession.userEmail;
+      memSession.userPin = user.pin_hash || memSession.userPin;
+      memSession.bankConnected = !!user.bank_connected;
+      memSession.truelayerAccessToken = user.truelayer_access_token || memSession.truelayerAccessToken;
+      memSession.truelayerRefreshToken = user.truelayer_refresh_token || memSession.truelayerRefreshToken;
+      memSession.truelayerExpiresAt = user.truelayer_expires_at || memSession.truelayerExpiresAt;
+      memSession.balance = user.balance || memSession.balance;
+    }
+
+    // Check TTL
+    if (Date.now() - memSession.lastActivityAt > SESSION_TTL_MS) {
+      const fresh = defaultSession(phoneNumber);
+      // Keep persistent data from DB
+      fresh.isOnboarded = memSession.isOnboarded;
+      fresh.userName = memSession.userName;
+      fresh.userPin = memSession.userPin;
+      fresh.bankConnected = memSession.bankConnected;
+      fresh.truelayerAccessToken = memSession.truelayerAccessToken;
+      fresh.truelayerRefreshToken = memSession.truelayerRefreshToken;
+      fresh.truelayerExpiresAt = memSession.truelayerExpiresAt;
+      memoryStore.set(phoneNumber, fresh);
+      return fresh;
+    }
+
+    memSession.lastActivityAt = Date.now();
+    memoryStore.set(phoneNumber, memSession);
+    return memSession;
+  }
+
+  // Fallback: pure in-memory
+  let session = memoryStore.get(phoneNumber);
   if (!session) {
     session = defaultSession(phoneNumber);
     memoryStore.set(phoneNumber, session);
-    logger.info(`New session created for ${phoneNumber}`);
   }
-
-  // Expire old sessions
   if (Date.now() - session.lastActivityAt > SESSION_TTL_MS) {
     session = defaultSession(phoneNumber);
     memoryStore.set(phoneNumber, session);
-    logger.info(`Session expired and reset for ${phoneNumber}`);
   }
-
   session.lastActivityAt = Date.now();
   return session;
 }
 
-// ─── UPDATE SESSION ───────────────────────────────────
 async function update(phoneNumber, updates) {
   const session = await get(phoneNumber);
   Object.assign(session, updates, { lastActivityAt: Date.now() });
   memoryStore.set(phoneNumber, session);
+
+  // Persist important fields to database
+  let db;
+  try { db = require('./database'); } catch(e) {}
+  
+  if (db?.isReady()) {
+    const dbUpdates = {};
+    if ('userName' in updates) dbUpdates.name = updates.userName;
+    if ('userEmail' in updates) dbUpdates.email = updates.userEmail;
+    if ('userPin' in updates) dbUpdates.pinHash = updates.userPin;
+    if ('isOnboarded' in updates) dbUpdates.isOnboarded = updates.isOnboarded ? 1 : 0;
+    if ('bankConnected' in updates) dbUpdates.bankConnected = updates.bankConnected ? 1 : 0;
+    if ('truelayerAccessToken' in updates) dbUpdates.truelayerAccessToken = updates.truelayerAccessToken;
+    if ('truelayerRefreshToken' in updates) dbUpdates.truelayerRefreshToken = updates.truelayerRefreshToken;
+    if ('truelayerExpiresAt' in updates) dbUpdates.truelayerExpiresAt = updates.truelayerExpiresAt;
+    if ('balance' in updates) dbUpdates.balance = updates.balance;
+
+    if (Object.keys(dbUpdates).length > 0) {
+      db.updateUser(phoneNumber, dbUpdates);
+    }
+  }
+
   return session;
 }
 
-// ─── CLEAR PENDING TRANSFER ───────────────────────────
 async function clearPendingTransfer(phoneNumber) {
   return update(phoneNumber, {
     pendingTransfer: null,
@@ -75,39 +130,8 @@ async function clearPendingTransfer(phoneNumber) {
   });
 }
 
-// ─── DELETE SESSION ───────────────────────────────────
 async function destroy(phoneNumber) {
   memoryStore.delete(phoneNumber);
 }
 
-// ─── STATS (for monitoring) ───────────────────────────
-function stats() {
-  return {
-    activeSessions: memoryStore.size,
-    sessions: Array.from(memoryStore.keys()).map(phone => ({
-      phone: phone.slice(0, 6) + '****',
-      lastActivity: new Date(memoryStore.get(phone).lastActivityAt).toISOString(),
-    })),
-  };
-}
-
-// ─── REDIS UPGRADE PATH ───────────────────────────────
-// To enable Redis, install ioredis and replace the above with:
-//
-// const Redis = require('ioredis');
-// const redis = new Redis(process.env.REDIS_URL);
-//
-// async function get(phoneNumber) {
-//   const raw = await redis.get(`session:${phoneNumber}`);
-//   if (!raw) return defaultSession(phoneNumber);
-//   return JSON.parse(raw);
-// }
-//
-// async function update(phoneNumber, updates) {
-//   const session = await get(phoneNumber);
-//   const updated = { ...session, ...updates, lastActivityAt: Date.now() };
-//   await redis.set(`session:${phoneNumber}`, JSON.stringify(updated), 'EX', 1800);
-//   return updated;
-// }
-
-module.exports = { get, update, clearPendingTransfer, destroy, stats };
+module.exports = { get, update, clearPendingTransfer, destroy };

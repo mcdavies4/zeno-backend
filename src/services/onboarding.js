@@ -1,13 +1,5 @@
 /**
- * Onboarding Service
- *
- * Handles new user registration flow:
- * 1. Welcome message
- * 2. Collect full name
- * 3. Collect email
- * 4. Set 4-digit PIN
- * 5. Confirm PIN
- * 6. Account created
+ * Onboarding Service — with Veriff KYC
  */
 
 const whatsappService = require('./whatsapp');
@@ -15,7 +7,6 @@ const sessionStore = require('./sessionStore');
 const { hashPin } = require('../utils/pinUtils');
 const logger = require('../utils/logger');
 
-// Onboarding steps in order
 const STEPS = {
   WELCOME: 'welcome',
   NAME: 'awaiting_name',
@@ -25,29 +16,18 @@ const STEPS = {
   COMPLETE: 'complete',
 };
 
-/**
- * Check if a user needs onboarding and start it if so.
- * Returns true if onboarding is in progress (caller should stop normal flow).
- */
 async function checkAndHandleOnboarding(from, session, incomingText) {
-  // Already onboarded — let normal flow handle it
   if (session.isOnboarded) return false;
-
-  // Not started yet — kick off onboarding
   if (!session.onboardingStep) {
     await startOnboarding(from);
     return true;
   }
-
-  // In progress — handle current step
   await handleStep(from, session, incomingText);
   return true;
 }
 
-// ─── START ONBOARDING ─────────────────────────────────
 async function startOnboarding(from) {
   await sessionStore.update(from, { onboardingStep: STEPS.NAME });
-
   await whatsappService.sendText(from,
     `👋 *Welcome to Zeno!*\n\n` +
     `I'm your personal AI banking assistant. I can help you:\n` +
@@ -60,12 +40,10 @@ async function startOnboarding(from) {
   );
 }
 
-// ─── HANDLE EACH STEP ─────────────────────────────────
 async function handleStep(from, session, input) {
   const step = session.onboardingStep;
 
   switch (step) {
-
     case STEPS.NAME: {
       const name = input.trim();
       if (name.length < 2) {
@@ -77,7 +55,7 @@ async function handleStep(from, session, input) {
         onboardingData: { ...session.onboardingData, name },
       });
       await whatsappService.sendText(from,
-        `Nice to meet you, *${name.split(' ')[0]}*! 😊\n\nWhat's your *email address*? (Used for account recovery only)`
+        `Nice to meet you, *${name.split(' ')[0]}*! 😊\n\nWhat's your *email address*?`
       );
       break;
     }
@@ -93,10 +71,7 @@ async function handleStep(from, session, input) {
         onboardingData: { ...session.onboardingData, email },
       });
       await whatsappService.sendText(from,
-        `✅ Got it!\n\n` +
-        `Now let's secure your account. Please create a *4-digit PIN*.\n\n` +
-        `🔐 You'll use this to authorise every payment.\n\n` +
-        `_Never share your PIN with anyone, including Zeno support._`
+        `✅ Got it!\n\nNow create a *4-digit PIN* to secure your account.\n\n🔐 You'll use this to authorise every payment.\n\n_Never share your PIN with anyone._`
       );
       break;
     }
@@ -104,14 +79,11 @@ async function handleStep(from, session, input) {
     case STEPS.PIN: {
       const pin = input.trim();
       if (!/^\d{4}$/.test(pin)) {
-        await whatsappService.sendText(from, "Your PIN must be exactly *4 digits* (numbers only). Please try again:");
+        await whatsappService.sendText(from, "Your PIN must be exactly *4 digits*. Please try again:");
         return;
       }
-      // Check for weak PINs
       if (isWeakPin(pin)) {
-        await whatsappService.sendText(from,
-          "That PIN is too easy to guess (e.g. 1234, 0000). Please choose a stronger PIN:"
-        );
+        await whatsappService.sendText(from, "That PIN is too easy to guess. Please choose a stronger PIN:");
         return;
       }
       await sessionStore.update(from, {
@@ -128,25 +100,21 @@ async function handleStep(from, session, input) {
 
       if (pin !== tempPin) {
         await sessionStore.update(from, { onboardingStep: STEPS.PIN });
-        await whatsappService.sendText(from,
-          "❌ PINs don't match. Let's try again — please enter your *4-digit PIN*:"
-        );
+        await whatsappService.sendText(from, "❌ PINs don't match. Please enter your *4-digit PIN* again:");
         return;
       }
 
-      // Hash the PIN securely
       const hashedPin = await hashPin(pin);
       const { name, email } = session.onboardingData;
 
-      // Save completed user profile
       await sessionStore.update(from, {
         isOnboarded: true,
         onboardingStep: STEPS.COMPLETE,
-        onboardingData: null,  // clear temp data
+        onboardingData: null,
         userPin: hashedPin,
         userName: name,
         userEmail: email,
-        balance: 0,           // real balance fetched from banking API
+        balance: 0,
         recentTransactions: [],
       });
 
@@ -154,13 +122,37 @@ async function handleStep(from, session, input) {
 
       await whatsappService.sendText(from,
         `🎉 *Welcome to Zeno, ${name.split(' ')[0]}!*\n\n` +
-        `Your account is ready. Here's what you can do:\n\n` +
-        `💸 *Send money* — "Send £50 to John"\n` +
-        `💰 *Check balance* — "What's my balance?"\n` +
-        `📊 *Spending* — "Show my spending"\n` +
-        `📄 *Pay bills* — "Pay my electricity bill"\n\n` +
-        `What would you like to do first?`
+        `Your account is created!\n\n` +
+        `*One last step* — verify your identity to comply with UK regulations.\n\n` +
+        `You'll need:\n📄 A valid UK ID (passport or driving licence)\n🤳 A selfie\n\n` +
+        `Getting your verification link...`
       );
+
+      // Trigger KYC
+      try {
+        const veriffService = require('./veriff');
+        const nameParts = name.split(' ');
+        const kycSession = await veriffService.createSession({
+          phoneNumber: from,
+          firstName: nameParts[0] || name,
+          lastName: nameParts.slice(1).join(' ') || '',
+        });
+        await sessionStore.update(from, { kycSessionId: kycSession.sessionId });
+        await whatsappService.sendText(from,
+          `🔐 *Verify Your Identity*\n\n` +
+          `Tap the link below:\n\n` +
+          `${kycSession.sessionUrl}\n\n` +
+          `_This link expires in 7 days. Fully encrypted and secure._`
+        );
+      } catch(e) {
+        logger.error('KYC session creation failed:', e.message);
+        await whatsappService.sendText(from,
+          `You can start using Zeno now!\n\n` +
+          `💸 *Send money* — "Send £50 to John"\n` +
+          `💰 *Check balance* — "What's my balance?"\n\n` +
+          `Type *'verify my identity'* to complete verification later.`
+        );
+      }
       break;
     }
 
@@ -169,17 +161,12 @@ async function handleStep(from, session, input) {
   }
 }
 
-// ─── HELPERS ──────────────────────────────────────────
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
 function isWeakPin(pin) {
-  const weakPins = [
-    '0000', '1111', '2222', '3333', '4444',
-    '5555', '6666', '7777', '8888', '9999',
-    '1234', '4321', '0123', '9876',
-  ];
+  const weakPins = ['0000','1111','2222','3333','4444','5555','6666','7777','8888','9999','1234','4321','0123','9876'];
   return weakPins.includes(pin);
 }
 

@@ -32,6 +32,9 @@ app.use('/webhook', webhookRouter);
 app.use('/truelayer', truelayerRouter);
 app.use('/veriff', veriffRouter);
 
+app.get('/', (req, res) => {
+  res.sendFile(require('path').join(__dirname, '../zeno-landing.html'));
+});
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',

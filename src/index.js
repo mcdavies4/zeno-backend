@@ -6,7 +6,6 @@ const rateLimit = require('express-rate-limit');
 
 const webhookRouter = require('./handlers/webhook');
 const truelayerRouter = require('./handlers/truelayerCallback');
-const database = require('./services/database');
 const logger = require('./utils/logger');
 
 const app = express();
@@ -48,7 +47,13 @@ app.get('/health', (req, res) => {
 // ─── START ────────────────────────────────────────────
 async function start() {
   // Init database first
-  await database.init();
+  async function start() {
+  app.listen(PORT, () => {
+    logger.info(`Zeno backend running on port ${PORT}`);
+    logger.info(`Webhook URL: POST /webhook`);
+    logger.info(`Verify URL:  GET  /webhook`);
+  });
+}
 
   app.listen(PORT, () => {
     logger.info(`Zeno backend running on port ${PORT}`);

@@ -12,7 +12,12 @@ const logger = winston.createLogger({
       format: winston.format.combine(
         winston.format.colorize(),
         winston.format.printf(({ timestamp, level, message, ...meta }) => {
-          const metaStr = Object.keys(meta).length ? ' ' + JSON.stringify(meta) : '';
+          const metaStr = Object.keys(meta).length ? ' ' + JSON.stringify(meta, (key, val) => {
+  if (val instanceof Object && val.constructor === Object) {
+    try { return JSON.parse(JSON.stringify(val)); } catch(e) { return '[Complex Object]'; }
+  }
+  return val;
+}) : '';
           return `${timestamp} [${level}] ${message}${metaStr}`;
         })
       ),

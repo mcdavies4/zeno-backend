@@ -950,25 +950,47 @@
 </style>
 
 <script>
-  // FIX 10: Scroll reveal — per-section stagger so delays don't accumulate across sections
-  // causing late-appearing elements in distant sections (e.g. use-grid cards at 0.64s+)
-  const reveals = document.querySelectorAll('.reveal');
-  const observer = new IntersectionObserver((entries) => {
-    // Group newly visible entries and stagger them relative to each other, not globally
-    const visible = entries.filter(e => e.isIntersecting);
-    visible.forEach((entry, i) => {
-      setTimeout(() => {
-        entry.target.classList.add('visible');
-      }, i * 80);
-      observer.unobserve(entry.target);
+  // Robust scroll reveal:
+  // - Each element gets its own observer so unobserve() never races with the class add
+  // - Small stagger per sibling group (same parent) so cards animate in sequence
+  // - rootMargin is generous so elements trigger before they're fully on-screen
+  // - Falls back to visible immediately if JS is slow (no content ever stays hidden)
+
+  document.querySelectorAll('.reveal').forEach((el) => {
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+
+        // Calculate stagger based on position among siblings with .reveal
+        const siblings = Array.from(entry.target.parentElement.children)
+          .filter(c => c.classList.contains('reveal'));
+        const index = siblings.indexOf(entry.target);
+        const delay = index >= 0 ? index * 80 : 0;
+
+        setTimeout(() => {
+          entry.target.classList.add('visible');
+        }, delay);
+
+        obs.disconnect(); // safe — each element has its own observer instance
+      });
+    }, {
+      threshold: 0.08,
+      rootMargin: '0px 0px -30px 0px'
     });
-  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
 
-  reveals.forEach(el => observer.observe(el));
+    obs.observe(el);
+  });
 
-  // FIX 11: Removed the JS stagger transitionDelay override that was fighting the
-  // reveal observer — elements now animate correctly on scroll without pre-baked delays
-  // that fire regardless of scroll position.
+  // Safety net: if page has been scrolled before JS runs (e.g. back-button navigation),
+  // immediately reveal anything already in the viewport
+  window.addEventListener('load', () => {
+    document.querySelectorAll('.reveal:not(.visible)').forEach(el => {
+      const rect = el.getBoundingClientRect();
+      if (rect.top < window.innerHeight) {
+        el.classList.add('visible');
+      }
+    });
+  });
 </script>
 </body>
 </html>

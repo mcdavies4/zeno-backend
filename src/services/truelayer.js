@@ -43,7 +43,7 @@ function generateAuthLink(phoneNumber) {
     client_id: CLIENT_ID,
     scope: 'info accounts balance transactions',
     redirect_uri: REDIRECT_URI,
-    providers: SUPPORTED_PROVIDERS.join(' '),
+    providers: 'uk-ob-all uk-oauth-all',
     state,
   });
 

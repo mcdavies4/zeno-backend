@@ -1,9 +1,5 @@
 /**
- * TrueLayer OAuth Callback
- *
- * After user connects their bank on TrueLayer,
- * they get redirected here with a code.
- * We exchange it for tokens and save to their session.
+ * TrueLayer OAuth Callback - Fixed version
  */
 
 const express = require('express');
@@ -16,33 +12,34 @@ const logger = require('../utils/logger');
 router.get('/callback', async (req, res) => {
   const { code, state, error } = req.query;
 
+  logger.info(`TrueLayer callback: code=${!!code}, state=${state}, error=${error}`);
+
   // Decode phone number from state
   let phoneNumber;
   try {
-    phoneNumber = Buffer.from(state, 'base64').toString('utf8');
+    if (!state) throw new Error('No state');
+    try {
+      const decoded = Buffer.from(state, 'base64').toString('utf8');
+      phoneNumber = /^\+?\d{7,15}$/.test(decoded) ? decoded : state;
+    } catch (e) {
+      phoneNumber = state;
+    }
   } catch (e) {
-    return res.status(400).send('Invalid state parameter');
+    logger.error('Invalid state:', state, e.message);
+    return res.send(successPage('Almost there!', 'Please return to WhatsApp.'));
   }
 
-  // Handle user cancellation
   if (error) {
-    logger.warn(`TrueLayer auth cancelled for ${phoneNumber}: ${error}`);
-    await whatsappService.sendText(phoneNumber,
-      "No worries! You can connect your bank anytime by asking me *'connect my bank'*. 😊"
+    logger.warn(`TrueLayer cancelled for ${phoneNumber}: ${error}`);
+    if (phoneNumber) await whatsappService.sendText(phoneNumber,
+      "No worries! Connect your bank anytime by asking me *'connect my bank'*. 😊"
     );
-    return res.send(`
-      <html><body style="font-family:sans-serif;text-align:center;padding:40px">
-        <h2>Cancelled</h2>
-        <p>You can close this window and return to WhatsApp.</p>
-      </body></html>
-    `);
+    return res.send(successPage('Cancelled', 'You can close this window.'));
   }
 
   try {
-    // Exchange code for access + refresh tokens
     const tokens = await exchangeCodeForToken(code);
 
-    // Save tokens to user session
     await sessionStore.update(phoneNumber, {
       truelayerAccessToken: tokens.access_token,
       truelayerRefreshToken: tokens.refresh_token,
@@ -50,51 +47,36 @@ router.get('/callback', async (req, res) => {
       bankConnected: true,
     });
 
-    logger.info(`Bank connected successfully for ${phoneNumber}`);
+    logger.info(`Bank connected for ${phoneNumber}`);
 
-    // Notify user on WhatsApp
-    await whatsappService.sendText(phoneNumber,
-      `🎉 *Bank connected successfully!*\n\n` +
-      `I can now fetch your real balance and transactions.\n\n` +
-      `Try asking:\n` +
-      `• *"What's my balance?"*\n` +
-      `• *"Show my recent transactions"*`
-    );
+    if (phoneNumber) {
+      await whatsappService.sendText(phoneNumber,
+        `🎉 *Bank connected successfully!*\n\n` +
+        `Try asking:\n` +
+        `• *"What's my balance?"*\n` +
+        `• *"Show my recent transactions"*`
+      );
+    }
 
-    // Show success page
-    res.send(`
-      <html>
-      <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <style>
-          body { font-family: sans-serif; text-align: center; padding: 60px 20px; background: #06090d; color: #e6edf3; }
-          .icon { font-size: 4rem; margin-bottom: 16px; }
-          h2 { font-size: 1.5rem; margin-bottom: 8px; color: #00d4aa; }
-          p { color: #8b949e; }
-        </style>
-      </head>
-      <body>
-        <div class="icon">✅</div>
-        <h2>Bank Connected!</h2>
-        <p>You can close this window and return to WhatsApp.</p>
-      </body>
-      </html>
-    `);
+    res.send(successPage('Bank Connected! ✅', 'You can close this window and return to WhatsApp.'));
 
   } catch (err) {
-    logger.error(`TrueLayer callback error for ${phoneNumber}:`, err.message);
-
-    await whatsappService.sendText(phoneNumber,
-      "⚠️ Something went wrong connecting your bank. Please try again by saying *'connect my bank'*."
+    logger.error(`TrueLayer error for ${phoneNumber}:`, err.message);
+    if (phoneNumber) await whatsappService.sendText(phoneNumber,
+      "⚠️ Something went wrong. Please try again by saying *'connect my bank'*."
     );
-
-    res.status(500).send(`
-      <html><body style="font-family:sans-serif;text-align:center;padding:40px;background:#06090d;color:#e6edf3">
-        <h2 style="color:#ff4d6d">Connection Failed</h2>
-        <p>Please close this window and try again on WhatsApp.</p>
-      </body></html>
-    `);
+    res.status(500).send(successPage('Connection Failed', 'Please try again on WhatsApp.'));
   }
 });
+
+function successPage(title, message) {
+  return `
+    <html>
+    <head><meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>body{font-family:sans-serif;text-align:center;padding:60px 20px;background:#06090d;color:#e6edf3}
+    h2{color:#00d4aa}p{color:#8b949e}</style></head>
+    <body><div style="font-size:3rem">✅</div><h2>${title}</h2><p>${message}</p></body>
+    </html>`;
+}
 
 module.exports = router;

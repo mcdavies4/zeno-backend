@@ -16,7 +16,7 @@ const CLIENT_SECRET = process.env.TRUELAYER_CLIENT_SECRET;
 const REDIRECT_URI = process.env.TRUELAYER_REDIRECT_URI;
 
 // Sandbox vs Live
-const IS_SANDBOX = process.env.NODE_ENV !== 'production';
+const IS_SANDBOX = true;
 const AUTH_URL = IS_SANDBOX
   ? 'https://auth.truelayer-sandbox.com'
   : 'https://auth.truelayer.com';

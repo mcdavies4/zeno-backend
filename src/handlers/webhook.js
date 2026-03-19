@@ -30,7 +30,7 @@ router.post('/', async (req, res) => {
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : 
                  Buffer.isBuffer(req.body) ? JSON.parse(req.body.toString()) : req.body;
-
+    logger.info('Webhook body received:', JSON.stringify(body).substring(0, 200));
     // Only handle whatsapp_business_account events
     if (body.object !== 'whatsapp_business_account') return;
 

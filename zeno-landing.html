@@ -600,8 +600,12 @@
   .footer-copy { font-size: 0.78rem; }
 
   /* ─── SCROLL REVEAL ─── */
-  .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.6s ease, transform 0.6s ease; }
-  .reveal.visible { opacity: 1; transform: translateY(0); }
+  .reveal { opacity: 0; }
+  .reveal.visible { animation: revealUp 0.55s ease forwards; }
+  @keyframes revealUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
 
   /* ─── MOBILE ─── */
   @media (max-width: 900px) {
@@ -950,43 +954,55 @@
 </style>
 
 <script>
-  // Robust scroll reveal:
-  // - Each element gets its own observer so unobserve() never races with the class add
-  // - Small stagger per sibling group (same parent) so cards animate in sequence
-  // - rootMargin is generous so elements trigger before they're fully on-screen
-  // - Falls back to visible immediately if JS is slow (no content ever stays hidden)
+  function initReveal() {
+    const els = document.querySelectorAll('.reveal');
 
-  document.querySelectorAll('.reveal').forEach((el) => {
-    const obs = new IntersectionObserver((entries) => {
+    // Immediately reveal anything already visible on load (back-nav, fast scroll, etc.)
+    els.forEach(el => {
+      const rect = el.getBoundingClientRect();
+      if (rect.top < window.innerHeight + 100) {
+        el.classList.add('visible');
+      }
+    });
+
+    // One shared observer — large rootMargin so elements trigger well before
+    // they hit the fold. threshold:0 means ANY pixel visible is enough.
+    const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (!entry.isIntersecting) return;
 
-        // Calculate stagger based on position among siblings with .reveal
-        const siblings = Array.from(entry.target.parentElement.children)
-          .filter(c => c.classList.contains('reveal'));
-        const index = siblings.indexOf(entry.target);
-        const delay = index >= 0 ? index * 80 : 0;
+        const el = entry.target;
+        observer.unobserve(el);
 
-        setTimeout(() => {
-          entry.target.classList.add('visible');
-        }, delay);
+        // Stagger siblings in the same parent container
+        const siblings = Array.from(el.parentElement.querySelectorAll(':scope > .reveal'));
+        const idx = siblings.indexOf(el);
+        const delay = Math.max(0, idx) * 80;
 
-        obs.disconnect(); // safe — each element has its own observer instance
+        setTimeout(() => el.classList.add('visible'), delay);
       });
     }, {
-      threshold: 0.08,
-      rootMargin: '0px 0px -30px 0px'
+      threshold: 0,
+      rootMargin: '0px 0px 60px 0px'  // positive = triggers 60px BEFORE element enters viewport
     });
 
-    obs.observe(el);
-  });
+    els.forEach(el => {
+      if (!el.classList.contains('visible')) observer.observe(el);
+    });
+  }
 
-  // Safety net: if page has been scrolled before JS runs (e.g. back-button navigation),
-  // immediately reveal anything already in the viewport
+  // Run after DOM + styles are ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initReveal);
+  } else {
+    initReveal();
+  }
+
+  // Extra safety: after full page load (images etc.), sweep for any still-hidden elements
   window.addEventListener('load', () => {
     document.querySelectorAll('.reveal:not(.visible)').forEach(el => {
       const rect = el.getBoundingClientRect();
-      if (rect.top < window.innerHeight) {
+      if (rect.top < window.innerHeight + 200) {
         el.classList.add('visible');
       }
     });

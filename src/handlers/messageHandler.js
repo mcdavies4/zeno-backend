@@ -4,6 +4,7 @@ const sessionStore = require('../services/sessionStore');
 const transferService = require('../services/transfer');
 const { checkAndHandleOnboarding } = require('../services/onboarding');
 const { verifyPin } = require('../utils/pinUtils');
+const truelayer = require('../services/truelayer');
 const logger = require('../utils/logger');
 
 /**
@@ -233,13 +234,50 @@ async function handleAIResponse({ from, aiResponse, session, text }) {
       break;
     }
 
-    case 'BALANCE':
+    case 'BALANCE': {
+      // Try real balance first
+      if (session.bankConnected) {
+        const result = await truelayer.getBalance(from, session);
+        if (result.success) {
+          await whatsappService.sendText(from, truelayer.formatBalanceMessage(result.balances));
+          break;
+        }
+      }
+      // Not connected — offer to connect or use AI response
+      if (!session.bankConnected) {
+        const authLink = truelayer.generateAuthLink(from);
+        await whatsappService.sendText(from,
+          `💰 To show your real balance, connect your bank first!\n\n` +
+          `Tap the link below — it's secure and takes 30 seconds:\n\n` +
+          `${authLink}\n\n` +
+          `_We use Open Banking — read-only access, no card details needed._`
+        );
+        break;
+      }
       await whatsappService.sendText(from, aiResponse.reply);
       break;
+    }
 
-    case 'TRANSACTIONS':
+    case 'TRANSACTIONS': {
+      // Try real transactions first
+      if (session.bankConnected) {
+        const result = await truelayer.getTransactions(from, session);
+        if (result.success) {
+          await whatsappService.sendText(from, truelayer.formatTransactionsMessage(result.transactions));
+          break;
+        }
+      }
+      // Not connected
+      if (!session.bankConnected) {
+        const authLink = truelayer.generateAuthLink(from);
+        await whatsappService.sendText(from,
+          `📋 Connect your bank to see real transactions!\n\n${authLink}`
+        );
+        break;
+      }
       await whatsappService.sendText(from, aiResponse.reply);
       break;
+    }
 
     case 'HELP':
       await whatsappService.sendText(from, aiResponse.reply);

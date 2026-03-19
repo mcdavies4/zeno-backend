@@ -5,10 +5,10 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 
 const webhookRouter = require('./handlers/webhook');
+const truelayerRouter = require('./handlers/truelayerCallback');
 const logger = require('./utils/logger');
 
 const app = express();
-app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
 
 // ─── SECURITY MIDDLEWARE ───────────────────────────────
@@ -31,6 +31,7 @@ app.use('/webhook', rateLimit({
 
 // ─── ROUTES ───────────────────────────────────────────
 app.use('/webhook', webhookRouter);
+app.use('/truelayer', truelayerRouter);
 
 // Health check
 app.get('/health', (req, res) => {

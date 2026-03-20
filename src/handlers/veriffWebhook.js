@@ -1,8 +1,5 @@
 /**
  * Veriff Webhook Handler
- *
- * Receives verification results from Veriff
- * and notifies users on WhatsApp.
  */
 
 const express = require('express');
@@ -12,9 +9,13 @@ const sessionStore = require('../services/sessionStore');
 const whatsappService = require('../services/whatsapp');
 const logger = require('../utils/logger');
 
-// ─── WEBHOOK ──────────────────────────────────────────
+// ─── GET — Veriff health check ────────────────────────
+router.get('/webhook', (req, res) => {
+  res.sendStatus(200);
+});
+
+// ─── POST — Veriff webhook results ────────────────────
 router.post('/webhook', express.json(), async (req, res) => {
-  // Respond immediately
   res.sendStatus(200);
 
   try {
@@ -24,16 +25,15 @@ router.post('/webhook', express.json(), async (req, res) => {
     logger.info('Veriff webhook received:', JSON.stringify(payload).substring(0, 200));
 
     // Verify signature
-   if (!veriffService.verifyWebhookSignature(payload, signature)) {
-    logger.warn('Invalid Veriff webhook signature');
-  return;
-}
+    if (!veriffService.verifyWebhookSignature(payload, signature)) {
+      logger.warn('Invalid Veriff webhook signature');
+      return;
+    }
 
-    const { action, verification } = payload;
-
+    const { verification } = payload;
     if (!verification) return;
 
-    const phoneNumber = verification.vendorData; // we stored phone number here
+    const phoneNumber = verification.vendorData;
     const status = verification.status;
     const code = verification.code;
 
@@ -44,17 +44,14 @@ router.post('/webhook', express.json(), async (req, res) => {
       return;
     }
 
-    // Get status message
     const { text, verified } = veriffService.getStatusMessage(status, code);
 
-    // Update user session
     await sessionStore.update(phoneNumber, {
       kycStatus: status,
       kycVerified: verified,
       kycSessionId: verification.id,
     });
 
-    // Notify user on WhatsApp
     await whatsappService.sendText(phoneNumber, text);
 
   } catch (err) {
@@ -62,7 +59,7 @@ router.post('/webhook', express.json(), async (req, res) => {
   }
 });
 
-// ─── MANUAL STATUS CHECK ──────────────────────────────
+// ─── STATUS CHECK ─────────────────────────────────────
 router.get('/status/:sessionId', async (req, res) => {
   try {
     const status = await veriffService.getSessionStatus(req.params.sessionId);

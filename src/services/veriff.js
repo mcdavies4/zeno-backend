@@ -20,7 +20,7 @@ async function createSession(user) {
   try {
     const payload = {
       verification: {
-        callback: `${process.env.VERIFF_CALLBACK_URL || process.env.RAILWAY_PUBLIC_DOMAIN}`,
+        callback: `${process.env.VERIFF_CALLBACK_URL || process.env.RAILWAY_PUBLIC_DOMAIN}/veriff/webhook`,
         person: {
           firstName: user.firstName || '',
           lastName: user.lastName || '',

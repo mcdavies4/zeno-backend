@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /webhook
+Disallow: /truelayer
+Disallow: /veriff
+Disallow: /health
+Disallow: /api
+
+Sitemap: https://www.joinzeno.co.uk/sitemap.xml

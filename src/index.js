@@ -33,6 +33,9 @@ app.get('/', (req, res) => res.sendFile(path.join(__dirname, '../zeno-landing.ht
 app.get('/privacy', (req, res) => res.sendFile(path.join(__dirname, '../privacy.html')));
 app.get('/terms', (req, res) => res.sendFile(path.join(__dirname, '../terms.html')));
 app.get('/security', (req, res) => res.sendFile(path.join(__dirname, '../security.html')));
+app.get('/sitemap.xml', (req, res) => res.sendFile(path.join(__dirname, '../sitemap.xml')));
+app.get('/robots.txt', (req, res) => res.sendFile(path.join(__dirname, '../robots.txt')));
+app.get('/favicon.svg', (req, res) => res.sendFile(path.join(__dirname, '../favicon.svg')));
 
 // ─── API ROUTES ───────────────────────────────────────
 app.use('/webhook', webhookRouter);

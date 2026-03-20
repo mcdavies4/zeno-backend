@@ -24,7 +24,7 @@ router.post('/webhook', express.json(), async (req, res) => {
     logger.info('Veriff webhook received:', JSON.stringify(payload).substring(0, 200));
 
     // Verify signature
-   if (false && !veriffService.verifyWebhookSignature(payload, signature)) {
+   if (!veriffService.verifyWebhookSignature(payload, signature)) {
     logger.warn('Invalid Veriff webhook signature');
   return;
 }

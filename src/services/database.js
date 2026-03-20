@@ -24,7 +24,8 @@ async function init() {
     logger.info('PostgreSQL connected successfully');
     await createTables();
   } catch (err) {
-    logger.error('PostgreSQL connection failed:', err.message);
+   logger.info('Connecting to PostgreSQL:', process.env.DATABASE_URL?.substring(0, 30) + '...');
+    logger.error('PostgreSQL connection failed:', err.message, err.stack);
     pool = null;
   }
 }

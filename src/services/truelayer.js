@@ -1,10 +1,5 @@
 /**
- * TrueLayer Open Banking Service
- *
- * Handles:
- * - Generating auth links for users to connect their bank
- * - Fetching real account balances
- * - Fetching real transactions
+ * TrueLayer Open Banking Service — Live Mode
  */
 
 const axios = require('axios');
@@ -15,8 +10,9 @@ const CLIENT_ID = process.env.TRUELAYER_CLIENT_ID;
 const CLIENT_SECRET = process.env.TRUELAYER_CLIENT_SECRET;
 const REDIRECT_URI = process.env.TRUELAYER_REDIRECT_URI;
 
-// Sandbox vs Live
+// Always use Live — change to true only for local sandbox testing
 const IS_SANDBOX = false;
+
 const AUTH_URL = IS_SANDBOX
   ? 'https://auth.truelayer-sandbox.com'
   : 'https://auth.truelayer.com';
@@ -24,17 +20,7 @@ const API_URL = IS_SANDBOX
   ? 'https://api.truelayer-sandbox.com'
   : 'https://api.truelayer.com';
 
-// UK banks supported via TrueLayer
-const SUPPORTED_PROVIDERS = [
-  'monzo', 'starling', 'barclays', 'hsbc',
-  'lloyds', 'natwest', 'santander', 'revolut',
-];
-
 // ─── GENERATE AUTH LINK ───────────────────────────────
-/**
- * Generate a TrueLayer auth link for the user to connect their bank.
- * Send this link to the user on WhatsApp.
- */
 function generateAuthLink(phoneNumber) {
   const state = Buffer.from(phoneNumber).toString('base64');
 
@@ -43,7 +29,6 @@ function generateAuthLink(phoneNumber) {
     client_id: CLIENT_ID,
     scope: 'info accounts balance transactions offline_access',
     redirect_uri: REDIRECT_URI,
-    providers: 'mock',
     state,
   });
 
@@ -51,22 +36,20 @@ function generateAuthLink(phoneNumber) {
 }
 
 // ─── EXCHANGE CODE FOR TOKEN ──────────────────────────
-/**
- * Called from your /callback route after user connects their bank.
- */
 async function exchangeCodeForToken(code) {
   try {
-    const response = await axios.post(`${AUTH_URL}/connect/token`, {
-      grant_type: 'authorization_code',
-      client_id: CLIENT_ID,
-      client_secret: CLIENT_SECRET,
-      redirect_uri: REDIRECT_URI,
-      code,
-    }, {
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    });
-
-    return response.data; // { access_token, refresh_token, expires_in }
+    const response = await axios.post(
+      `${AUTH_URL}/connect/token`,
+      new URLSearchParams({
+        grant_type: 'authorization_code',
+        client_id: CLIENT_ID,
+        client_secret: CLIENT_SECRET,
+        redirect_uri: REDIRECT_URI,
+        code,
+      }),
+      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+    );
+    return response.data;
   } catch (err) {
     logger.error('TrueLayer token exchange failed:', err.response?.data || err.message);
     throw err;
@@ -76,15 +59,16 @@ async function exchangeCodeForToken(code) {
 // ─── REFRESH TOKEN ────────────────────────────────────
 async function refreshAccessToken(refreshToken) {
   try {
-    const response = await axios.post(`${AUTH_URL}/connect/token`, {
-      grant_type: 'refresh_token',
-      client_id: CLIENT_ID,
-      client_secret: CLIENT_SECRET,
-      refresh_token: refreshToken,
-    }, {
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    });
-
+    const response = await axios.post(
+      `${AUTH_URL}/connect/token`,
+      new URLSearchParams({
+        grant_type: 'refresh_token',
+        client_id: CLIENT_ID,
+        client_secret: CLIENT_SECRET,
+        refresh_token: refreshToken,
+      }),
+      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+    );
     return response.data;
   } catch (err) {
     logger.error('TrueLayer token refresh failed:', err.response?.data || err.message);
@@ -94,14 +78,10 @@ async function refreshAccessToken(refreshToken) {
 
 // ─── GET VALID ACCESS TOKEN ───────────────────────────
 async function getValidToken(session, phoneNumber) {
-  if (!session.truelayerAccessToken) {
-    throw new Error('NO_TOKEN');
-  }
+  if (!session.truelayerAccessToken) throw new Error('NO_TOKEN');
 
-  // Check if token is expired (with 5 min buffer)
   const expiresAt = session.truelayerExpiresAt || 0;
   if (Date.now() > expiresAt - 300000) {
-    // Refresh the token
     const newTokens = await refreshAccessToken(session.truelayerRefreshToken);
     await sessionStore.update(phoneNumber, {
       truelayerAccessToken: newTokens.access_token,
@@ -134,10 +114,9 @@ async function getBalance(phoneNumber, session) {
     const accounts = await getAccounts(accessToken);
 
     if (!accounts || accounts.length === 0) {
-      return { success: false, message: "No accounts found." };
+      return { success: false, message: 'No accounts found.' };
     }
 
-    // Fetch balance for each account
     const balances = await Promise.all(
       accounts.map(async (account) => {
         const res = await axios.get(
@@ -155,7 +134,6 @@ async function getBalance(phoneNumber, session) {
       })
     );
 
-    // Cache balance in session
     await sessionStore.update(phoneNumber, {
       balance: balances[0]?.available || 0,
       lastBalanceFetch: Date.now(),
@@ -164,9 +142,7 @@ async function getBalance(phoneNumber, session) {
     return { success: true, balances };
 
   } catch (err) {
-    if (err.message === 'NO_TOKEN') {
-      return { success: false, needsConnection: true };
-    }
+    if (err.message === 'NO_TOKEN') return { success: false, needsConnection: true };
     logger.error('Balance fetch failed:', err.message);
     return { success: false, message: 'Could not fetch balance right now.' };
   }
@@ -179,14 +155,14 @@ async function getTransactions(phoneNumber, session, days = 30) {
     const accounts = await getAccounts(accessToken);
 
     if (!accounts || accounts.length === 0) {
-      return { success: false, message: "No accounts found." };
+      return { success: false, message: 'No accounts found.' };
     }
 
     const from = new Date();
     from.setDate(from.getDate() - days);
     const fromStr = from.toISOString().split('T')[0];
 
-    const account = accounts[0]; // Use primary account
+    const account = accounts[0];
     const res = await axios.get(
       `${API_URL}/data/v1/accounts/${account.account_id}/transactions`,
       {
@@ -203,21 +179,17 @@ async function getTransactions(phoneNumber, session, days = 30) {
       type: tx.transaction_type,
     }));
 
-    // Cache in session
     await sessionStore.update(phoneNumber, { recentTransactions: transactions });
-
     return { success: true, transactions };
 
   } catch (err) {
-    if (err.message === 'NO_TOKEN') {
-      return { success: false, needsConnection: true };
-    }
+    if (err.message === 'NO_TOKEN') return { success: false, needsConnection: true };
     logger.error('Transactions fetch failed:', err.message);
     return { success: false, message: 'Could not fetch transactions right now.' };
   }
 }
 
-// ─── FORMAT BALANCE MESSAGE ───────────────────────────
+// ─── FORMAT MESSAGES ──────────────────────────────────
 function formatBalanceMessage(balances) {
   if (balances.length === 1) {
     const b = balances[0];
@@ -229,16 +201,11 @@ function formatBalanceMessage(balances) {
       `Account: ****${b.accountNumber.slice(-4)}`
     );
   }
-
-  // Multiple accounts
   let msg = `💰 *Your Balances*\n\n`;
-  balances.forEach(b => {
-    msg += `*${b.accountName}*: £${b.available.toFixed(2)}\n`;
-  });
+  balances.forEach(b => { msg += `*${b.accountName}*: £${b.available.toFixed(2)}\n`; });
   return msg;
 }
 
-// ─── FORMAT TRANSACTIONS MESSAGE ──────────────────────
 function formatTransactionsMessage(transactions) {
   let msg = `📋 *Recent Transactions*\n\n`;
   transactions.forEach(tx => {

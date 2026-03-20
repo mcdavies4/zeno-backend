@@ -35,6 +35,13 @@ app.use('/veriff', veriffRouter);
 app.get('/', (req, res) => {
   res.sendFile(require('path').join(__dirname, '../zeno-landing.html'));
 });
+const path = require('path');
+
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, '../zeno-landing.html')));
+app.get('/privacy', (req, res) => res.sendFile(path.join(__dirname, '../privacy.html')));
+app.get('/terms', (req, res) => res.sendFile(path.join(__dirname, '../terms.html')));
+app.get('/security', (req, res) => res.sendFile(path.join(__dirname, '../security.html')));
+
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',

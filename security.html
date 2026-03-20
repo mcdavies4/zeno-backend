@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Security — Zeno</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f7f5f0;--white:#fff;--accent:#1a6b4a;--al:#e6f4ed;--text:#1c1c1a;--t2:#6b6b5e;--border:rgba(26,26,24,0.1)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text)}
+nav{display:flex;align-items:center;justify-content:space-between;padding:18px 48px;background:var(--white);border-bottom:1px solid var(--border)}
+.logo{font-family:'Fraunces',serif;font-weight:700;font-size:1.4rem;letter-spacing:-.03em;text-decoration:none;color:var(--text)}.logo span{color:var(--accent)}
+.back{color:var(--t2);text-decoration:none;font-size:.88rem;font-weight:500}.back:hover{color:var(--text)}
+.hero{background:var(--accent);padding:80px 48px;text-align:center}
+.hero h1{font-family:'Fraunces',serif;font-size:clamp(2rem,4vw,3rem);font-weight:700;color:white;letter-spacing:-.03em;margin-bottom:12px}
+.hero p{color:rgba(255,255,255,.75);font-size:1rem;font-weight:300;max-width:500px;margin:0 auto}
+.page{max-width:900px;margin:0 auto;padding:60px 24px 100px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:60px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:18px;padding:28px}
+.card-icon{font-size:2rem;margin-bottom:14px;display:block}
+.card h3{font-family:'Fraunces',serif;font-size:1.1rem;font-weight:700;letter-spacing:-.02em;margin-bottom:8px}
+.card p{font-size:.85rem;color:var(--t2);line-height:1.65;font-weight:300}
+h2{font-family:'Fraunces',serif;font-size:1.6rem;font-weight:700;letter-spacing:-.03em;margin-bottom:24px}
+.steps{display:flex;flex-direction:column;gap:16px;margin-bottom:60px}
+.step{display:flex;gap:16px;align-items:flex-start;background:var(--white);border:1px solid var(--border);border-radius:14px;padding:20px 24px}
+.step-n{width:32px;height:32px;background:var(--al);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-weight:700;font-size:.88rem;color:var(--accent);flex-shrink:0}
+.step h4{font-family:'Fraunces',serif;font-weight:700;font-size:.95rem;margin-bottom:4px}
+.step p{font-size:.83rem;color:var(--t2);line-height:1.6;font-weight:300;margin:0}
+.badges{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:60px}
+.badge{display:flex;align-items:center;gap:10px;background:var(--white);border:1px solid var(--border);border-radius:12px;padding:12px 18px}
+.badge-i{font-size:1.3rem}
+.badge-t{font-size:.82rem;font-weight:600}.badge-s{font-size:.72rem;color:var(--t2)}
+.report{background:var(--al);border:1px solid rgba(26,107,74,.15);border-radius:18px;padding:28px 32px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+.report p{font-size:.9rem;color:var(--t2);font-weight:300;margin:0;max-width:500px}
+.report h3{font-family:'Fraunces',serif;font-weight:700;font-size:1.1rem;margin-bottom:6px}
+.btn{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:white;padding:12px 22px;border-radius:50px;font-weight:600;font-size:.85rem;text-decoration:none;white-space:nowrap;transition:all .2s}.btn:hover{background:#155a3d}
+@media(max-width:700px){.grid{grid-template-columns:1fr}nav{padding:14px 20px}.hero{padding:60px 20px}.page{padding:40px 20px 80px}.report{flex-direction:column}}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="logo">Ze<span>n</span>o</a>
+  <a href="/" class="back">← Back to home</a>
+</nav>
+
+<div class="hero">
+  <h1>Security at Zeno</h1>
+  <p>We take the security of your money and personal data seriously. Here's exactly how we protect you.</p>
+</div>
+
+<div class="page">
+
+  <div style="margin-bottom:48px">
+    <h2>How we protect your money</h2>
+    <div class="grid">
+      <div class="card">
+        <span class="card-icon">🔐</span>
+        <h3>PIN-Protected Transactions</h3>
+        <p>Every payment requires your 4-digit PIN. Your PIN is hashed using bcrypt — even we cannot see it. After 3 incorrect attempts, your account is automatically locked.</p>
+      </div>
+      <div class="card">
+        <span class="card-icon">🛡️</span>
+        <h3>256-bit TLS Encryption</h3>
+        <p>All data transmitted between your WhatsApp, our servers, and your bank is encrypted using industry-standard TLS 1.3. Your data is unreadable in transit.</p>
+      </div>
+      <div class="card">
+        <span class="card-icon">🏦</span>
+        <h3>Open Banking — Read Only</h3>
+        <p>We connect to your bank via FCA-regulated Open Banking. This gives us read-only access to your balance and transactions. We cannot move money without your explicit instruction and PIN.</p>
+      </div>
+      <div class="card">
+        <span class="card-icon">🪪</span>
+        <h3>Identity Verification</h3>
+        <p>Every Zeno user completes KYC verification via Veriff. We verify your government-issued ID and perform a liveness check to prevent identity fraud.</p>
+      </div>
+      <div class="card">
+        <span class="card-icon">❄️</span>
+        <h3>Instant Account Freeze</h3>
+        <p>If your phone is lost or stolen, you can freeze your Zeno account instantly by messaging us from any device. All payment activity stops immediately.</p>
+      </div>
+      <div class="card">
+        <span class="card-icon">🔍</span>
+        <h3>Transaction Monitoring</h3>
+        <p>We monitor transactions in real time for unusual patterns. Suspicious activity triggers automatic alerts and may result in temporary holds for your protection.</p>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-bottom:48px">
+    <h2>What happens when you make a payment</h2>
+    <div class="steps">
+      <div class="step"><div class="step-n">1</div><div><h4>You request a payment</h4><p>You send a natural language message to Zeno, e.g. "Send £50 to John Smith".</p></div></div>
+      <div class="step"><div class="step-n">2</div><div><h4>Zeno confirms the details</h4><p>We show you a summary of the transfer — recipient, amount, bank, and reference — before anything happens.</p></div></div>
+      <div class="step"><div class="step-n">3</div><div><h4>You enter your PIN</h4><p>You must enter your 4-digit PIN to authorise the payment. No PIN, no payment.</p></div></div>
+      <div class="step"><div class="step-n">4</div><div><h4>Payment is processed</h4><p>Only after PIN confirmation do we submit the payment via Faster Payments. You receive a confirmation with a transaction ID.</p></div></div>
+      <div class="step"><div class="step-n">5</div><div><h4>You get a receipt</h4><p>We send you a full transaction receipt including the new balance and a unique transaction reference.</p></div></div>
+    </div>
+  </div>
+
+  <div style="margin-bottom:48px">
+    <h2>Our security certifications</h2>
+    <div class="badges">
+      <div class="badge"><span class="badge-i">🏛️</span><div><div class="badge-t">FCA Regulated</div><div class="badge-s">Financial Conduct Authority</div></div></div>
+      <div class="badge"><span class="badge-i">🔒</span><div><div class="badge-t">TLS 1.3 Encrypted</div><div class="badge-s">All data in transit</div></div></div>
+      <div class="badge"><span class="badge-i">🌐</span><div><div class="badge-t">Open Banking</div><div class="badge-s">FCA-regulated access</div></div></div>
+      <div class="badge"><span class="badge-i">🪪</span><div><div class="badge-t">KYC Verified</div><div class="badge-s">Powered by Veriff</div></div></div>
+      <div class="badge"><span class="badge-i">📋</span><div><div class="badge-t">ICO Registered</div><div class="badge-s">UK Data Protection</div></div></div>
+      <div class="badge"><span class="badge-i">🛡️</span><div><div class="badge-t">bcrypt PIN Hashing</div><div class="badge-s">Military-grade security</div></div></div>
+    </div>
+  </div>
+
+  <div style="margin-bottom:48px">
+    <h2>Tips to keep your account safe</h2>
+    <div class="steps">
+      <div class="step"><div class="step-n">✓</div><div><h4>Never share your PIN</h4><p>Zeno staff will never ask for your PIN. Anyone asking for it is attempting fraud.</p></div></div>
+      <div class="step"><div class="step-n">✓</div><div><h4>Lock your WhatsApp</h4><p>Enable WhatsApp's built-in fingerprint or face ID lock in Settings → Privacy → Screen Lock.</p></div></div>
+      <div class="step"><div class="step-n">✓</div><div><h4>Check payment details carefully</h4><p>Always verify the recipient name, sort code and account number before confirming a payment.</p></div></div>
+      <div class="step"><div class="step-n">✓</div><div><h4>Report suspicious activity</h4><p>If you notice transactions you don't recognise, contact us immediately at security@joinzeno.co.uk.</p></div></div>
+    </div>
+  </div>
+
+  <div class="report">
+    <div>
+      <h3>Found a security issue?</h3>
+      <p>We take security reports seriously. If you've discovered a vulnerability in Zeno, please contact our security team responsibly and we'll investigate promptly.</p>
+    </div>
+    <a href="mailto:security@joinzeno.co.uk" class="btn">Report a Vulnerability →</a>
+  </div>
+
+</div>
+
+</body>
+</html>

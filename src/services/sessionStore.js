@@ -1,32 +1,36 @@
 /**
- * Session Store — Redis backed with in-memory fallback
+ * Session Store — Upstash Redis backed with in-memory fallback
+ * Works perfectly on both Railway and serverless environments
  */
 
 const logger = require('../utils/logger');
 
-const SESSION_TTL = 1800; // 30 minutes in seconds
+const SESSION_TTL = 1800; // 30 minutes
 const memoryStore = new Map();
 
-// Try to connect to Redis
-let redisClient = null;
+// Try to connect to Upstash Redis
+let redis = null;
 
-async function connectRedis() {
+async function connectUpstash() {
   try {
-    const { createClient } = require('redis');
-    redisClient = createClient({ url: process.env.REDIS_URL });
-    redisClient.on('error', (err) => logger.error('Redis error:', err.message));
-    redisClient.on('connect', () => logger.info('Redis connected successfully'));
-    await redisClient.connect();
+    const { Redis } = require('@upstash/redis');
+    redis = new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+    });
+    // Test connection
+    await redis.set('zeno:ping', 'pong');
+    logger.info('Upstash Redis connected successfully');
     return true;
   } catch (err) {
-    logger.warn('Redis not available, using in-memory sessions:', err.message);
-    redisClient = null;
+    logger.warn('Upstash Redis not available, using in-memory:', err.message);
+    redis = null;
     return false;
   }
 }
 
 // Connect on startup
-connectRedis();
+connectUpstash();
 
 function defaultSession(phoneNumber) {
   return {
@@ -50,25 +54,27 @@ function defaultSession(phoneNumber) {
     truelayerExpiresAt: null,
     onboardingStep: null,
     onboardingData: null,
+    kycStatus: null,
+    kycVerified: false,
+    kycSessionId: null,
   };
 }
 
 async function get(phoneNumber) {
   try {
-    if (redisClient?.isReady) {
-      const data = await redisClient.get(`session:${phoneNumber}`);
+    if (redis) {
+      const data = await redis.get(`session:${phoneNumber}`);
       if (data) {
-        const session = JSON.parse(data);
+        const session = typeof data === 'string' ? JSON.parse(data) : data;
         session.lastActivityAt = Date.now();
         return session;
       }
-      // New session
       const session = defaultSession(phoneNumber);
-      await redisClient.setEx(`session:${phoneNumber}`, SESSION_TTL, JSON.stringify(session));
+      await redis.setex(`session:${phoneNumber}`, SESSION_TTL, JSON.stringify(session));
       return session;
     }
   } catch (err) {
-    logger.error('Redis get error:', err.message);
+    logger.error('Upstash get error:', err.message);
   }
 
   // Fallback to memory
@@ -86,12 +92,12 @@ async function update(phoneNumber, updates) {
   Object.assign(session, updates, { lastActivityAt: Date.now() });
 
   try {
-    if (redisClient?.isReady) {
-      await redisClient.setEx(`session:${phoneNumber}`, SESSION_TTL, JSON.stringify(session));
+    if (redis) {
+      await redis.setex(`session:${phoneNumber}`, SESSION_TTL, JSON.stringify(session));
       return session;
     }
   } catch (err) {
-    logger.error('Redis update error:', err.message);
+    logger.error('Upstash update error:', err.message);
   }
 
   memoryStore.set(phoneNumber, session);
@@ -108,11 +114,9 @@ async function clearPendingTransfer(phoneNumber) {
 
 async function destroy(phoneNumber) {
   try {
-    if (redisClient?.isReady) {
-      await redisClient.del(`session:${phoneNumber}`);
-    }
+    if (redis) await redis.del(`session:${phoneNumber}`);
   } catch (err) {
-    logger.error('Redis delete error:', err.message);
+    logger.error('Upstash delete error:', err.message);
   }
   memoryStore.delete(phoneNumber);
 }

@@ -9,12 +9,12 @@ const sessionStore = require('../services/sessionStore');
 const whatsappService = require('../services/whatsapp');
 const logger = require('../utils/logger');
 
-// ─── GET — Veriff health check ────────────────────────
+// GET — Veriff health check
 router.get('/webhook', (req, res) => {
   res.sendStatus(200);
 });
 
-// ─── POST — Veriff webhook results ────────────────────
+// POST — Veriff webhook results
 router.post('/webhook', express.json(), async (req, res) => {
   res.sendStatus(200);
 
@@ -24,16 +24,19 @@ router.post('/webhook', express.json(), async (req, res) => {
 
     logger.info('Veriff webhook received:', JSON.stringify(payload).substring(0, 200));
 
-    // Verify signature
-    // Temporarily disabled for testing
-// if (!veriffService.verifyWebhookSignature(payload, signature)) {
-//   logger.warn('Invalid Veriff webhook signature');
-//   return;
-// }
+    // Temporarily disabled signature check
+    // if (!veriffService.verifyWebhookSignature(payload, signature)) {
+    //   logger.warn('Invalid Veriff webhook signature');
+    //   return;
+    // }
+
     const { verification } = payload;
     if (!verification) return;
 
-    const phoneNumber = verification.vendorData;
+    // Clean phone number — digits only, no + or spaces
+    const rawPhone = verification.vendorData || '';
+    const phoneNumber = rawPhone.replace(/\D/g, '');
+
     const status = verification.status;
     const code = verification.code;
 
@@ -53,13 +56,14 @@ router.post('/webhook', express.json(), async (req, res) => {
     });
 
     await whatsappService.sendText(phoneNumber, text);
+    logger.info(`Veriff notification sent to ${phoneNumber}`);
 
   } catch (err) {
     logger.error('Veriff webhook error:', err.message);
   }
 });
 
-// ─── STATUS CHECK ─────────────────────────────────────
+// Status check
 router.get('/status/:sessionId', async (req, res) => {
   try {
     const status = await veriffService.getSessionStatus(req.params.sessionId);

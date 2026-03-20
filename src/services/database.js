@@ -1,189 +1,157 @@
 /**
- * Database Service
- * 
- * Uses SQLite for simple, persistent storage.
- * No separate database server needed — just a file.
- * Easy to migrate to PostgreSQL later for scale.
+ * PostgreSQL Database Service
  */
 
-const path = require('path');
+const { Pool } = require('pg');
 const logger = require('../utils/logger');
 
-let db;
+let pool = null;
 
-// ─── INITIALISE DATABASE ──────────────────────────────
 async function init() {
+  if (!process.env.DATABASE_URL) {
+    logger.warn('DATABASE_URL not set — running without PostgreSQL');
+    return;
+  }
   try {
-    const Database = require('better-sqlite3');
-    const dbPath = process.env.DB_PATH || path.join(__dirname, '../../data/zeno.db');
-    
-    // Ensure data directory exists
-    const fs = require('fs');
-    const dbDir = path.dirname(dbPath);
-    if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
-
-    db = new Database(dbPath);
-    db.pragma('journal_mode = WAL'); // Better performance
-    db.pragma('foreign_keys = ON');
-
-    createTables();
-    logger.info(`Database initialised at ${dbPath}`);
+    pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false },
+      max: 10,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 5000,
+    });
+    await pool.query('SELECT 1');
+    logger.info('PostgreSQL connected successfully');
+    await createTables();
   } catch (err) {
-    logger.error('Database init failed:', err.message);
-    logger.warn('Running without persistent database — data will be lost on restart');
+    logger.error('PostgreSQL connection failed:', err.message);
+    pool = null;
   }
 }
 
-// ─── CREATE TABLES ────────────────────────────────────
-function createTables() {
-  db.exec(`
+async function createTables() {
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      phone_number TEXT UNIQUE NOT NULL,
-      name TEXT,
-      email TEXT,
-      pin_hash TEXT,
-      is_onboarded INTEGER DEFAULT 0,
-      bank_connected INTEGER DEFAULT 0,
+      id SERIAL PRIMARY KEY,
+      phone_number VARCHAR(20) UNIQUE NOT NULL,
+      name VARCHAR(100),
+      email VARCHAR(100),
+      pin_hash VARCHAR(200),
+      is_onboarded BOOLEAN DEFAULT FALSE,
+      kyc_status VARCHAR(20) DEFAULT 'pending',
+      kyc_verified BOOLEAN DEFAULT FALSE,
+      kyc_session_id VARCHAR(100),
+      bank_connected BOOLEAN DEFAULT FALSE,
       truelayer_access_token TEXT,
       truelayer_refresh_token TEXT,
-      truelayer_expires_at INTEGER,
-      balance REAL DEFAULT 0,
-      account_id TEXT,
-      created_at INTEGER DEFAULT (strftime('%s', 'now')),
-      updated_at INTEGER DEFAULT (strftime('%s', 'now'))
+      truelayer_expires_at BIGINT,
+      balance DECIMAL(12,2) DEFAULT 0,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
     );
-
     CREATE TABLE IF NOT EXISTS transactions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      phone_number TEXT NOT NULL,
-      type TEXT NOT NULL,
-      amount REAL NOT NULL,
-      currency TEXT DEFAULT 'GBP',
-      recipient_name TEXT,
-      recipient_account TEXT,
-      recipient_sort_code TEXT,
-      reference TEXT,
-      status TEXT DEFAULT 'pending',
-      transaction_id TEXT,
-      created_at INTEGER DEFAULT (strftime('%s', 'now')),
-      FOREIGN KEY (phone_number) REFERENCES users(phone_number)
+      id SERIAL PRIMARY KEY,
+      phone_number VARCHAR(20) NOT NULL,
+      type VARCHAR(10) NOT NULL,
+      amount DECIMAL(12,2) NOT NULL,
+      currency VARCHAR(3) DEFAULT 'GBP',
+      recipient_name VARCHAR(100),
+      recipient_account VARCHAR(20),
+      recipient_sort_code VARCHAR(10),
+      reference VARCHAR(100),
+      status VARCHAR(20) DEFAULT 'completed',
+      transaction_id VARCHAR(100),
+      created_at TIMESTAMP DEFAULT NOW()
     );
-
-    CREATE TABLE IF NOT EXISTS sessions (
-      phone_number TEXT PRIMARY KEY,
-      data TEXT NOT NULL,
-      updated_at INTEGER DEFAULT (strftime('%s', 'now')),
-      FOREIGN KEY (phone_number) REFERENCES users(phone_number)
-    );
+    CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone_number);
+    CREATE INDEX IF NOT EXISTS idx_tx_phone ON transactions(phone_number);
   `);
+  logger.info('PostgreSQL tables ready');
 }
 
-// ─── USER OPERATIONS ──────────────────────────────────
-function getUser(phoneNumber) {
-  if (!db) return null;
+async function getUser(phoneNumber) {
+  if (!pool) return null;
   try {
-    return db.prepare('SELECT * FROM users WHERE phone_number = ?').get(phoneNumber);
+    const result = await pool.query('SELECT * FROM users WHERE phone_number = $1', [phoneNumber]);
+    return result.rows[0] || null;
   } catch (err) {
     logger.error('getUser error:', err.message);
     return null;
   }
 }
 
-function createUser(phoneNumber) {
-  if (!db) return null;
+async function upsertUser(phoneNumber, data = {}) {
+  if (!pool) return null;
   try {
-    const stmt = db.prepare(`
-      INSERT OR IGNORE INTO users (phone_number) VALUES (?)
-    `);
-    stmt.run(phoneNumber);
-    return getUser(phoneNumber);
-  } catch (err) {
-    logger.error('createUser error:', err.message);
-    return null;
-  }
-}
-
-function updateUser(phoneNumber, updates) {
-  if (!db) return null;
-  try {
-    const fields = Object.keys(updates)
-      .map(k => `${toSnakeCase(k)} = ?`)
-      .join(', ');
-    const values = Object.values(updates);
-    
-    db.prepare(`
-      UPDATE users SET ${fields}, updated_at = strftime('%s', 'now')
-      WHERE phone_number = ?
-    `).run(...values, phoneNumber);
-    
-    return getUser(phoneNumber);
-  } catch (err) {
-    logger.error('updateUser error:', err.message);
-    return null;
-  }
-}
-
-// ─── TRANSACTION OPERATIONS ───────────────────────────
-function saveTransaction(phoneNumber, txData) {
-  if (!db) return null;
-  try {
-    const stmt = db.prepare(`
-      INSERT INTO transactions (
-        phone_number, type, amount, currency,
-        recipient_name, recipient_account, recipient_sort_code,
-        reference, status, transaction_id
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-    const result = stmt.run(
-      phoneNumber,
-      txData.type || 'debit',
-      txData.amount,
-      txData.currency || 'GBP',
-      txData.recipientName || null,
-      txData.accountNumber || null,
-      txData.sortCode || null,
-      txData.reference || null,
-      txData.status || 'completed',
-      txData.transactionId || null,
+    const fields = Object.keys(data);
+    if (fields.length === 0) {
+      await pool.query(
+        'INSERT INTO users (phone_number) VALUES ($1) ON CONFLICT (phone_number) DO NOTHING',
+        [phoneNumber]
+      );
+      return getUser(phoneNumber);
+    }
+    const setClauses = fields.map((f, i) => `${toSnake(f)} = $${i + 2}`).join(', ');
+    const values = fields.map(f => data[f]);
+    await pool.query(
+      `INSERT INTO users (phone_number, ${fields.map(toSnake).join(', ')})
+       VALUES ($1, ${fields.map((_, i) => `$${i + 2}`).join(', ')})
+       ON CONFLICT (phone_number) DO UPDATE SET ${setClauses}, updated_at = NOW()`,
+      [phoneNumber, ...values]
     );
-    return result.lastInsertRowid;
+    return getUser(phoneNumber);
+  } catch (err) {
+    logger.error('upsertUser error:', err.message);
+    return null;
+  }
+}
+
+async function saveTransaction(phoneNumber, txData) {
+  if (!pool) return null;
+  try {
+    const result = await pool.query(
+      `INSERT INTO transactions
+        (phone_number, type, amount, currency, recipient_name,
+         recipient_account, recipient_sort_code, reference, status, transaction_id)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`,
+      [
+        phoneNumber,
+        txData.type || 'debit',
+        txData.amount,
+        txData.currency || 'GBP',
+        txData.recipientName || null,
+        txData.accountNumber || null,
+        txData.sortCode || null,
+        txData.reference || null,
+        txData.status || 'completed',
+        txData.transactionId || null,
+      ]
+    );
+    return result.rows[0].id;
   } catch (err) {
     logger.error('saveTransaction error:', err.message);
     return null;
   }
 }
 
-function getTransactions(phoneNumber, limit = 10) {
-  if (!db) return [];
+async function getTransactions(phoneNumber, limit = 10) {
+  if (!pool) return [];
   try {
-    return db.prepare(`
-      SELECT * FROM transactions 
-      WHERE phone_number = ? 
-      ORDER BY created_at DESC 
-      LIMIT ?
-    `).all(phoneNumber, limit);
+    const result = await pool.query(
+      'SELECT * FROM transactions WHERE phone_number = $1 ORDER BY created_at DESC LIMIT $2',
+      [phoneNumber, limit]
+    );
+    return result.rows;
   } catch (err) {
     logger.error('getTransactions error:', err.message);
     return [];
   }
 }
 
-// ─── HELPER ───────────────────────────────────────────
-function toSnakeCase(str) {
-  return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+function toSnake(str) {
+  return str.replace(/[A-Z]/g, l => `_${l.toLowerCase()}`);
 }
 
-function isReady() {
-  return !!db;
-}
+function isReady() { return !!pool; }
 
-module.exports = {
-  init,
-  getUser,
-  createUser,
-  updateUser,
-  saveTransaction,
-  getTransactions,
-  isReady,
-};
+module.exports = { init, getUser, upsertUser, saveTransaction, getTransactions, isReady };

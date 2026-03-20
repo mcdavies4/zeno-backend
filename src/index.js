@@ -8,6 +8,7 @@ const path = require('path');
 const webhookRouter = require('./handlers/webhook');
 const truelayerRouter = require('./handlers/truelayerCallback');
 const veriffRouter = require('./handlers/veriffWebhook');
+const database = require('./services/database');
 const logger = require('./utils/logger');
 
 const app = express();
@@ -46,14 +47,21 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     service: 'Zeno WhatsApp Banking AI',
+    database: database.isReady() ? 'postgresql' : 'unavailable',
     timestamp: new Date().toISOString(),
   });
 });
 
-app.listen(PORT, () => {
-  logger.info(`Zeno backend running on port ${PORT}`);
-  logger.info(`Webhook URL: POST /webhook`);
-  logger.info(`Verify URL:  GET  /webhook`);
-});
+// ─── START ────────────────────────────────────────────
+async function start() {
+  await database.init();
+  app.listen(PORT, () => {
+    logger.info(`Zeno backend running on port ${PORT}`);
+    logger.info(`Database: ${database.isReady() ? 'PostgreSQL connected' : 'unavailable'}`);
+    logger.info(`Webhook URL: POST /webhook`);
+    logger.info(`Verify URL:  GET  /webhook`);
+  });
+}
 
+start();
 module.exports = app;

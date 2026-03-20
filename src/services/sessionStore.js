@@ -122,3 +122,36 @@ async function destroy(phoneNumber) {
 }
 
 module.exports = { get, update, clearPendingTransfer, destroy };
+
+// Re-export with DB sync
+const _originalUpdate = module.exports.update;
+module.exports.update = async function(phoneNumber, updates) {
+  const session = await _originalUpdate(phoneNumber, updates);
+  
+  // Sync important fields to PostgreSQL
+  try {
+    const db = require('./database');
+    if (db.isReady()) {
+      const dbData = {};
+      if ('userName' in updates) dbData.name = updates.userName;
+      if ('userEmail' in updates) dbData.email = updates.userEmail;
+      if ('userPin' in updates) dbData.pinHash = updates.userPin;
+      if ('isOnboarded' in updates) dbData.isOnboarded = updates.isOnboarded;
+      if ('kycStatus' in updates) dbData.kycStatus = updates.kycStatus;
+      if ('kycVerified' in updates) dbData.kycVerified = updates.kycVerified;
+      if ('kycSessionId' in updates) dbData.kycSessionId = updates.kycSessionId;
+      if ('bankConnected' in updates) dbData.bankConnected = updates.bankConnected;
+      if ('truelayerAccessToken' in updates) dbData.truelayerAccessToken = updates.truelayerAccessToken;
+      if ('truelayerRefreshToken' in updates) dbData.truelayerRefreshToken = updates.truelayerRefreshToken;
+      if ('truelayerExpiresAt' in updates) dbData.truelayerExpiresAt = updates.truelayerExpiresAt;
+      if ('balance' in updates) dbData.balance = updates.balance;
+      if (Object.keys(dbData).length > 0) {
+        await db.upsertUser(phoneNumber, dbData);
+      }
+    }
+  } catch (err) {
+    // Non-blocking — don't crash if DB sync fails
+  }
+  
+  return session;
+};

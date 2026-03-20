@@ -91,12 +91,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    /* FIX: increased right padding to prevent float badge clipping */
-    padding: 120px 80px 80px 60px;
+    padding: 120px 60px 80px;
     position: relative;
     overflow: hidden;
   }
 
+  /* Subtle background shapes */
   .hero-bg {
     position: absolute;
     inset: 0;
@@ -184,7 +184,6 @@
     display: flex;
     gap: 14px;
     align-items: center;
-    flex-wrap: wrap;
     animation: fadeUp 0.6s 0.3s ease both;
   }
 
@@ -217,7 +216,6 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    white-space: nowrap;
   }
   .btn-ghost:hover { color: var(--text); }
 
@@ -225,7 +223,6 @@
     margin-top: 56px;
     display: flex;
     gap: 40px;
-    flex-wrap: wrap;
     animation: fadeUp 0.6s 0.4s ease both;
     padding-top: 40px;
     border-top: 1px solid var(--border);
@@ -244,8 +241,6 @@
     position: relative;
     display: flex;
     justify-content: center;
-    /* FIX: added padding to give float badges room without being clipped */
-    padding: 20px 100px 20px 100px;
     animation: fadeUp 0.8s 0.2s ease both;
   }
 
@@ -260,8 +255,6 @@
     border: 1px solid var(--border);
     padding: 20px 16px 28px;
     box-shadow: 0 40px 80px rgba(26,26,24,0.12), 0 0 0 1px rgba(26,26,24,0.04);
-    position: relative;
-    z-index: 2;
   }
 
   .phone-notch {
@@ -288,7 +281,6 @@
     display: flex; align-items: center; justify-content: center;
     font-size: 0.85rem; font-weight: 700; color: white;
     font-family: 'Fraunces', serif;
-    flex-shrink: 0;
   }
   .chat-name { font-size: 0.85rem; font-weight: 600; color: var(--text); }
   .chat-online { font-size: 0.68rem; color: var(--accent); }
@@ -332,7 +324,7 @@
 
   @keyframes bubbleIn { from{opacity:0;transform:scale(0.95) translateY(6px)} to{opacity:1;transform:scale(1) translateY(0)} }
 
-  /* FIX: Float badges — now positioned relative to .hero-visual which has enough padding */
+  /* Float badges */
   .fbadge {
     position: absolute;
     background: var(--white);
@@ -341,27 +333,11 @@
     padding: 10px 14px;
     font-size: 0.76rem;
     box-shadow: 0 8px 24px rgba(26,26,24,0.08);
-    z-index: 3;
-    white-space: nowrap;
-  }
-  .fbadge.left {
-    left: 0;
-    top: 130px;
     animation: floatY 4s ease-in-out infinite;
-    animation-delay: 0s;
   }
-  .fbadge.right {
-    right: 0;
-    top: 60px;
-    animation: floatY 4s ease-in-out infinite;
-    animation-delay: 1.5s;
-  }
-  .fbadge.bottom {
-    right: 0;
-    bottom: 100px;
-    animation: floatY 4s ease-in-out infinite;
-    animation-delay: 0.8s;
-  }
+  .fbadge.left { left: -90px; top: 120px; animation-delay: 0s; }
+  .fbadge.right { right: -80px; top: 60px; animation-delay: 1.5s; }
+  .fbadge.bottom { right: -70px; bottom: 100px; animation-delay: 0.8s; }
   .fbadge-icon { font-size: 1.1rem; margin-bottom: 3px; }
   .fbadge-val { font-family: 'Fraunces', serif; font-weight: 700; font-size: 0.88rem; color: var(--text); }
   .fbadge-sub { color: var(--text2); font-size: 0.68rem; }
@@ -393,13 +369,11 @@
     max-width: 500px;
   }
 
-  /* FIX: steps grid — removed ::after arrow that was overflowing, replaced with a cleaner in-flow approach */
   .steps-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 24px;
     margin-top: 56px;
-    position: relative;
   }
 
   .step {
@@ -411,18 +385,6 @@
     transition: all 0.3s;
   }
   .step:hover { border-color: rgba(26,107,74,0.2); transform: translateY(-4px); box-shadow: 0 12px 32px rgba(26,26,24,0.06); }
-
-  /* FIX: connector arrow now uses a pseudo on the grid itself, not on steps, so it doesn't break layout */
-  .step:not(:last-child)::after {
-    content: '→';
-    position: absolute;
-    right: -16px;
-    top: 40px;
-    color: rgba(26,107,74,0.25);
-    font-size: 1rem;
-    z-index: 1;
-    pointer-events: none;
-  }
 
   .step-num {
     font-family: 'Fraunces', serif;
@@ -437,6 +399,18 @@
   .step-title { font-family: 'Fraunces', serif; font-size: 1rem; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.02em; }
   .step-desc { font-size: 0.84rem; color: var(--text2); line-height: 1.6; font-weight: 300; }
 
+  /* Connector line between steps */
+  .step:not(:last-child)::after {
+    content: '→';
+    position: absolute;
+    right: -16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--border);
+    font-size: 1.2rem;
+    z-index: 1;
+  }
+
   /* ─── FEATURES ─── */
   .features {
     padding: 100px 60px;
@@ -446,11 +420,9 @@
   .features-inner { max-width: 1100px; margin: 0 auto; }
   .features-header { margin-bottom: 56px; }
 
-  /* FIX: bento grid uses auto rows so cards don't get clipped */
   .bento {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    grid-auto-rows: auto;
     gap: 16px;
   }
 
@@ -462,8 +434,6 @@
     transition: all 0.3s;
     position: relative;
     overflow: hidden;
-    /* FIX: ensure cards don't clip their own content */
-    min-height: 0;
   }
   .bento-card:hover { border-color: rgba(26,107,74,0.2); transform: translateY(-3px); box-shadow: 0 12px 32px rgba(26,26,24,0.06); }
   .bento-card.wide { grid-column: span 2; }
@@ -475,17 +445,17 @@
     display: flex; align-items: center; justify-content: center;
     font-size: 1.2rem;
     margin-bottom: 18px;
-    flex-shrink: 0;
   }
   .card-title { font-family: 'Fraunces', serif; font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 8px; }
   .card-desc { font-size: 0.85rem; color: var(--text2); line-height: 1.65; font-weight: 300; }
 
+  /* Mini UI in cards */
   .mini-bar-wrap { margin-top: 20px; display: flex; flex-direction: column; gap: 8px; }
   .mini-bar-row { display: flex; align-items: center; gap: 10px; }
-  .mini-bar-label { font-size: 0.72rem; color: var(--text2); width: 64px; flex-shrink: 0; }
+  .mini-bar-label { font-size: 0.72rem; color: var(--text2); width: 60px; }
   .mini-bar-track { flex: 1; height: 6px; background: var(--surface); border-radius: 3px; overflow: hidden; }
   .mini-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 3px; }
-  .mini-bar-val { font-size: 0.72rem; font-weight: 600; color: var(--text); width: 40px; text-align: right; flex-shrink: 0; }
+  .mini-bar-val { font-size: 0.72rem; font-weight: 600; color: var(--text); width: 40px; text-align: right; }
 
   /* ─── SECURITY ─── */
   .security {
@@ -543,9 +513,8 @@
     border-top: 1px solid var(--border);
   }
   .use-cases-inner { max-width: 1100px; margin: 0 auto; }
-  .use-cases-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 48px; flex-wrap: wrap; gap: 16px; }
+  .use-cases-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 48px; }
 
-  /* FIX: use-grid — auto rows so cards don't clip content */
   .use-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
   .use-card {
     background: var(--white);
@@ -618,10 +587,10 @@
     padding: 60px;
     color: rgba(255,255,255,0.6);
   }
-  .footer-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 24px; }
+  .footer-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; }
   .footer-logo { font-family: 'Fraunces', serif; font-weight: 700; font-size: 1.4rem; color: white; letter-spacing: -0.03em; }
   .footer-logo span { color: var(--accent2); }
-  .footer-links { display: flex; gap: 28px; flex-wrap: wrap; }
+  .footer-links { display: flex; gap: 28px; }
   .footer-links a { color: rgba(255,255,255,0.5); text-decoration: none; font-size: 0.84rem; transition: color 0.2s; }
   .footer-links a:hover { color: white; }
   .footer-copy { font-size: 0.78rem; }
@@ -630,48 +599,21 @@
   .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.6s ease, transform 0.6s ease; }
   .reveal.visible { opacity: 1; transform: translateY(0); }
 
-  /* ─── RESPONSIVE ─── */
-  @media (max-width: 1100px) {
-    .hero-visual { padding: 20px 80px; }
-  }
-
   @media (max-width: 900px) {
     nav { padding: 16px 24px; }
     .nav-links { display: none; }
-
     .hero { padding: 100px 24px 60px; }
-    .hero-inner { grid-template-columns: 1fr; gap: 0; }
+    .hero-inner { grid-template-columns: 1fr; }
     .hero-visual { display: none; }
-
     .how, .features, .security, .use-cases, .cta { padding: 70px 24px; }
-
-    /* FIX: steps collapse to 2 cols on tablet, 1 col on mobile */
-    .steps-grid { grid-template-columns: repeat(2, 1fr); }
-    .step:not(:last-child)::after { display: none; }
-
-    .bento { grid-template-columns: 1fr; }
+    .steps-grid, .bento, .use-grid { grid-template-columns: 1fr; }
     .bento-card.wide { grid-column: span 1; }
-
-    .security-inner { grid-template-columns: 1fr; gap: 40px; }
+    .security-inner { grid-template-columns: 1fr; }
     .security-visual { display: none; }
-
-    /* FIX: use-grid collapses to 2 cols on tablet */
-    .use-grid { grid-template-columns: repeat(2, 1fr); }
-
-    .use-cases-header { flex-direction: column; align-items: flex-start; }
-    .footer-inner { flex-direction: column; gap: 20px; text-align: center; }
-    .footer-links { justify-content: center; }
+    .use-cases-header { flex-direction: column; align-items: flex-start; gap: 16px; }
+    .footer-inner { flex-direction: column; gap: 24px; text-align: center; }
+    .footer-links { flex-wrap: wrap; justify-content: center; }
   }
-
-  @media (max-width: 540px) {
-    .steps-grid { grid-template-columns: 1fr; }
-    .use-grid { grid-template-columns: 1fr; }
-    .hero-stats { gap: 24px; }
-    .cta { padding: 80px 24px; }
-    footer { padding: 40px 24px; }
-  }
-
-  @keyframes progressLoad { from{width:0} to{width:100%} }
 </style>
 </head>
 <body>
@@ -716,7 +658,6 @@
       </div>
     </div>
 
-    <!-- Hero visual: badges are now positioned inside .hero-visual which has side padding -->
     <div class="hero-visual">
       <div class="fbadge left">
         <div class="fbadge-icon">💸</div>
@@ -811,13 +752,14 @@
         <div class="card-icon">💸</div>
         <div class="card-title">Instant UK Transfers</div>
         <div class="card-desc">Send money to any UK bank account in seconds. Just say who you want to pay and how much — Zeno handles the rest via Faster Payments.</div>
-        <div style="margin-top:20px;background:var(--bg);border-radius:12px;padding:14px;">
+        <div class="mini-bar-wrap" style="margin-top:20px;background:var(--bg);border-radius:12px;padding:14px;">
           <div style="display:flex;justify-content:space-between;font-size:0.72rem;color:var(--text2);margin-bottom:8px;">
             <span>Transfer progress</span><span style="color:var(--accent);font-weight:600">Sent ✓</span>
           </div>
           <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;">
             <div style="width:100%;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:3px;animation:progressLoad 1.5s ease both;"></div>
           </div>
+          <style>@keyframes progressLoad{from{width:0}to{width:100%}}</style>
         </div>
       </div>
 

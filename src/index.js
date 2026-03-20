@@ -3,6 +3,7 @@ const express = require('express');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
+const path = require('path');
 
 const webhookRouter = require('./handlers/webhook');
 const truelayerRouter = require('./handlers/truelayerCallback');
@@ -12,7 +13,7 @@ const logger = require('./utils/logger');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(helmet());
+app.use(helmet({ contentSecurityPolicy: false }));
 app.set('trust proxy', 1);
 
 app.use('/webhook', express.raw({ type: 'application/json' }));
@@ -27,20 +28,16 @@ app.use('/webhook', rateLimit({
   standardHeaders: true,
 }));
 
-// ─── ROUTES ───────────────────────────────────────────
-app.use('/webhook', webhookRouter);
-app.use('/truelayer', truelayerRouter);
-app.use('/veriff', veriffRouter);
-
-app.get('/', (req, res) => {
-  res.sendFile(require('path').join(__dirname, '../zeno-landing.html'));
-});
-const path = require('path');
-
+// ─── STATIC PAGES ─────────────────────────────────────
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, '../zeno-landing.html')));
 app.get('/privacy', (req, res) => res.sendFile(path.join(__dirname, '../privacy.html')));
 app.get('/terms', (req, res) => res.sendFile(path.join(__dirname, '../terms.html')));
 app.get('/security', (req, res) => res.sendFile(path.join(__dirname, '../security.html')));
+
+// ─── API ROUTES ───────────────────────────────────────
+app.use('/webhook', webhookRouter);
+app.use('/truelayer', truelayerRouter);
+app.use('/veriff', veriffRouter);
 
 app.get('/health', (req, res) => {
   res.json({

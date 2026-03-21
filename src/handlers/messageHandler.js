@@ -9,7 +9,6 @@ const transferService = require('../services/transfer');
 const { checkAndHandleOnboarding } = require('../services/onboarding');
 const { verifyPin } = require('../utils/pinUtils');
 const banking = require('../services/banking');
-const { detectCountry } = require('../utils/countryDetect');
 const logger = require('../utils/logger');
 
 /**

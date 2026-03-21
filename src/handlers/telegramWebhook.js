@@ -23,7 +23,22 @@ router.post('/webhook', express.json(), async (req, res) => {
       await handleCallbackQuery(update.callback_query);
       return;
     }
-
+// Handle /start command specially
+if (update.message?.text === '/start') {
+  const chatId = String(update.message.chat.id);
+  const firstName = update.message.from?.first_name || 'there';
+  await telegramService.sendText(chatId,
+    `👋 *Welcome to Zeno, ${firstName}!*\n\n` +
+    `I'm your AI banking assistant — available 24/7 right here on Telegram.\n\n` +
+    `Here's what I can do:\n` +
+    `💸 *Send money* — "Send £50 to John"\n` +
+    `💰 *Check balance* — "What's my balance?"\n` +
+    `📊 *Track spending* — "Show my spending"\n` +
+    `📄 *Pay bills* — "Pay my electricity bill"\n\n` +
+    `Type anything to get started! 🚀`
+  );
+  return;
+}
     if (update.message?.text) {
       const msg = update.message;
       const chatId = String(msg.chat.id);

@@ -10,6 +10,7 @@ const truelayerRouter = require('./handlers/truelayerCallback');
 const veriffRouter = require('./handlers/veriffWebhook');
 const adminRouter = require('./handlers/adminDashboard');
 const telegramRouter = require('./handlers/telegramWebhook');
+const monoRouter = require('./handlers/monoCallback');
 const database = require('./services/database');
 const logger = require('./utils/logger');
 
@@ -46,11 +47,13 @@ app.use('/truelayer', truelayerRouter);
 app.use('/veriff', veriffRouter);
 app.use('/admin', adminRouter);
 app.use('/telegram', telegramRouter);
+app.use('/mono', monoRouter);
 
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     service: 'Zeno WhatsApp Banking AI',
+    markets: ['UK 🇬🇧', 'Nigeria 🇳🇬'],
     database: database.isReady() ? 'postgresql' : 'unavailable',
     timestamp: new Date().toISOString(),
   });
@@ -62,20 +65,19 @@ async function start() {
 
   app.listen(PORT, async () => {
     logger.info(`Zeno backend running on port ${PORT}`);
+    logger.info(`Markets: UK 🇬🇧 Nigeria 🇳🇬`);
     logger.info(`Database: ${database.isReady() ? 'PostgreSQL connected' : 'unavailable'}`);
-    logger.info(`Webhook URL: POST /webhook`);
-    logger.info(`Telegram:   POST /telegram/webhook`);
 
     // Auto-register Telegram webhook
     if (process.env.TELEGRAM_BOT_TOKEN) {
-  try {
-    const telegramService = require('./services/telegram');
-    await telegramService.setWebhook('https://api.joinzeno.co.uk');
-    logger.info('Telegram webhook registered successfully');
-  } catch (err) {
-    logger.warn('Telegram webhook registration failed:', err.message);
-  }
-}
+      try {
+        const telegramService = require('./services/telegram');
+        await telegramService.setWebhook('https://api.joinzeno.co.uk');
+        logger.info('Telegram webhook registered');
+      } catch (err) {
+        logger.warn('Telegram webhook failed:', err.message);
+      }
+    }
   });
 }
 

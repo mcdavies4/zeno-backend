@@ -1,4 +1,7 @@
 const whatsappService = require('../services/whatsapp');
+const flutterwave = require('../services/flutterwave');
+const { detectCountry } = require('../utils/countryDetect');
+const { findBankCode } = require('../utils/nigerianBanks');
 const messenger = require('../services/messenger');
 const claudeService = require('../services/claude');
 const sessionStore = require('../services/sessionStore');
@@ -166,39 +169,64 @@ async function initiateTransfer({ from, session }) {
     return;
   }
 
-  // Ask for PIN before executing
+  const country = detectCountry(from);
+  const symbol = country.symbol;
+
   await sessionStore.update(from, { awaitingPin: true });
   await whatsappService.sendText(from,
-    `🔐 *Security Check*\n\nPlease enter your 4-digit Zeno PIN to authorise this transfer of *£${transfer.amount}* to *${transfer.recipientName}*.\n\n_Never share your PIN with anyone, including Zeno support._`
+    `🔐 *Security Check*\n\nPlease enter your 4-digit Zeno PIN to authorise this transfer of *${symbol}${transfer.amount.toLocaleString()}* to *${transfer.recipientName}*.\n\n_Never share your PIN with anyone, including Zeno support._`
   );
 }
 
 async function executeTransfer({ from, session }) {
   const transfer = session.pendingTransfer;
+  const country = detectCountry(from);
+  const symbol = country.symbol;
 
   await whatsappService.sendText(from, "⏳ Processing your transfer...");
 
   try {
-    const result = await transferService.sendPayment({
-      fromUser: from,
-      recipientName: transfer.recipientName,
-      recipientSortCode: transfer.sortCode,
-      recipientAccountNumber: transfer.accountNumber,
-      amount: transfer.amount,
-      reference: transfer.reference,
-      currency: 'GBP',
-    });
+    let result;
+
+    if (country.code === 'NG') {
+      // Nigerian transfer via Flutterwave
+      const bankInfo = transfer.bankCode ? { code: transfer.bankCode } : findBankCode(transfer.bankName);
+      if (!bankInfo) {
+        await sessionStore.clearPendingTransfer(from);
+        await whatsappService.sendText(from,
+          `❌ I couldn't identify the bank. Please specify the bank name clearly, e.g. "GTBank", "Access Bank", "Zenith".`
+        );
+        return;
+      }
+      result = await flutterwave.sendPayment({
+        recipientName: transfer.recipientName,
+        recipientAccountNumber: transfer.accountNumber,
+        recipientBankCode: bankInfo.code,
+        amount: transfer.amount,
+        reference: transfer.reference,
+        narration: transfer.reference || 'Zeno Transfer',
+      });
+    } else {
+      // UK transfer via Modulr
+      result = await transferService.sendPayment({
+        fromUser: from,
+        recipientName: transfer.recipientName,
+        recipientSortCode: transfer.sortCode,
+        recipientAccountNumber: transfer.accountNumber,
+        amount: transfer.amount,
+        reference: transfer.reference,
+        currency: 'GBP',
+      });
+    }
 
     await sessionStore.clearPendingTransfer(from);
 
     await whatsappService.sendText(from,
       `✅ *Transfer Successful!*\n\n` +
-      `• Amount: *£${transfer.amount}*\n` +
+      `• Amount: *${symbol}${transfer.amount.toLocaleString()}*\n` +
       `• To: *${transfer.recipientName}*\n` +
       `• Reference: ${transfer.reference}\n` +
-      `• Transaction ID: ${result.transactionId}\n` +
-      `• Time: ${new Date().toLocaleTimeString('en-GB', { timeZone: 'Europe/London' })}\n\n` +
-      `Your updated balance is *£${result.newBalance}*.\n\n` +
+      `• Transaction ID: ${result.transactionId}\n\n` +
       `_Need anything else? Just ask!_`
     );
 

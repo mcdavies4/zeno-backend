@@ -24,8 +24,7 @@ async function init() {
     logger.info('PostgreSQL connected successfully');
     await createTables();
   } catch (err) {
-   logger.info('Connecting to PostgreSQL:', process.env.DATABASE_URL?.substring(0, 30) + '...');
-    logger.error('PostgreSQL connection failed:', err.message, err.stack);
+    logger.error('PostgreSQL connection failed:', err.message);
     pool = null;
   }
 }
@@ -66,6 +65,16 @@ async function createTables() {
     );
     CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone_number);
     CREATE INDEX IF NOT EXISTS idx_tx_phone ON transactions(phone_number);
+  `);
+  // Add new support columns (safe to run multiple times)
+  await pool.query(`
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS onboarding_step VARCHAR(30);
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS last_error TEXT;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS pin_attempts_total INTEGER DEFAULT 0;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS is_frozen BOOLEAN DEFAULT FALSE;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS bank_connected_at TIMESTAMP;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS last_balance_check TIMESTAMP;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS kyc_attempt_count INTEGER DEFAULT 0;
   `);
   logger.info('PostgreSQL tables ready');
 }

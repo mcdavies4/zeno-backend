@@ -9,6 +9,7 @@ const webhookRouter = require('./handlers/webhook');
 const truelayerRouter = require('./handlers/truelayerCallback');
 const veriffRouter = require('./handlers/veriffWebhook');
 const adminRouter = require('./handlers/adminDashboard');
+const telegramRouter = require('./handlers/telegramWebhook');
 const database = require('./services/database');
 const logger = require('./utils/logger');
 
@@ -44,6 +45,7 @@ app.use('/webhook', webhookRouter);
 app.use('/truelayer', truelayerRouter);
 app.use('/veriff', veriffRouter);
 app.use('/admin', adminRouter);
+app.use('/telegram', telegramRouter);
 
 app.get('/health', (req, res) => {
   res.json({
@@ -57,12 +59,26 @@ app.get('/health', (req, res) => {
 // ─── START ────────────────────────────────────────────
 async function start() {
   await database.init();
-  app.listen(PORT, () => {
+
+  app.listen(PORT, async () => {
     logger.info(`Zeno backend running on port ${PORT}`);
     logger.info(`Database: ${database.isReady() ? 'PostgreSQL connected' : 'unavailable'}`);
     logger.info(`Webhook URL: POST /webhook`);
-    logger.info(`Verify URL:  GET  /webhook`);
-    logger.info(`Admin URL:   GET  /admin?key=YOUR_ADMIN_SECRET`);
+    logger.info(`Telegram:   POST /telegram/webhook`);
+
+    // Auto-register Telegram webhook
+    if (process.env.TELEGRAM_BOT_TOKEN && process.env.RAILWAY_PUBLIC_DOMAIN) {
+      try {
+        const telegramService = require('./services/telegram');
+        const domain = process.env.RAILWAY_PUBLIC_DOMAIN.startsWith('http')
+          ? process.env.RAILWAY_PUBLIC_DOMAIN
+          : `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`;
+        await telegramService.setWebhook(domain);
+        logger.info('Telegram webhook registered successfully');
+      } catch (err) {
+        logger.warn('Telegram webhook registration failed:', err.message);
+      }
+    }
   });
 }
 

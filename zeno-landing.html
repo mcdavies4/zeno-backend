@@ -129,6 +129,25 @@ footer{background:var(--text);padding:48px;color:rgba(255,255,255,.5)}
   footer{padding:32px 20px}.fi2{flex-direction:column;gap:20px;text-align:center}.fls{flex-wrap:wrap;justify-content:center}
 }
 </style>
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4MYTE09H9T"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-XXXXXXXXXX');
+  
+  // Track WhatsApp CTA clicks
+  document.addEventListener('click', function(e) {
+    var link = e.target.closest('a[href*="wa.me"]');
+    if (link) {
+      gtag('event', 'whatsapp_click', {
+        'event_category': 'CTA',
+        'event_label': link.textContent.trim().substring(0, 50)
+      });
+    }
+  });
+</script>
 </head>
 <body>
 

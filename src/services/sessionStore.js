@@ -80,6 +80,7 @@ async function loadFromDatabase(phoneNumber, session) {
     if (user.truelayer_refresh_token) session.truelayerRefreshToken = user.truelayer_refresh_token;
     if (user.truelayer_expires_at) session.truelayerExpiresAt = user.truelayer_expires_at;
     if (user.balance) session.balance = parseFloat(user.balance);
+    if (user.banking_country) session.bankingCountry = user.banking_country;
 
     logger.info(`Session restored from DB for ${phoneNumber}: onboarded=${session.isOnboarded}`);
   } catch (err) {
@@ -154,6 +155,7 @@ async function update(phoneNumber, updates) {
       if ('truelayerRefreshToken' in updates) dbData.truelayerRefreshToken = updates.truelayerRefreshToken;
       if ('truelayerExpiresAt' in updates) dbData.truelayerExpiresAt = updates.truelayerExpiresAt;
       if ('balance' in updates) dbData.balance = updates.balance;
+      if ('bankingCountry' in updates) dbData.bankingCountry = updates.bankingCountry;
       if (Object.keys(dbData).length > 0) {
         await db.upsertUser(phoneNumber, dbData);
       }

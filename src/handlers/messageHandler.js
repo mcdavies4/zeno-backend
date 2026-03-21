@@ -9,6 +9,7 @@ const transferService = require('../services/transfer');
 const { checkAndHandleOnboarding } = require('../services/onboarding');
 const { verifyPin } = require('../utils/pinUtils');
 const banking = require('../services/banking');
+const { detectCountry } = require('../utils/countryDetect');
 const logger = require('../utils/logger');
 
 /**
@@ -168,7 +169,7 @@ async function initiateTransfer({ from, session }) {
     return;
   }
 
-  const country = detectCountry(from);
+  const country = detectCountry(from, session);
   const symbol = country.symbol;
 
   await sessionStore.update(from, { awaitingPin: true });
@@ -179,7 +180,7 @@ async function initiateTransfer({ from, session }) {
 
 async function executeTransfer({ from, session }) {
   const transfer = session.pendingTransfer;
-  const country = detectCountry(from);
+  const country = detectCountry(from, session);
   const symbol = country.symbol;
 
   await whatsappService.sendText(from, "⏳ Processing your transfer...");
@@ -268,11 +269,11 @@ async function handleAIResponse({ from, aiResponse, session, text }) {
       if (bankConnected) {
         const result = await banking.getBalance(from, session);
         if (result.success) {
-          await whatsappService.sendText(from, banking.formatBalanceMessage(result.balances, from));
+          await whatsappService.sendText(from, banking.formatBalanceMessage(result.balances, from, session));
           break;
         }
       }
-      const authLink = banking.generateAuthLink(from);
+      const authLink = banking.generateAuthLink(from, session);
       await whatsappService.sendText(from,
         `💰 To show your real balance, connect your bank first!\n\n` +
         `Tap the link below — it's secure and takes 30 seconds:\n\n` +
@@ -287,11 +288,11 @@ async function handleAIResponse({ from, aiResponse, session, text }) {
       if (bankConnected) {
         const result = await banking.getTransactions(from, session);
         if (result.success) {
-          await whatsappService.sendText(from, banking.formatTransactionsMessage(result.transactions, from));
+          await whatsappService.sendText(from, banking.formatTransactionsMessage(result.transactions, from, session));
           break;
         }
       }
-      const authLink = banking.generateAuthLink(from);
+      const authLink = banking.generateAuthLink(from, session);
       await whatsappService.sendText(from,
         `📋 Connect your bank to see real transactions!\n\n${authLink}`
       );

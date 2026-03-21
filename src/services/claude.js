@@ -46,7 +46,7 @@ async function processMessage({ userMessage, contactName, session, from }) {
 
 function buildSystemPrompt({ contactName, session, from }) {
   const firstName = contactName?.split(' ')[0] || 'there';
-  const country = detectCountry(from);
+  const country = detectCountry(from, session);
   const platform = getPlatform(from);
   const balance = session.balance;
   const kycVerified = session.kycVerified;

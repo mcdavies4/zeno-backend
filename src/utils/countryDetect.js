@@ -1,6 +1,10 @@
 /**
  * Country Detection Utility
- * Detects user country from phone number prefix or Telegram ID
+ * 
+ * Priority order:
+ * 1. User's saved bankingCountry preference (set during onboarding)
+ * 2. Phone number prefix fallback
+ * 3. Default to UK
  */
 
 const COUNTRY_CONFIGS = {
@@ -30,27 +34,37 @@ const COUNTRY_CONFIGS = {
   },
 };
 
-function detectCountry(phoneOrId) {
+/**
+ * Detect country from session preference first, then phone prefix
+ * Always pass session when available for accurate detection
+ */
+function detectCountry(phoneOrId, session = null) {
+  // 1. Use saved banking country preference (most accurate)
+  if (session?.bankingCountry && COUNTRY_CONFIGS[session.bankingCountry]) {
+    return COUNTRY_CONFIGS[session.bankingCountry];
+  }
+
   const id = String(phoneOrId);
 
-  // Telegram IDs — default to UK for now
+  // 2. Telegram IDs — default to UK (will be set properly during onboarding)
   if (/^\d{5,10}$/.test(id) && !id.startsWith('44') && !id.startsWith('234') && !id.startsWith('1')) {
     return COUNTRY_CONFIGS.UK;
   }
 
-  // Nigerian numbers
+  // 3. Phone number prefix detection
   if (id.startsWith('234')) return COUNTRY_CONFIGS.NG;
-
-  // Canadian/US numbers
   if (id.startsWith('1') && id.length === 11) return COUNTRY_CONFIGS.CA;
 
-  // Default UK
+  // 4. Default UK
   return COUNTRY_CONFIGS.UK;
 }
 
 function isTelegram(id) {
   const str = String(id);
-  return /^\d{5,10}$/.test(str) && !str.startsWith('44') && !str.startsWith('234') && !str.startsWith('1');
+  return /^\d{5,10}$/.test(str) &&
+    !str.startsWith('44') &&
+    !str.startsWith('234') &&
+    !str.startsWith('1');
 }
 
 function getPlatform(id) {

@@ -1,10 +1,12 @@
 const whatsappService = require('../services/whatsapp');
+const messenger = require('../services/messenger');
 const claudeService = require('../services/claude');
 const sessionStore = require('../services/sessionStore');
 const transferService = require('../services/transfer');
 const { checkAndHandleOnboarding } = require('../services/onboarding');
 const { verifyPin } = require('../utils/pinUtils');
-const truelayer = require('../services/truelayer');
+const banking = require('../services/banking');
+const { detectCountry } = require('../utils/countryDetect');
 const logger = require('../utils/logger');
 
 /**
@@ -235,47 +237,37 @@ async function handleAIResponse({ from, aiResponse, session, text }) {
     }
 
     case 'BALANCE': {
-      // Try real balance first
-      if (session.bankConnected) {
-        const result = await truelayer.getBalance(from, session);
+      const bankConnected = banking.isBankConnected(session, from);
+      if (bankConnected) {
+        const result = await banking.getBalance(from, session);
         if (result.success) {
-          await whatsappService.sendText(from, truelayer.formatBalanceMessage(result.balances));
+          await whatsappService.sendText(from, banking.formatBalanceMessage(result.balances, from));
           break;
         }
       }
-      // Not connected — offer to connect or use AI response
-      if (!session.bankConnected) {
-        const authLink = truelayer.generateAuthLink(from);
-        await whatsappService.sendText(from,
-          `💰 To show your real balance, connect your bank first!\n\n` +
-          `Tap the link below — it's secure and takes 30 seconds:\n\n` +
-          `${authLink}\n\n` +
-          `_We use Open Banking — read-only access, no card details needed._`
-        );
-        break;
-      }
-      await whatsappService.sendText(from, aiResponse.reply);
+      const authLink = banking.generateAuthLink(from);
+      await whatsappService.sendText(from,
+        `💰 To show your real balance, connect your bank first!\n\n` +
+        `Tap the link below — it's secure and takes 30 seconds:\n\n` +
+        `${authLink}\n\n` +
+        `_Read-only access. No card details needed._`
+      );
       break;
     }
 
     case 'TRANSACTIONS': {
-      // Try real transactions first
-      if (session.bankConnected) {
-        const result = await truelayer.getTransactions(from, session);
+      const bankConnected = banking.isBankConnected(session, from);
+      if (bankConnected) {
+        const result = await banking.getTransactions(from, session);
         if (result.success) {
-          await whatsappService.sendText(from, truelayer.formatTransactionsMessage(result.transactions));
+          await whatsappService.sendText(from, banking.formatTransactionsMessage(result.transactions, from));
           break;
         }
       }
-      // Not connected
-      if (!session.bankConnected) {
-        const authLink = truelayer.generateAuthLink(from);
-        await whatsappService.sendText(from,
-          `📋 Connect your bank to see real transactions!\n\n${authLink}`
-        );
-        break;
-      }
-      await whatsappService.sendText(from, aiResponse.reply);
+      const authLink = banking.generateAuthLink(from);
+      await whatsappService.sendText(from,
+        `📋 Connect your bank to see real transactions!\n\n${authLink}`
+      );
       break;
     }
 

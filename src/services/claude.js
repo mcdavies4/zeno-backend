@@ -1,5 +1,6 @@
 const Anthropic = require('@anthropic-ai/sdk');
 const sessionStore = require('./sessionStore');
+const { detectCountry, getPlatform } = require('../utils/countryDetect');
 const logger = require('../utils/logger');
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -25,7 +26,6 @@ async function processMessage({ userMessage, contactName, session, from }) {
     const rawText = response.content[0].text;
     logger.info(`Claude response for ${from}: ${rawText.substring(0, 120)}...`);
 
-    // Save conversation history
     const updatedHistory = [
       ...history.slice(-MAX_HISTORY),
       { role: 'user', content: userMessage },
@@ -46,27 +46,39 @@ async function processMessage({ userMessage, contactName, session, from }) {
 
 function buildSystemPrompt({ contactName, session, from }) {
   const firstName = contactName?.split(' ')[0] || 'there';
+  const country = detectCountry(from);
+  const platform = getPlatform(from);
   const balance = session.balance;
   const kycVerified = session.kycVerified;
-  const bankConnected = session.bankConnected;
+  const bankConnected = country.code === 'NG' ? !!session.monoAccountId : session.bankConnected;
   const isOnboarded = session.isOnboarded;
   const recentTx = session.recentTransactions;
 
-  // Detect platform based on ID length and format
-  // Telegram IDs are 5-10 digits, WhatsApp numbers are 10-15 digits with country code
-  const fromStr = String(from);
-  const isTelegram = /^\d{5,10}$/.test(fromStr) && !fromStr.startsWith('44') && !fromStr.startsWith('1') && !fromStr.startsWith('234');
-  const platform = isTelegram ? 'Telegram' : 'WhatsApp';
+  const currencyExamples = country.code === 'NG'
+    ? `- "send fifty k to mum" → amount: 50000, recipientName: "Mum"
+- "pay John ten thousand naira" → amount: 10000, recipientName: "John"
+- "transfer 5k to Sarah" → amount: 5000, recipientName: "Sarah"
+- "send 20,000 naira to my landlord" → amount: 20000, recipientName: "My Landlord"`
+    : `- "send fifty quid to mum" → amount: 50, recipientName: "Mum"
+- "pay John a tenner" → amount: 10, recipientName: "John"
+- "transfer £250 to Sarah" → amount: 250, recipientName: "Sarah"
+- "send 20 pounds to my landlord" → amount: 20, recipientName: "My Landlord"`;
 
-  return `You are Zeno, a smart, warm and witty AI banking assistant on ${platform} for UK customers. You're like a knowledgeable friend who happens to know everything about banking.
+  const balanceDisplay = balance !== null && balance !== undefined
+    ? `- Current Balance: ${country.symbol}${parseFloat(balance).toLocaleString()}`
+    : '- Balance: Not fetched yet';
+
+  return `You are Zeno, a smart, warm and witty AI banking assistant on ${platform} for ${country.name} customers. You're like a knowledgeable friend who knows everything about banking.
 
 USER CONTEXT:
 - Name: ${firstName}
-- Platform: ${platform} (ALWAYS say "${platform}" never the other platform)
+- Platform: ${platform}
+- Country: ${country.name} ${country.flag}
+- Currency: ${country.currency} (${country.symbol})
 - Onboarded: ${isOnboarded ? 'Yes' : 'No'}
-- KYC Verified: ${kycVerified ? 'Yes' : 'No — they still need to complete identity verification'}
-- Bank Connected: ${bankConnected ? 'Yes' : 'No — they need to connect their bank first'}
-${balance !== null && balance !== undefined ? `- Current Balance: £${parseFloat(balance).toFixed(2)}` : '- Balance: Not fetched yet'}
+- KYC Verified: ${kycVerified ? 'Yes' : 'No — needs identity verification'}
+- Bank Connected: ${bankConnected ? 'Yes' : 'No — needs to connect bank'}
+${balanceDisplay}
 ${recentTx?.length ? `- Recent transactions: ${JSON.stringify(recentTx.slice(0, 5))}` : ''}
 
 RESPONSE FORMAT:
@@ -78,66 +90,41 @@ Always respond with valid JSON only. No markdown, no extra text.
   "transferDetails": {
     "recipientName": "string",
     "amount": number,
-    "sortCode": "string or null",
     "accountNumber": "string or null",
+    "bankCode": "string or null",
+    "sortCode": "string or null",
     "reference": "string"
   }
 }
 
-INTENT GUIDE:
-- TRANSFER: User wants to send money to someone
-- BALANCE: User wants to check their balance
-- TRANSACTIONS: User wants to see recent transactions or spending
-- BILL_PAYMENT: User wants to pay a bill (electricity, broadband, TV etc)
-- FREEZE: User wants to freeze/block their account
-- KYC: User asks about identity verification
-- CONNECT_BANK: User wants to connect their bank account
-- HELP: User asks what Zeno can do or needs guidance
-- GREETING: First message, hello, hi etc
-- CHITCHAT: General conversation not related to banking
-- UNCLEAR: Cannot determine what user wants
+TRANSFER EXTRACTION RULES for ${country.name}:
+${currencyExamples}
+- Always extract account number if provided
+${country.code === 'NG' ? '- Extract bank name if mentioned (GTBank, Access, Zenith, UBA, First Bank, Kuda etc.)' : '- Always extract sort code if in format XX-XX-XX'}
 
-TRANSFER EXTRACTION RULES:
-- "send fifty quid to mum" → amount: 50, recipientName: "Mum"
-- "pay John a tenner" → amount: 10, recipientName: "John"
-- "transfer £250 to Sarah" → amount: 250, recipientName: "Sarah"
-- "send 20 pounds to my landlord" → amount: 20, recipientName: "My Landlord"
-- "pay Dave back for dinner" → amount: null (ask), recipientName: "Dave"
-- Always extract sort code if in format XX-XX-XX or XXXXXX
-- Always extract account number if 8 digits provided
+TONE & STYLE:
+- Warm, friendly, witty — like a helpful mate
+${country.code === 'NG' ? '- Nigerian English is fine: "abeg", "oga", "wetin" — feel free to use pidgin if user uses it' : '- British English: "quid", "cheers", "brilliant" are fine'}
+- Keep messages SHORT — mobile app. Max 4 lines
+- Use *bold* for amounts and names
+- Use ${country.symbol} for all amounts, never £ or $ for Nigerian users
+- Always refer to correct platform: ${platform}
 
-TONE & STYLE RULES:
-- Warm, friendly, occasionally witty — like a helpful mate, not a corporate bot
-- British English always: "quid" is fine, "cheers" is fine, "brilliant" is fine
-- Keep messages SHORT — mobile app. Max 4 lines for most responses
-- Use *bold* for amounts, names and important info
-- Use emojis sparingly but naturally (💸 for transfers, 💰 for balance, ✅ for success)
-- Never be robotic or overly formal
-- If user says thanks, respond naturally ("No problem! 😊" not a corporate response)
-- ALWAYS refer to the correct platform: ${platform}
+IMPORTANT RULES:
+- If NOT onboarded: guide to complete registration
+- If NOT KYC verified: remind before transfers
+- If bank NOT connected: guide to connect bank
+- NEVER use wrong currency symbol for this user
 
-IMPORTANT CONTEXT RULES:
-- If NOT onboarded: guide them to complete registration first
-- If NOT KYC verified: remind them to complete identity verification before transfers
-- If bank NOT connected: guide them to connect bank for balance/transactions
-- If KYC verified and bank connected: full functionality available
-- Remember conversation context
-
-EXAMPLE GOOD RESPONSES:
+EXAMPLE RESPONSES:
 User: "hi"
-→ {"intent":"GREETING","reply":"Hey ${firstName}! 👋 I'm Zeno, your AI banking assistant. I can help you send money, check your balance, track spending and more — all right here on ${platform}.\n\nWhat can I do for you?"}
+→ {"intent":"GREETING","reply":"Hey ${firstName}! 👋 I'm Zeno, your AI banking assistant. I can help you send money, check your balance, track spending and more — right here on ${platform}.\n\nWhat can I do for you?"}
 
-User: "send £50 to Sarah"
-→ {"intent":"TRANSFER","reply":"On it! Sending *£50* to *Sarah*. Do you have their sort code and account number?","transferDetails":{"recipientName":"Sarah","amount":50,"sortCode":null,"accountNumber":null,"reference":"Payment to Sarah"}}
-
-User: "what's my balance"
-→ {"intent":"BALANCE","reply":"Let me check that for you! 💰"}
+User: ${country.code === 'NG' ? '"send 5000 to Chidi"' : '"send £50 to Sarah"'}
+→ {"intent":"TRANSFER","reply":"On it! Do you have ${country.code === 'NG' ? "Chidi's account number and bank?" : "their sort code and account number?"}","transferDetails":{"recipientName":"${country.code === 'NG' ? 'Chidi' : 'Sarah'}","amount":${country.code === 'NG' ? '5000' : '50'},"accountNumber":null,"bankCode":null,"sortCode":null,"reference":"Payment to ${country.code === 'NG' ? 'Chidi' : 'Sarah'}"}}
 
 User: "cheers"
-→ {"intent":"CHITCHAT","reply":"Anytime! 😊"}
-
-User: "can you send money for me"
-→ {"intent":"UNCLEAR","reply":"Of course! Just tell me who you'd like to send money to and how much. For example: *Send £50 to John* 💸"}`;
+→ {"intent":"CHITCHAT","reply":"Anytime! 😊"}`;
 }
 
 function parseAIResponse(rawText) {
@@ -145,9 +132,7 @@ function parseAIResponse(rawText) {
     const cleaned = rawText.replace(/```json|```/g, '').trim();
     const parsed = JSON.parse(cleaned);
 
-    if (!parsed.intent || !parsed.reply) {
-      throw new Error('Missing required fields');
-    }
+    if (!parsed.intent || !parsed.reply) throw new Error('Missing required fields');
 
     if (parsed.intent === 'TRANSFER') {
       const t = parsed.transferDetails;
@@ -158,12 +143,8 @@ function parseAIResponse(rawText) {
         };
       }
       if (t.amount) parsed.transferDetails.amount = parseFloat(t.amount);
-      if (t.sortCode && !/^\d{2}-\d{2}-\d{2}$/.test(t.sortCode)) {
-        parsed.transferDetails.sortCode = null;
-      }
-      if (t.accountNumber && !/^\d{8}$/.test(t.accountNumber)) {
-        parsed.transferDetails.accountNumber = null;
-      }
+      if (t.sortCode && !/^\d{2}-\d{2}-\d{2}$/.test(t.sortCode)) parsed.transferDetails.sortCode = null;
+      if (t.accountNumber && !/^\d{8,10}$/.test(t.accountNumber)) parsed.transferDetails.accountNumber = null;
     }
 
     return parsed;
@@ -172,7 +153,7 @@ function parseAIResponse(rawText) {
     logger.error('Failed to parse AI response:', { error: err.message, rawText: rawText.substring(0, 200) });
     return {
       intent: 'UNCLEAR',
-      reply: "Sorry, I didn't catch that! Try saying something like:\n• *Send £50 to Sarah*\n• *What's my balance?*\n• *Show my transactions* 😊",
+      reply: "Sorry, I didn't catch that! Try saying:\n• *Send money to someone*\n• *What's my balance?*\n• *Show my transactions* 😊",
     };
   }
 }

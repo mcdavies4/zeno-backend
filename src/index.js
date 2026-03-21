@@ -67,18 +67,15 @@ async function start() {
     logger.info(`Telegram:   POST /telegram/webhook`);
 
     // Auto-register Telegram webhook
-    if (process.env.TELEGRAM_BOT_TOKEN && process.env.RAILWAY_PUBLIC_DOMAIN) {
-      try {
-        const telegramService = require('./services/telegram');
-        const domain = process.env.RAILWAY_PUBLIC_DOMAIN.startsWith('http')
-          ? process.env.RAILWAY_PUBLIC_DOMAIN
-          : `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`;
-        await telegramService.setWebhook(domain);
-        logger.info('Telegram webhook registered successfully');
-      } catch (err) {
-        logger.warn('Telegram webhook registration failed:', err.message);
-      }
-    }
+    if (process.env.TELEGRAM_BOT_TOKEN) {
+  try {
+    const telegramService = require('./services/telegram');
+    await telegramService.setWebhook('https://api.joinzeno.co.uk');
+    logger.info('Telegram webhook registered successfully');
+  } catch (err) {
+    logger.warn('Telegram webhook registration failed:', err.message);
+  }
+}
   });
 }
 

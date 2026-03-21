@@ -48,7 +48,7 @@ router.get('/', adminAuth, async (req, res) => {
         pool.query("SELECT COUNT(*) FROM users WHERE updated_at > NOW() - INTERVAL '24 hours'"),
         pool.query(`SELECT phone_number, name, email, is_onboarded, kyc_verified, kyc_status,
           kyc_session_id, bank_connected, balance, onboarding_step, last_error,
-          pin_attempts, is_frozen, bank_connected_at, last_balance_check,
+          pin_attempts_total as pin_attempts, is_frozen, bank_connected_at, last_balance_check,
           truelayer_expires_at, kyc_attempt_count, created_at, updated_at
           FROM users ORDER BY created_at DESC LIMIT 25`),
         pool.query('SELECT * FROM transactions ORDER BY created_at DESC LIMIT 20'),
@@ -58,7 +58,7 @@ router.get('/', adminAuth, async (req, res) => {
         queries.push(pool.query(
           `SELECT phone_number, name, email, is_onboarded, kyc_verified, kyc_status,
            kyc_session_id, bank_connected, balance, created_at, updated_at,
-           is_frozen, pin_attempts, last_error
+           is_frozen, pin_attempts_total as pin_attempts, last_error
            FROM users WHERE phone_number LIKE $1 OR name ILIKE $2 OR email ILIKE $2
            ORDER BY created_at DESC LIMIT 10`,
           [`%${search}%`, `%${search}%`]

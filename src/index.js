@@ -8,6 +8,7 @@ const path = require('path');
 const webhookRouter = require('./handlers/webhook');
 const truelayerRouter = require('./handlers/truelayerCallback');
 const veriffRouter = require('./handlers/veriffWebhook');
+const adminRouter = require('./handlers/adminDashboard');
 const database = require('./services/database');
 const logger = require('./utils/logger');
 
@@ -42,6 +43,7 @@ app.get('/favicon.svg', (req, res) => res.sendFile(path.join(__dirname, '../favi
 app.use('/webhook', webhookRouter);
 app.use('/truelayer', truelayerRouter);
 app.use('/veriff', veriffRouter);
+app.use('/admin', adminRouter);
 
 app.get('/health', (req, res) => {
   res.json({
@@ -60,6 +62,7 @@ async function start() {
     logger.info(`Database: ${database.isReady() ? 'PostgreSQL connected' : 'unavailable'}`);
     logger.info(`Webhook URL: POST /webhook`);
     logger.info(`Verify URL:  GET  /webhook`);
+    logger.info(`Admin URL:   GET  /admin?key=YOUR_ADMIN_SECRET`);
   });
 }
 

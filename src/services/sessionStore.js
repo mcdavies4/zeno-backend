@@ -1,14 +1,16 @@
 /**
- * Session Store — Upstash Redis backed with in-memory fallback
- * Works perfectly on both Railway and serverless environments
+ * Session Store — Upstash Redis + PostgreSQL
+ * 
+ * Flow:
+ * 1. Check Redis (fast cache)
+ * 2. If not in Redis, load from PostgreSQL (persistent)
+ * 3. All updates go to both Redis and PostgreSQL
  */
 
 const logger = require('../utils/logger');
 
 const SESSION_TTL = 1800; // 30 minutes
 const memoryStore = new Map();
-
-// Try to connect to Upstash Redis
 let redis = null;
 
 async function connectUpstash() {
@@ -18,18 +20,14 @@ async function connectUpstash() {
       url: process.env.UPSTASH_REDIS_REST_URL,
       token: process.env.UPSTASH_REDIS_REST_TOKEN,
     });
-    // Test connection
     await redis.set('zeno:ping', 'pong');
     logger.info('Upstash Redis connected successfully');
-    return true;
   } catch (err) {
-    logger.warn('Upstash Redis not available, using in-memory:', err.message);
+    logger.warn('Upstash Redis not available:', err.message);
     redis = null;
-    return false;
   }
 }
 
-// Connect on startup
 connectUpstash();
 
 function defaultSession(phoneNumber) {
@@ -60,7 +58,38 @@ function defaultSession(phoneNumber) {
   };
 }
 
+// Load user data from PostgreSQL into session
+async function loadFromDatabase(phoneNumber, session) {
+  try {
+    const db = require('./database');
+    if (!db.isReady()) return session;
+
+    const user = await db.getUser(phoneNumber);
+    if (!user) return session;
+
+    // Restore persistent data from DB
+    if (user.name) session.userName = user.name;
+    if (user.email) session.userEmail = user.email;
+    if (user.pin_hash) session.userPin = user.pin_hash;
+    if (user.is_onboarded) session.isOnboarded = user.is_onboarded;
+    if (user.kyc_status) session.kycStatus = user.kyc_status;
+    if (user.kyc_verified) session.kycVerified = user.kyc_verified;
+    if (user.kyc_session_id) session.kycSessionId = user.kyc_session_id;
+    if (user.bank_connected) session.bankConnected = user.bank_connected;
+    if (user.truelayer_access_token) session.truelayerAccessToken = user.truelayer_access_token;
+    if (user.truelayer_refresh_token) session.truelayerRefreshToken = user.truelayer_refresh_token;
+    if (user.truelayer_expires_at) session.truelayerExpiresAt = user.truelayer_expires_at;
+    if (user.balance) session.balance = parseFloat(user.balance);
+
+    logger.info(`Session restored from DB for ${phoneNumber}: onboarded=${session.isOnboarded}`);
+  } catch (err) {
+    logger.error('Error loading from database:', err.message);
+  }
+  return session;
+}
+
 async function get(phoneNumber) {
+  // 1. Try Redis first
   try {
     if (redis) {
       const data = await redis.get(`session:${phoneNumber}`);
@@ -69,21 +98,26 @@ async function get(phoneNumber) {
         session.lastActivityAt = Date.now();
         return session;
       }
-      const session = defaultSession(phoneNumber);
-      await redis.setex(`session:${phoneNumber}`, SESSION_TTL, JSON.stringify(session));
-      return session;
     }
   } catch (err) {
-    logger.error('Upstash get error:', err.message);
+    logger.error('Redis get error:', err.message);
   }
 
-  // Fallback to memory
-  let session = memoryStore.get(phoneNumber);
-  if (!session) {
-    session = defaultSession(phoneNumber);
-    memoryStore.set(phoneNumber, session);
-  }
+  // 2. Not in Redis — create new session and load from PostgreSQL
+  let session = memoryStore.get(phoneNumber) || defaultSession(phoneNumber);
+  session = await loadFromDatabase(phoneNumber, session);
   session.lastActivityAt = Date.now();
+
+  // Save back to Redis
+  try {
+    if (redis) {
+      await redis.setex(`session:${phoneNumber}`, SESSION_TTL, JSON.stringify(session));
+    }
+  } catch (err) {
+    logger.error('Redis set error:', err.message);
+  }
+
+  memoryStore.set(phoneNumber, session);
   return session;
 }
 
@@ -91,44 +125,19 @@ async function update(phoneNumber, updates) {
   const session = await get(phoneNumber);
   Object.assign(session, updates, { lastActivityAt: Date.now() });
 
+  // Save to Redis
   try {
     if (redis) {
       await redis.setex(`session:${phoneNumber}`, SESSION_TTL, JSON.stringify(session));
-      return session;
+    } else {
+      memoryStore.set(phoneNumber, session);
     }
   } catch (err) {
-    logger.error('Upstash update error:', err.message);
+    logger.error('Redis update error:', err.message);
+    memoryStore.set(phoneNumber, session);
   }
 
-  memoryStore.set(phoneNumber, session);
-  return session;
-}
-
-async function clearPendingTransfer(phoneNumber) {
-  return update(phoneNumber, {
-    pendingTransfer: null,
-    awaitingPin: false,
-    pinAttempts: 0,
-  });
-}
-
-async function destroy(phoneNumber) {
-  try {
-    if (redis) await redis.del(`session:${phoneNumber}`);
-  } catch (err) {
-    logger.error('Upstash delete error:', err.message);
-  }
-  memoryStore.delete(phoneNumber);
-}
-
-module.exports = { get, update, clearPendingTransfer, destroy };
-
-// Re-export with DB sync
-const _originalUpdate = module.exports.update;
-module.exports.update = async function(phoneNumber, updates) {
-  const session = await _originalUpdate(phoneNumber, updates);
-  
-  // Sync important fields to PostgreSQL
+  // Sync to PostgreSQL
   try {
     const db = require('./database');
     if (db.isReady()) {
@@ -150,8 +159,27 @@ module.exports.update = async function(phoneNumber, updates) {
       }
     }
   } catch (err) {
-    // Non-blocking — don't crash if DB sync fails
+    logger.error('DB sync error:', err.message);
   }
-  
+
   return session;
-};
+}
+
+async function clearPendingTransfer(phoneNumber) {
+  return update(phoneNumber, {
+    pendingTransfer: null,
+    awaitingPin: false,
+    pinAttempts: 0,
+  });
+}
+
+async function destroy(phoneNumber) {
+  try {
+    if (redis) await redis.del(`session:${phoneNumber}`);
+  } catch (err) {
+    logger.error('Redis delete error:', err.message);
+  }
+  memoryStore.delete(phoneNumber);
+}
+
+module.exports = { get, update, clearPendingTransfer, destroy };

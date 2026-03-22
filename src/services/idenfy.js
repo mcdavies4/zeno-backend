@@ -31,7 +31,7 @@ async function createSession(user) {
       clientId,
       firstName: user.firstName || '',
       lastName: user.lastName || '',
-      callbackUrl: `${process.env.IDENFY_CALLBACK_URL || process.env.VERIFF_CALLBACK_URL}/idenfy/webhook`,
+      callbackUrl: `${process.env.IDENFY_CALLBACK_URL || 'https://api.joinzeno.co.uk'}/idenfy/webhook`,
       // Allow all document types for both UK and Nigeria
       documents: ['ID_CARD', 'PASSPORT', 'DRIVER_LICENSE', 'RESIDENCE_PERMIT'],
       // No country restriction — works for both UK and Nigeria

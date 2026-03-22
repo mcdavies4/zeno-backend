@@ -7,7 +7,6 @@ const path = require('path');
 
 const webhookRouter = require('./handlers/webhook');
 const truelayerRouter = require('./handlers/truelayerCallback');
-const veriffRouter = require('./handlers/veriffWebhook');
 const idenfyRouter = require('./handlers/idenfyWebhook');
 const adminRouter = require('./handlers/adminDashboard');
 const telegramRouter = require('./handlers/telegramWebhook');
@@ -37,7 +36,6 @@ app.get('/favicon.svg', (req, res) => res.sendFile(path.join(__dirname, '../favi
 // ─── API ROUTES ───────────────────────────────────────
 app.use('/webhook', webhookRouter);
 app.use('/truelayer', truelayerRouter);
-app.use('/veriff', veriffRouter);      // Keep for any existing Veriff sessions
 app.use('/idenfy', idenfyRouter);      // New iDenfy handler
 app.use('/admin', adminRouter);
 app.use('/telegram', telegramRouter);

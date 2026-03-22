@@ -74,7 +74,7 @@ async function sendPayment(params) {
     narration: narration || reference || 'Zeno Transfer',
     currency: 'NGN',
     reference: uuidv4(),
-    callback_url: `${process.env.VERIFF_CALLBACK_URL}/flutterwave/webhook`,
+    callback_url: `https://api.joinzeno.co.uk/flutterwave/webhook`,
     debit_currency: 'NGN',
   };
 

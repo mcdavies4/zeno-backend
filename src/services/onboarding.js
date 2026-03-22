@@ -9,6 +9,7 @@ const logger = require('../utils/logger');
 
 const STEPS = {
   WELCOME: 'welcome',
+  TERMS: 'awaiting_terms',
   NAME: 'awaiting_name',
   EMAIL: 'awaiting_email',
   PIN: 'awaiting_pin',
@@ -33,17 +34,19 @@ async function checkAndHandleOnboarding(from, session, incomingText) {
 }
 
 async function startOnboarding(from) {
-  await sessionStore.update(from, { onboardingStep: STEPS.NAME });
+  await sessionStore.update(from, { onboardingStep: STEPS.TERMS });
   await messenger.sendText(from,
     `👋 *Welcome to Zeno!*\n\n` +
-    `I'm your personal AI banking assistant. I can help you:\n` +
+    `I'm your AI banking assistant. I can help you:\n` +
     `💸 Send money instantly\n` +
     `💰 Check your balance\n` +
     `📊 Track your spending\n` +
-    `📄 Pay bills\n\n` +
+    `📱 Pay bills & airtime\n\n` +
     `Available in 🇬🇧 UK and 🇳🇬 Nigeria.\n\n` +
-    `Let's get you set up in 2 minutes.\n\n` +
-    `First, what's your *full name*?`
+    `Before we start, please read and accept our terms:\n` +
+    `📋 Terms: https://www.joinzeno.co.uk/terms\n` +
+    `🔒 Privacy: https://www.joinzeno.co.uk/privacy\n\n` +
+    `Reply *"I agree"* to continue ✅`
   );
 }
 
@@ -52,6 +55,27 @@ async function handleStep(from, session, input) {
   const text = input.trim();
 
   switch (step) {
+
+    case STEPS.TERMS: {
+      const accepted = input.toLowerCase().includes('agree') ||
+                       input.toLowerCase().includes('accept') ||
+                       input.toLowerCase().includes('yes') ||
+                       input === '1';
+      if (!accepted) {
+        await messenger.sendText(from,
+          `Please reply *"I agree"* to accept our Terms & Privacy Policy and continue.\n\n` +
+          `📋 https://www.joinzeno.co.uk/terms`
+        );
+        return;
+      }
+      await sessionStore.update(from, {
+        onboardingStep: STEPS.NAME,
+        termsAccepted: true,
+        termsAcceptedAt: new Date().toISOString(),
+      });
+      await messenger.sendText(from, `✅ Great! Let's get you set up.\n\nWhat's your *full name*?`);
+      return;
+    }
 
     case STEPS.NAME: {
       if (text.length < 2) {

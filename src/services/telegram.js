@@ -9,42 +9,49 @@ const TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const BASE_URL = `https://api.telegram.org/bot${TOKEN}`;
 
 // Convert WhatsApp markdown to Telegram HTML
+// Handles *bold*, _italic_, `code` but NOT URLs (send those separately)
 function convertMarkdown(text) {
   if (!text) return '';
 
-  // Extract markdown links [text](url) and replace with HTML links
-  // Do this BEFORE any other processing
-  let result = text.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, (match, linkText, url) => {
-    return `<a href="${url}">${linkText}</a>`;
+  // First extract URLs to protect them
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const urls = [];
+  let protected_text = text.replace(urlRegex, (url) => {
+    const placeholder = `URLPLACEHOLDER${urls.length}END`;
+    urls.push(url);
+    return placeholder;
   });
 
-  // Now escape HTML in the non-link parts only
-  // Split by <a href...> tags, escape non-link parts, rejoin
-  const parts = result.split(/(<a href="[^"]*">[^<]*<\/a>)/g);
-  result = parts.map((part, i) => {
-    // Even indexes are non-link text, odd indexes are link tags
-    if (i % 2 === 0) {
-      return part
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
-    }
-    return part; // Keep link tags as-is
-  }).join('');
+  // Extract markdown links [text](url)
+  const mdLinks = [];
+  protected_text = protected_text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, linkText, url) => {
+    const placeholder = `LINKPLACEHOLDER${mdLinks.length}END`;
+    mdLinks.push(`<a href="${url}">${linkText}</a>`);
+    return placeholder;
+  });
 
-  // Apply bold/italic/code formatting on non-link parts
-  result = result
-    .replace(/\*([^*]+)\*/g, '<b>$1</b>')
-    .replace(/_([^_]+)_/g, '<i>$1</i>')
-    .replace(/`([^`]+)`/g, '<code>$1</code>');
+  // Escape HTML special chars
+  protected_text = protected_text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 
-  return result;
-}
+  // Apply formatting
+  protected_text = protected_text
+    .replace(/\*([^*\n]+)\*/g, '<b>$1</b>')
+    .replace(/`([^`\n]+)`/g, '<code>$1</code>');
 
-// Send plain URL as clickable link in Telegram
-// Telegram auto-previews raw URLs if they're on their own line
-function formatLinkMessage(text, url, caption) {
-  return `${text}\n\n${url}\n\n${caption || ''}`.trim();
+  // Restore URLs (as plain text — Telegram auto-linkifies them)
+  urls.forEach((url, i) => {
+    protected_text = protected_text.replace(`URLPLACEHOLDER${i}END`, url);
+  });
+
+  // Restore markdown links
+  mdLinks.forEach((link, i) => {
+    protected_text = protected_text.replace(`LINKPLACEHOLDER${i}END`, link);
+  });
+
+  return protected_text;
 }
 
 async function sendText(chatId, text) {
@@ -54,13 +61,13 @@ async function sendText(chatId, text) {
       chat_id: chatId,
       text: converted,
       parse_mode: 'HTML',
-      disable_web_page_preview: false,
+      disable_web_page_preview: true,
     });
     logger.info(`Telegram message sent to ${chatId}`);
     return response.data;
   } catch (err) {
     logger.error(`Telegram send failed to ${chatId}:`, err.response?.data || err.message);
-    // Fallback — send without parse mode, strip markdown
+    // Fallback — send plain text
     try {
       const plain = text
         .replace(/\*([^*]+)\*/g, '$1')
@@ -71,7 +78,7 @@ async function sendText(chatId, text) {
         text: plain,
       });
     } catch (e) {
-      logger.error(`Telegram fallback also failed:`, e.message);
+      logger.error(`Telegram fallback failed:`, e.message);
     }
   }
 }

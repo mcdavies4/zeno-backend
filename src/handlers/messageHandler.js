@@ -306,6 +306,49 @@ async function handleAIResponse({ from, aiResponse, session, text }) {
       await whatsappService.sendText(from, aiResponse.reply);
       break;
 
+    case 'KYC': {
+      // Send iDenfy verification link
+      if (session.kycVerified) {
+        await whatsappService.sendText(from,
+          `✅ *You're already verified!*\n\nYour identity has been confirmed. You have full access to all Zeno features.`
+        );
+        break;
+      }
+      try {
+        const kycService = require('../services/idenfy');
+        const nameParts = (session.userName || 'User').split(' ');
+        const kycSession = await kycService.createSession({
+          phoneNumber: from,
+          firstName: nameParts[0],
+          lastName: nameParts.slice(1).join(' ') || '',
+        });
+        await sessionStore.update(from, { kycSessionId: kycSession.sessionId });
+        await whatsappService.sendText(from,
+          `🔐 *Verify Your Identity*\n\n` +
+          `Tap the link below to complete verification:\n\n` +
+          `${kycSession.sessionUrl}\n\n` +
+          `_Takes less than 2 minutes. Fully encrypted and secure._`
+        );
+      } catch (err) {
+        logger.error('KYC session error:', err.message);
+        await whatsappService.sendText(from,
+          `⚠️ Couldn't generate verification link. Please try again in a moment.`
+        );
+      }
+      break;
+    }
+
+    case 'CONNECT_BANK': {
+      const authLink = banking.generateAuthLink(from, session);
+      await whatsappService.sendText(from,
+        `🏦 *Connect Your Bank*\n\n` +
+        `Tap the link below to securely connect your bank account:\n\n` +
+        `${authLink}\n\n` +
+        `_Read-only access. No card details needed. Takes 30 seconds._`
+      );
+      break;
+    }
+
     case 'UNCLEAR':
       await whatsappService.sendText(from, aiResponse.reply);
       break;

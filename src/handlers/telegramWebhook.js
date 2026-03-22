@@ -75,6 +75,42 @@ async function handleTextMessage({ chatId, text, contactName }) {
       return;
     }
 
+    // Intercept KYC keywords directly
+    const lowerText = text.toLowerCase();
+    if (['kyc', 'verify', 'verify my identity', 'verification', 'verify identity', 'complete kyc'].some(k => lowerText.includes(k))) {
+      if (session.kycVerified) {
+        await telegramService.sendText(chatId, `✅ *You're already verified!*
+
+Your identity has been confirmed. You have full access to all Zeno features.`);
+      } else {
+        try {
+          const kycService = require('../services/idenfy');
+          const nameParts = (session.userName || 'User').split(' ');
+          const kycSession = await kycService.createSession({
+            phoneNumber: chatId,
+            firstName: nameParts[0],
+            lastName: nameParts.slice(1).join(' ') || '',
+          });
+          await sessionStore.update(chatId, { kycSessionId: kycSession.sessionId });
+          await telegramService.sendText(chatId,
+            `🔐 *Verify Your Identity*
+
+` +
+            `Tap the link below:
+
+${kycSession.sessionUrl}
+
+` +
+            `_Takes less than 2 minutes. Fully encrypted and secure._`
+          );
+        } catch (err) {
+          logger.error('KYC session error:', err.message);
+          await telegramService.sendText(chatId, `⚠️ Couldn't generate verification link. Please try again.`);
+        }
+      }
+      return;
+    }
+
     // Process with Claude AI
     logger.info(`Sending to Claude AI for ${chatId}`);
     const aiResponse = await claudeService.processMessage({
@@ -212,6 +248,45 @@ async function handleAIResponse({ chatId, aiResponse, session }) {
       await telegramService.sendText(chatId, `📋 Connect your bank first!\n\n[Tap here](${authLink})`);
       break;
     }
+    case 'KYC': {
+      if (session.kycVerified) {
+        await telegramService.sendText(chatId,
+          `✅ *You're already verified!*\n\nYour identity has been confirmed.`
+        );
+        break;
+      }
+      try {
+        const kycService = require('../services/idenfy');
+        const nameParts = (session.userName || 'User').split(' ');
+        const kycSession = await kycService.createSession({
+          phoneNumber: chatId,
+          firstName: nameParts[0],
+          lastName: nameParts.slice(1).join(' ') || '',
+        });
+        await sessionStore.update(chatId, { kycSessionId: kycSession.sessionId });
+        await telegramService.sendText(chatId,
+          `🔐 *Verify Your Identity*\n\n` +
+          `[Tap here to verify](${kycSession.sessionUrl})\n\n` +
+          `_Takes less than 2 minutes. Fully encrypted and secure._`
+        );
+      } catch (err) {
+        await telegramService.sendText(chatId,
+          `⚠️ Couldn't generate verification link. Please try again.`
+        );
+      }
+      break;
+    }
+
+    case 'CONNECT_BANK': {
+      const authLink = banking.generateAuthLink(chatId, session);
+      await telegramService.sendText(chatId,
+        `🏦 *Connect Your Bank*\n\n` +
+        `[Tap here to connect your bank](${authLink})\n\n` +
+        `_Read-only access. No card details needed._`
+      );
+      break;
+    }
+
     default:
       await telegramService.sendText(chatId, aiResponse.reply);
   }

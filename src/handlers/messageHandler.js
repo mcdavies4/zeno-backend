@@ -358,4 +358,79 @@ async function handleAIResponse({ from, aiResponse, session, text }) {
   }
 }
 
+// ─── SWITCH COUNTRY ──────────────────────────────────
+async function handleSwitchCountry({ from, session, text }) {
+  const current = session.bankingCountry || 'UK';
+
+  // If they specified a country directly
+  let newCountry = null;
+  if (text.includes('nigeria') || text.includes('naija') || text.includes('nigerian')) {
+    newCountry = 'NG';
+  } else if (text.includes('uk') || text.includes('britain') || text.includes('england') || text.includes('united kingdom')) {
+    newCountry = 'UK';
+  }
+
+  // If already on that country
+  if (newCountry && newCountry === current) {
+    const flag = newCountry === 'NG' ? '🇳🇬' : '🇬🇧';
+    await whatsappService.sendText(from,
+      `${flag} You're already set to ${newCountry === 'NG' ? 'Nigeria' : 'United Kingdom'}!
+
+Your balance and transfers are already using ${newCountry === 'NG' ? '₦ NGN' : '£ GBP'}.`
+    );
+    return;
+  }
+
+  // If they specified a country, switch directly
+  if (newCountry) {
+    await switchToCountry(from, session, newCountry);
+    return;
+  }
+
+  // Otherwise show options
+  const currentFlag = current === 'NG' ? '🇳🇬' : '🇬🇧';
+  const currentName = current === 'NG' ? 'Nigeria' : 'United Kingdom';
+  await sessionStore.update(from, { awaitingField: 'country_switch' });
+  await whatsappService.sendText(from,
+    `🌍 *Switch Banking Country*
+
+` +
+    `Currently set to: ${currentFlag} *${currentName}*
+
+` +
+    `Switch to:
+` +
+    `1️⃣ 🇬🇧 United Kingdom (£ GBP)
+` +
+    `2️⃣ 🇳🇬 Nigeria (₦ NGN)
+
+` +
+    `Reply with *1* or *2* to switch.`
+  );
+}
+
+async function switchToCountry(from, session, countryCode) {
+  const isNG = countryCode === 'NG';
+  const flag = isNG ? '🇳🇬' : '🇬🇧';
+  const name = isNG ? 'Nigeria' : 'United Kingdom';
+  const currency = isNG ? '₦ NGN' : '£ GBP';
+
+  await sessionStore.update(from, {
+    bankingCountry: countryCode,
+    awaitingField: null,
+    // Clear bank connection so they reconnect for new country
+    bankConnected: isNG ? session.bankConnected : session.bankConnected,
+  });
+
+  await whatsappService.sendText(from,
+    `✅ *Switched to ${flag} ${name}!*
+
+` +
+    `Your account is now set to *${currency}*.
+
+` +
+    `${isNG ? 'Connect your Nigerian bank:\n• *"Connect my bank"*\n• *"What\'s my balance?"*' : 'Connect your UK bank:\n• *"Connect my bank"*\n• *"What\'s my balance?"*'}`
+  );
+}
+
 module.exports = { handle };

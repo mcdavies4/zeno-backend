@@ -17,11 +17,18 @@ async function createSession(user) {
     const firstName = user.firstName || nameParts[0] || 'User';
     const lastName = user.lastName || nameParts.slice(1).join(' ') || '';
 
+    // Deep link back to WhatsApp or Telegram after verification
+    const phone = String(user.phoneNumber).replace(/\D/g, '');
+    const isTelegram = phone.length <= 10 && !phone.startsWith('44') && !phone.startsWith('234') && !phone.startsWith('1');
+    const callbackUrl = isTelegram
+      ? `https://t.me/ZenoUKbot`
+      : `https://wa.me/447459233682?text=I+just+completed+my+verification`;
+
     const payload = {
       verification: {
-        callback: 'https://www.joinzeno.co.uk',
+        callback: callbackUrl,
         person: { firstName, lastName },
-        vendorData: String(user.phoneNumber), // used to identify user in webhook
+        vendorData: String(user.phoneNumber),
         timestamp: new Date().toISOString(),
       },
     };

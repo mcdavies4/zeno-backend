@@ -6,6 +6,7 @@ const messenger = require('./messenger');
 const sessionStore = require('./sessionStore');
 const { hashPin } = require('../utils/pinUtils');
 const logger = require('../utils/logger');
+const virtualAccount = require('./virtualAccount');
 
 const STEPS = {
   WELCOME: 'welcome',

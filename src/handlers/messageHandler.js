@@ -301,7 +301,7 @@ async function handleAIResponse({ from, aiResponse, session, text }) {
           break;
         }
       }
-      const authLink = banking.generateAuthLink(from, session);
+      const authLink = await banking.generateAuthLink(from, session);
       await whatsappService.sendText(from,
         `💰 To show your real balance, connect your bank first!\n\n` +
         `Tap the link below — it's secure and takes 30 seconds:\n\n` +
@@ -320,7 +320,7 @@ async function handleAIResponse({ from, aiResponse, session, text }) {
           break;
         }
       }
-      const authLink = banking.generateAuthLink(from, session);
+      const authLink = await banking.generateAuthLink(from, session);
       await whatsappService.sendText(from,
         `📋 Connect your bank to see real transactions!\n\n${authLink}`
       );
@@ -368,7 +368,7 @@ async function handleAIResponse({ from, aiResponse, session, text }) {
     }
 
     case 'CONNECT_BANK': {
-      const authLink = banking.generateAuthLink(from, session);
+      const authLink = await banking.generateAuthLink(from, session);
       await whatsappService.sendText(from,
         `🏦 *Connect Your Bank*\n\n` +
         `Tap the link below to securely connect your bank account:\n\n` +

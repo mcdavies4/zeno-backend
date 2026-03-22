@@ -245,29 +245,37 @@ async function handleAIResponse({ chatId, aiResponse, session }) {
       break;
     }
     case 'BALANCE': {
-      if (session.bankConnected) {
-        const result = await truelayer.getBalance(chatId, session);
+      if (banking.isBankConnected(session, chatId)) {
+        const result = await banking.getBalance(chatId, session);
         if (result.success) {
-          await telegramService.sendText(chatId, truelayer.formatBalanceMessage(result.balances));
+          await telegramService.sendText(chatId, banking.formatBalanceMessage(result.balances, chatId, session));
           break;
         }
       }
-      const authLink = banking.generateAuthLink(chatId, session);
-      await telegramService.sendText(chatId,
-        `💰 Connect your bank to see your real balance!\n\n[Tap here to connect](${authLink})\n\n_Read-only. No card details needed._`
-      );
+      try {
+        const authLink = await banking.generateAuthLink(chatId, session);
+        await telegramService.sendText(chatId,
+          `💰 *Connect Your Bank*\n\nTap the link below to see your real balance:\n\n${authLink}\n\n_Read-only. No card details needed._`
+        );
+      } catch(err) {
+        await telegramService.sendText(chatId, `⚠️ Bank connection not available right now. Please try again later.`);
+      }
       break;
     }
     case 'TRANSACTIONS': {
-      if (session.bankConnected) {
-        const result = await truelayer.getTransactions(chatId, session);
+      if (banking.isBankConnected(session, chatId)) {
+        const result = await banking.getTransactions(chatId, session);
         if (result.success) {
-          await telegramService.sendText(chatId, truelayer.formatTransactionsMessage(result.transactions));
+          await telegramService.sendText(chatId, banking.formatTransactionsMessage(result.transactions, chatId, session));
           break;
         }
       }
-      const authLink = banking.generateAuthLink(chatId, session);
-      await telegramService.sendText(chatId, `📋 Connect your bank first!\n\n[Tap here](${authLink})`);
+      try {
+        const authLink = await banking.generateAuthLink(chatId, session);
+        await telegramService.sendText(chatId, `📋 *Connect Your Bank*\n\nTap the link below to see your transactions:\n\n${authLink}\n\n_Read-only. No card details needed._`);
+      } catch(err) {
+        await telegramService.sendText(chatId, `⚠️ Bank connection not available right now. Please try again later.`);
+      }
       break;
     }
     case 'KYC': {
@@ -300,7 +308,7 @@ async function handleAIResponse({ chatId, aiResponse, session }) {
     }
 
     case 'CONNECT_BANK': {
-      const authLink = banking.generateAuthLink(chatId, session);
+      const authLink = await banking.generateAuthLink(chatId, session);
       await telegramService.sendText(chatId,
         `🏦 *Connect Your Bank*\n\n` +
         `[Tap here to connect your bank](${authLink})\n\n` +

@@ -11,6 +11,7 @@ const { verifyPin } = require('../utils/pinUtils');
 const banking = require('../services/banking');
 const insights = require('../services/insights');
 const bills = require('../services/bills');
+const searchService = require('../services/search');
 const logger = require('../utils/logger');
 
 /**
@@ -91,6 +92,18 @@ async function handleText({ from, contactName, message, session }) {
     return;
   }
 
+
+  // ── Transaction search ────────────────────────────
+  if (['find', 'search', 'show all', 'show transactions', 'all payments'].some(k => lowerText.includes(k)) && !lowerText.includes('balance') && !lowerText.includes('connect')) {
+    await handleSearch({ from, session, text: lowerText });
+    return;
+  }
+
+  // ── Exchange rate ─────────────────────────────────
+  if (['exchange rate', 'exchange', 'convert', 'how much is', 'naira to', 'pounds to', 'dollar to', 'rate today'].some(k => lowerText.includes(k))) {
+    await handleExchange({ from, session, text: lowerText });
+    return;
+  }
   // ── Airtime & Bills (Nigeria only) ───────────────
   if (country.code === 'NG' && ['airtime', 'recharge', 'top up', 'topup', 'buy data', 'data bundle', 'electricity', 'nepa', 'disco', 'dstv', 'gotv', 'cable tv', 'pay bill'].some(k => lowerText.includes(k))) {
     await handleBillPayment({ from, session, text: lowerText, country });
@@ -496,6 +509,68 @@ async function handleAIResponse({ from, aiResponse, session, text }) {
   }
 }
 
+// ─── TRANSACTION SEARCH ──────────────────────────────
+async function handleSearch({ from, session, text }) {
+  const country = detectCountry(from, session);
+
+  if (!banking.isBankConnected(session, from)) {
+    await whatsappService.sendText(from, `Connect your bank first to search transactions!`);
+    return;
+  }
+
+  await whatsappService.sendText(from, `🔍 Searching transactions...`);
+
+  try {
+    const result = await banking.getTransactions(from, session);
+    if (!result.success || !result.transactions?.length) {
+      await whatsappService.sendText(from, `No transactions found.`);
+      return;
+    }
+
+    const results = searchService.searchTransactions(result.transactions, text);
+    const msg = searchService.formatSearchResults(results, country.symbol, text);
+    await whatsappService.sendText(from, msg);
+  } catch(err) {
+    logger.error('Search error:', err.message);
+    await whatsappService.sendText(from, `Couldn't search transactions right now.`);
+  }
+}
+
+// ─── EXCHANGE RATE ────────────────────────────────────
+async function handleExchange({ from, session, text }) {
+  const parsed = searchService.parseExchangeQuery(text);
+  if (!parsed) {
+    await whatsappService.sendText(from,
+      `💱 Try:
+• "What's £1 in naira?"
+• "Convert $500 to pounds"
+• "Exchange rate today"`
+    );
+    return;
+  }
+
+  try {
+    const { rate, from: f, to: t } = await searchService.getExchangeRate(parsed.from, parsed.to);
+    const converted = (parsed.amount * rate).toLocaleString('en', { maximumFractionDigits: 2 });
+    const symbols = { GBP: '£', NGN: '₦', USD: '$', EUR: '€' };
+
+    await whatsappService.sendText(from,
+      `💱 *Exchange Rate*
+
+` +
+      `${symbols[f] || f}1 = *${symbols[t] || t}${rate.toLocaleString('en', { maximumFractionDigits: 2 })}*
+
+` +
+      (parsed.amount > 1 ? `${symbols[f] || f}${parsed.amount.toLocaleString()} = *${symbols[t] || t}${converted}*
+
+` : '') +
+      `_Live rate · ${new Date().toLocaleDateString('en-GB')}_`
+    );
+  } catch(err) {
+    await whatsappService.sendText(from, `Couldn't fetch exchange rate right now. Try again shortly.`);
+  }
+}
+
 // ─── BILL PAYMENTS & AIRTIME ─────────────────────────
 async function handleBillPayment({ from, session, text, country }) {
   const parsed = bills.parseBillCommand(text);
@@ -740,6 +815,68 @@ async function switchToCountry(from, session, countryCode) {
 ` +
     `${isNG ? 'Connect your Nigerian bank:\n• *"Connect my bank"*\n• *"What\'s my balance?"*' : 'Connect your UK bank:\n• *"Connect my bank"*\n• *"What\'s my balance?"*'}`
   );
+}
+
+// ─── TRANSACTION SEARCH ──────────────────────────────
+async function handleSearch({ from, session, text }) {
+  const country = detectCountry(from, session);
+
+  if (!banking.isBankConnected(session, from)) {
+    await whatsappService.sendText(from, `Connect your bank first to search transactions!`);
+    return;
+  }
+
+  await whatsappService.sendText(from, `🔍 Searching transactions...`);
+
+  try {
+    const result = await banking.getTransactions(from, session);
+    if (!result.success || !result.transactions?.length) {
+      await whatsappService.sendText(from, `No transactions found.`);
+      return;
+    }
+
+    const results = searchService.searchTransactions(result.transactions, text);
+    const msg = searchService.formatSearchResults(results, country.symbol, text);
+    await whatsappService.sendText(from, msg);
+  } catch(err) {
+    logger.error('Search error:', err.message);
+    await whatsappService.sendText(from, `Couldn't search transactions right now.`);
+  }
+}
+
+// ─── EXCHANGE RATE ────────────────────────────────────
+async function handleExchange({ from, session, text }) {
+  const parsed = searchService.parseExchangeQuery(text);
+  if (!parsed) {
+    await whatsappService.sendText(from,
+      `💱 Try:
+• "What's £1 in naira?"
+• "Convert $500 to pounds"
+• "Exchange rate today"`
+    );
+    return;
+  }
+
+  try {
+    const { rate, from: f, to: t } = await searchService.getExchangeRate(parsed.from, parsed.to);
+    const converted = (parsed.amount * rate).toLocaleString('en', { maximumFractionDigits: 2 });
+    const symbols = { GBP: '£', NGN: '₦', USD: '$', EUR: '€' };
+
+    await whatsappService.sendText(from,
+      `💱 *Exchange Rate*
+
+` +
+      `${symbols[f] || f}1 = *${symbols[t] || t}${rate.toLocaleString('en', { maximumFractionDigits: 2 })}*
+
+` +
+      (parsed.amount > 1 ? `${symbols[f] || f}${parsed.amount.toLocaleString()} = *${symbols[t] || t}${converted}*
+
+` : '') +
+      `_Live rate · ${new Date().toLocaleDateString('en-GB')}_`
+    );
+  } catch(err) {
+    await whatsappService.sendText(from, `Couldn't fetch exchange rate right now. Try again shortly.`);
+  }
 }
 
 // ─── BILL PAYMENTS & AIRTIME ─────────────────────────

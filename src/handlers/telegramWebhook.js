@@ -12,6 +12,8 @@ const { checkAndHandleOnboarding } = require('../services/onboarding');
 const { verifyPin } = require('../utils/pinUtils');
 const banking = require('../services/banking');
 const insights = require('../services/insights');
+const bills = require('../services/bills');
+const searchService = require('../services/search');
 const logger = require('../utils/logger');
 
 router.post('/webhook', express.json(), async (req, res) => {
@@ -96,6 +98,24 @@ async function handleTextMessage({ chatId, text, contactName }) {
       } else {
         await telegramService.sendText(chatId, `Please reply with *1* for 🇬🇧 UK or *2* for 🇳🇬 Nigeria.`);
       }
+      return;
+    }
+
+
+    // ── Transaction search ────────────────────────────
+  if (['find', 'search', 'show all', 'show transactions', 'all payments'].some(k => lowerText.includes(k)) && !lowerText.includes('balance') && !lowerText.includes('connect')) {
+      await handleTelegramSearch({ chatId, session, text: lowerText });
+    return;
+    }
+
+    // ── Exchange rate ─────────────────────────────────
+  if (['exchange rate', 'exchange', 'convert', 'how much is', 'naira to', 'pounds to', 'dollar to', 'rate today'].some(k => lowerText.includes(k))) {
+      await handleTelegramExchange({ chatId, session, text: lowerText });
+    return;
+    }
+    // ── Airtime & Bills (Nigeria only) ───────────────
+    if (session.bankingCountry === 'NG' && ['airtime', 'recharge', 'top up', 'topup', 'buy data', 'data bundle', 'electricity', 'nepa', 'disco', 'dstv', 'gotv', 'cable tv', 'pay bill'].some(k => lowerText.includes(k))) {
+      await handleTelegramBillPayment({ chatId, session, text: lowerText });
       return;
     }
 
@@ -340,6 +360,159 @@ async function handleAIResponse({ chatId, aiResponse, session }) {
 
     default:
       await telegramService.sendText(chatId, aiResponse.reply);
+  }
+}
+
+// ─── TRANSACTION SEARCH (TELEGRAM) ───────────────────
+async function handleTelegramSearch({ chatId, session, text }) {
+  const { detectCountry } = require('../utils/countryDetect');
+  const country = detectCountry(chatId, session);
+
+  if (!banking.isBankConnected(session, chatId)) {
+    await telegramService.sendText(chatId, `Connect your bank first to search transactions!`);
+    return;
+  }
+
+  await telegramService.sendText(chatId, `🔍 Searching transactions...`);
+
+  try {
+    const result = await banking.getTransactions(chatId, session);
+    if (!result.success || !result.transactions?.length) {
+      await telegramService.sendText(chatId, `No transactions found.`);
+      return;
+    }
+
+    const results = searchService.searchTransactions(result.transactions, text);
+    const msg = searchService.formatSearchResults(results, country.symbol, text);
+    await telegramService.sendText(chatId, msg);
+  } catch(err) {
+    logger.error('Telegram search error:', err.message);
+    await telegramService.sendText(chatId, `Couldn't search transactions right now.`);
+  }
+}
+
+// ─── EXCHANGE RATE (TELEGRAM) ─────────────────────────
+async function handleTelegramExchange({ chatId, session, text }) {
+  const parsed = searchService.parseExchangeQuery(text);
+  if (!parsed) {
+    await telegramService.sendText(chatId,
+      `💱 Try:
+• "What's £1 in naira?"
+• "Convert $500 to pounds"
+• "Exchange rate today"`
+    );
+    return;
+  }
+
+  try {
+    const { rate, from: f, to: t } = await searchService.getExchangeRate(parsed.from, parsed.to);
+    const converted = (parsed.amount * rate).toLocaleString('en', { maximumFractionDigits: 2 });
+    const symbols = { GBP: '£', NGN: '₦', USD: '$', EUR: '€' };
+
+    await telegramService.sendText(chatId,
+      `💱 *Exchange Rate*
+
+` +
+      `${symbols[f] || f}1 = *${symbols[t] || t}${rate.toLocaleString('en', { maximumFractionDigits: 2 })}*
+
+` +
+      (parsed.amount > 1 ? `${symbols[f] || f}${parsed.amount.toLocaleString()} = *${symbols[t] || t}${converted}*
+
+` : '') +
+      `_Live rate · ${new Date().toLocaleDateString('en-GB')}_`
+    );
+  } catch(err) {
+    await telegramService.sendText(chatId, `Couldn't fetch exchange rate right now.`);
+  }
+}
+
+// ─── BILL PAYMENT (TELEGRAM) ─────────────────────────
+async function handleTelegramBillPayment({ chatId, session, text }) {
+  const parsed = bills.parseBillCommand(text);
+
+  if (!parsed) {
+    await telegramService.sendText(chatId,
+      `📱 *Bills & Airtime*
+
+` +
+      `I can help with:
+` +
+      `• *Airtime:* "Buy ₦500 airtime for 08012345678"
+` +
+      `• *Electricity:* "Pay Ikeja Electric ₦5000 meter 12345678"
+` +
+      `• *DSTV:* "Pay DSTV ₦6500 smartcard 1234567890"
+` +
+      `• *Data:* "Buy MTN data 1000 for 08012345678"`
+    );
+    return;
+  }
+
+  await sessionStore.update(chatId, { pendingBill: parsed, awaitingPin: true });
+
+  let summary = '';
+  if (parsed.type === 'airtime') {
+    summary = `₦${parsed.amount.toLocaleString()} airtime for *${parsed.phone}* (${parsed.network.toUpperCase()})`;
+  } else if (parsed.type === 'electricity') {
+    summary = `₦${parsed.amount.toLocaleString()} electricity (${parsed.disco.toUpperCase()}) meter *${parsed.meterNumber}*`;
+  } else if (parsed.type === 'tv') {
+    summary = `₦${parsed.amount.toLocaleString()} ${parsed.provider.toUpperCase()} card *${parsed.smartCardNumber}*`;
+  }
+
+  await telegramService.sendText(chatId,
+    `📋 *Bill Payment Summary*
+
+${summary}
+
+🔐 Enter your PIN to confirm:`
+  );
+}
+
+async function executeTelegramBill({ chatId, session }) {
+  const bill = session.pendingBill;
+  if (!bill) return;
+
+  await telegramService.sendText(chatId, `⏳ Processing payment...`);
+
+  try {
+    if (bill.type === 'airtime') {
+      await bills.buyAirtime({ phone: bill.phone, amount: bill.amount, network: bill.network });
+      await sessionStore.update(chatId, { pendingBill: null });
+      await telegramService.sendText(chatId,
+        `✅ *Airtime Purchased!*
+
+• Amount: *₦${bill.amount.toLocaleString()}*
+• Number: *${bill.phone}*
+• Network: ${bill.network.toUpperCase()}`
+      );
+    } else if (bill.type === 'electricity') {
+      await bills.payElectricity({ meterNumber: bill.meterNumber, amount: bill.amount, disco: bill.disco });
+      await sessionStore.update(chatId, { pendingBill: null });
+      await telegramService.sendText(chatId,
+        `✅ *Electricity Paid!*
+
+• Amount: *₦${bill.amount.toLocaleString()}*
+• Meter: *${bill.meterNumber}*
+• Provider: ${bill.disco.toUpperCase()}
+
+_Token sent to your registered number._`
+      );
+    } else if (bill.type === 'tv') {
+      await bills.payTV({ smartCardNumber: bill.smartCardNumber, amount: bill.amount, provider: bill.provider });
+      await sessionStore.update(chatId, { pendingBill: null });
+      await telegramService.sendText(chatId,
+        `✅ *${bill.provider.toUpperCase()} Paid!*
+
+• Amount: *₦${bill.amount.toLocaleString()}*
+• Smart Card: *${bill.smartCardNumber}*`
+      );
+    }
+  } catch (err) {
+    logger.error('Telegram bill payment failed:', err.message);
+    await sessionStore.update(chatId, { pendingBill: null });
+    await telegramService.sendText(chatId, `❌ *Payment Failed*
+
+Could not complete payment. Please try again.`);
   }
 }
 

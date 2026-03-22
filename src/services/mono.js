@@ -12,10 +12,23 @@ const SECRET_KEY = process.env.MONO_SECRET_KEY;
 const BASE_URL = 'https://api.withmono.com';
 
 // ─── GENERATE AUTH LINK ───────────────────────────────
-function generateAuthLink(phoneNumber) {
-  // Mono uses their Connect widget
-  // In production, generate a one-time token and embed in link
+async function generateAuthLink(phoneNumber) {
   const state = Buffer.from(phoneNumber).toString('base64');
+
+  // Store phone number in Redis so webhook can look it up
+  try {
+    const { Redis } = require('@upstash/redis');
+    const redis = new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+    });
+    // Store for 24 hours
+    await redis.setex(`mono:state:${state}`, 86400, phoneNumber);
+    logger.info(`Mono state stored for ${phoneNumber}`);
+  } catch(e) {
+    logger.warn('Could not store Mono state in Redis:', e.message);
+  }
+
   return `https://connect.withmono.com/?key=${process.env.MONO_PUBLIC_KEY}&state=${state}`;
 }
 

@@ -16,9 +16,9 @@ function getCountry(phoneNumber, session) {
   return detectCountry(phoneNumber, session);
 }
 
-function generateAuthLink(phoneNumber, session) {
+async function generateAuthLink(phoneNumber, session) {
   const country = getCountry(phoneNumber, session);
-  if (country.code === 'NG') return mono.generateAuthLink(phoneNumber);
+  if (country.code === 'NG') return await mono.generateAuthLink(phoneNumber);
   return truelayer.generateAuthLink(phoneNumber);
 }
 

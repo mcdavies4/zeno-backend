@@ -13,23 +13,57 @@ const BASE_URL = 'https://api.withmono.com';
 
 // ─── GENERATE AUTH LINK ───────────────────────────────
 async function generateAuthLink(phoneNumber) {
-  const state = Buffer.from(phoneNumber).toString('base64');
-
-  // Store phone number in Redis so webhook can look it up
+  // Use Mono Initiate API to generate a link with meta.ref = phoneNumber
+  // This ensures the phone number comes back in the webhook payload
   try {
-    const { Redis } = require('@upstash/redis');
-    const redis = new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN,
-    });
-    // Store for 24 hours
-    await redis.setex(`mono:state:${state}`, 86400, phoneNumber);
-    logger.info(`Mono state stored for ${phoneNumber}`);
-  } catch(e) {
-    logger.warn('Could not store Mono state in Redis:', e.message);
-  }
+    const response = await axios.post(
+      `${BASE_URL}/v2/accounts/initiate`,
+      {
+        customer: {
+          name: 'Zeno User',
+          email: `${phoneNumber}@zeno.app`,
+        },
+        meta: {
+          ref: Buffer.from(phoneNumber).toString('base64'),
+        },
+        scope: 'auth',
+        redirect_url: 'https://api.joinzeno.co.uk/mono/callback',
+      },
+      {
+        headers: {
+          'mono-sec-key': SECRET_KEY,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
 
-  return `https://connect.withmono.com/?key=${process.env.MONO_PUBLIC_KEY}&state=${state}`;
+    const monoUrl = response.data?.data?.mono_url;
+    if (!monoUrl) throw new Error('No mono_url returned');
+
+    logger.info(`Mono link generated for ${phoneNumber}: ${monoUrl}`);
+    return monoUrl;
+
+  } catch(err) {
+    logger.error('Mono initiate failed:', err.response?.data || err.message);
+
+    // Fallback to widget URL with public key
+    const publicKey = process.env.MONO_PUBLIC_KEY;
+    if (!publicKey) throw new Error('Mono not configured. Please contact support.');
+
+    const state = Buffer.from(phoneNumber).toString('base64');
+
+    // Store in Redis as fallback
+    try {
+      const { Redis } = require('@upstash/redis');
+      const redis = new Redis({
+        url: process.env.UPSTASH_REDIS_REST_URL,
+        token: process.env.UPSTASH_REDIS_REST_TOKEN,
+      });
+      await redis.setex(`mono:state:${state}`, 86400, phoneNumber);
+    } catch(e) {}
+
+    return `https://connect.withmono.com/?key=${publicKey}&state=${state}`;
+  }
 }
 
 // ─── EXCHANGE CODE FOR ACCOUNT ID ────────────────────

@@ -9,6 +9,7 @@ const transferService = require('../services/transfer');
 const { checkAndHandleOnboarding } = require('../services/onboarding');
 const { verifyPin } = require('../utils/pinUtils');
 const banking = require('../services/banking');
+const insights = require('../services/insights');
 const logger = require('../utils/logger');
 
 /**
@@ -86,6 +87,24 @@ async function handleText({ from, contactName, message, session }) {
   // ── KYC keywords — send real iDenfy link ──────────────
   if (['kyc', 'verify my identity', 'verify identity', 'identity verification', 'complete kyc', 'complete verification'].some(k => lowerText.includes(k)) || lowerText === 'verify') {
     await handleAIResponse({ from, aiResponse: { intent: 'KYC' }, session, text });
+    return;
+  }
+
+  // ── Spending analysis keywords ───────────────────
+  if (['spending', 'analyse', 'analysis', 'breakdown', 'categories', 'where is my money', 'how much did i spend', 'spending report'].some(k => lowerText.includes(k))) {
+    await handleSpendingAnalysis({ from, session });
+    return;
+  }
+
+  // ── Alert keywords ────────────────────────────────
+  if (['set alert', 'alert me', 'notify me', 'warn me', 'low balance alert', 'transaction alert', 'my alerts', 'show alerts', 'list alerts'].some(k => lowerText.includes(k))) {
+    await handleAlerts({ from, session, text: lowerText });
+    return;
+  }
+
+  // ── Beneficiary keywords ──────────────────────────
+  if (['save contact', 'save beneficiary', 'remember', 'saved contacts', 'my contacts', 'list contacts', 'show contacts', 'saved recipients'].some(k => lowerText.includes(k))) {
+    await handleBeneficiaries({ from, session, text: lowerText });
     return;
   }
 
@@ -258,6 +277,21 @@ async function executeTransfer({ from, session }) {
       `_Need anything else? Just ask!_`
     );
 
+    // Offer to save beneficiary if not already saved
+    const existing = insights.getBeneficiary(session, transfer.recipientName);
+    if (!existing && (transfer.accountNumber || transfer.sortCode || transfer.bankCode)) {
+      const beneficiaries = insights.saveBeneficiary(session, transfer.recipientName, {
+        accountNumber: transfer.accountNumber,
+        sortCode: transfer.sortCode,
+        bankCode: transfer.bankCode,
+        bankName: transfer.bankName,
+      });
+      await sessionStore.update(from, { beneficiaries });
+      await whatsappService.sendText(from,
+        `💾 *${transfer.recipientName}* has been saved to your contacts! Next time just say *"Send money to ${transfer.recipientName}"*.`
+      );
+    }
+
   } catch (err) {
     logger.error('Transfer failed:', err);
     await sessionStore.clearPendingTransfer(from);
@@ -387,6 +421,129 @@ async function handleAIResponse({ from, aiResponse, session, text }) {
   }
 }
 
+// ─── SPENDING ANALYSIS ───────────────────────────────
+async function handleSpendingAnalysis({ from, session }) {
+  const country = detectCountry(from, session);
+  const symbol = country.symbol;
+
+  if (!banking.isBankConnected(session, from)) {
+    try {
+      const authLink = await banking.generateAuthLink(from, session);
+      await whatsappService.sendText(from,
+        `📊 Connect your bank first to see spending analysis!
+
+${authLink}`
+      );
+    } catch(e) {
+      await whatsappService.sendText(from, `Connect your bank first to see spending analysis!`);
+    }
+    return;
+  }
+
+  await whatsappService.sendText(from, `📊 Analysing your spending...`);
+
+  try {
+    const result = await banking.getTransactions(from, session);
+    if (!result.success || !result.transactions?.length) {
+      await whatsappService.sendText(from, `No recent transactions found to analyse.`);
+      return;
+    }
+
+    const analysis = insights.analyseSpending(result.transactions, symbol);
+    const msg = insights.formatAnalysis(analysis, symbol, 'recently');
+    await whatsappService.sendText(from, msg);
+  } catch(err) {
+    logger.error('Spending analysis error:', err.message);
+    await whatsappService.sendText(from, `Couldn't fetch spending data right now. Please try again.`);
+  }
+}
+
+// ─── ALERTS ───────────────────────────────────────────
+async function handleAlerts({ from, session, text }) {
+  const country = detectCountry(from, session);
+  const symbol = country.symbol;
+
+  // Show existing alerts
+  if (text.includes('my alerts') || text.includes('show alerts') || text.includes('list alerts')) {
+    const alerts = session.alerts || {};
+    if (!Object.keys(alerts).length) {
+      await whatsappService.sendText(from,
+        `🔔 *No alerts set*
+
+You can set:
+• *"Alert me when balance below ${symbol}500"*
+• *"Alert me for transactions over ${symbol}200"*`
+      );
+      return;
+    }
+    let msg = `🔔 *Your Alerts*
+
+`;
+    if (alerts.lowBalance) msg += `• Low balance: below *${symbol}${alerts.lowBalance}*
+`;
+    if (alerts.largeTransaction) msg += `• Large transaction: over *${symbol}${alerts.largeTransaction}*
+`;
+    await whatsappService.sendText(from, msg.trim());
+    return;
+  }
+
+  // Parse and set new alert
+  const alert = insights.parseAlertCommand(text);
+  if (!alert) {
+    await whatsappService.sendText(from,
+      `🔔 *Set an Alert*
+
+Try:
+• *"Alert me when balance below ${symbol}500"*
+• *"Alert me for transactions over ${symbol}200"*`
+    );
+    return;
+  }
+
+  const currentAlerts = session.alerts || {};
+  currentAlerts[alert.type] = alert.amount;
+  await sessionStore.update(from, { alerts: currentAlerts });
+
+  const alertDesc = alert.type === 'lowBalance'
+    ? `balance drops below *${symbol}${alert.amount}*`
+    : `any transaction over *${symbol}${alert.amount}*`;
+
+  await whatsappService.sendText(from,
+    `✅ *Alert Set!*
+
+I'll notify you when ${alertDesc}.
+
+To see all alerts: *"Show my alerts"*
+To remove: *"Remove alerts"*`
+  );
+}
+
+// ─── BENEFICIARIES ────────────────────────────────────
+async function handleBeneficiaries({ from, session, text }) {
+  // List beneficiaries
+  if (text.includes('list') || text.includes('show') || text.includes('my contacts') || text.includes('saved')) {
+    const list = insights.listBeneficiaries(session);
+    if (!list) {
+      await whatsappService.sendText(from,
+        `👥 *No saved contacts yet*
+
+After sending money to someone, reply *"Save [name]'s details"* to save them for next time.`
+      );
+      return;
+    }
+    await whatsappService.sendText(from, list);
+    return;
+  }
+
+  await whatsappService.sendText(from,
+    `👥 *Saved Contacts*
+
+After a transfer, say *"Save John's details"* to remember them.
+
+Next time just say *"Send £50 to John"* without re-entering bank details!`
+  );
+}
+
 // ─── SWITCH COUNTRY ──────────────────────────────────
 async function handleSwitchCountry({ from, session, text }) {
   const current = session.bankingCountry || 'UK';
@@ -459,6 +616,129 @@ async function switchToCountry(from, session, countryCode) {
 
 ` +
     `${isNG ? 'Connect your Nigerian bank:\n• *"Connect my bank"*\n• *"What\'s my balance?"*' : 'Connect your UK bank:\n• *"Connect my bank"*\n• *"What\'s my balance?"*'}`
+  );
+}
+
+// ─── SPENDING ANALYSIS ───────────────────────────────
+async function handleSpendingAnalysis({ from, session }) {
+  const country = detectCountry(from, session);
+  const symbol = country.symbol;
+
+  if (!banking.isBankConnected(session, from)) {
+    try {
+      const authLink = await banking.generateAuthLink(from, session);
+      await whatsappService.sendText(from,
+        `📊 Connect your bank first to see spending analysis!
+
+${authLink}`
+      );
+    } catch(e) {
+      await whatsappService.sendText(from, `Connect your bank first to see spending analysis!`);
+    }
+    return;
+  }
+
+  await whatsappService.sendText(from, `📊 Analysing your spending...`);
+
+  try {
+    const result = await banking.getTransactions(from, session);
+    if (!result.success || !result.transactions?.length) {
+      await whatsappService.sendText(from, `No recent transactions found to analyse.`);
+      return;
+    }
+
+    const analysis = insights.analyseSpending(result.transactions, symbol);
+    const msg = insights.formatAnalysis(analysis, symbol, 'recently');
+    await whatsappService.sendText(from, msg);
+  } catch(err) {
+    logger.error('Spending analysis error:', err.message);
+    await whatsappService.sendText(from, `Couldn't fetch spending data right now. Please try again.`);
+  }
+}
+
+// ─── ALERTS ───────────────────────────────────────────
+async function handleAlerts({ from, session, text }) {
+  const country = detectCountry(from, session);
+  const symbol = country.symbol;
+
+  // Show existing alerts
+  if (text.includes('my alerts') || text.includes('show alerts') || text.includes('list alerts')) {
+    const alerts = session.alerts || {};
+    if (!Object.keys(alerts).length) {
+      await whatsappService.sendText(from,
+        `🔔 *No alerts set*
+
+You can set:
+• *"Alert me when balance below ${symbol}500"*
+• *"Alert me for transactions over ${symbol}200"*`
+      );
+      return;
+    }
+    let msg = `🔔 *Your Alerts*
+
+`;
+    if (alerts.lowBalance) msg += `• Low balance: below *${symbol}${alerts.lowBalance}*
+`;
+    if (alerts.largeTransaction) msg += `• Large transaction: over *${symbol}${alerts.largeTransaction}*
+`;
+    await whatsappService.sendText(from, msg.trim());
+    return;
+  }
+
+  // Parse and set new alert
+  const alert = insights.parseAlertCommand(text);
+  if (!alert) {
+    await whatsappService.sendText(from,
+      `🔔 *Set an Alert*
+
+Try:
+• *"Alert me when balance below ${symbol}500"*
+• *"Alert me for transactions over ${symbol}200"*`
+    );
+    return;
+  }
+
+  const currentAlerts = session.alerts || {};
+  currentAlerts[alert.type] = alert.amount;
+  await sessionStore.update(from, { alerts: currentAlerts });
+
+  const alertDesc = alert.type === 'lowBalance'
+    ? `balance drops below *${symbol}${alert.amount}*`
+    : `any transaction over *${symbol}${alert.amount}*`;
+
+  await whatsappService.sendText(from,
+    `✅ *Alert Set!*
+
+I'll notify you when ${alertDesc}.
+
+To see all alerts: *"Show my alerts"*
+To remove: *"Remove alerts"*`
+  );
+}
+
+// ─── BENEFICIARIES ────────────────────────────────────
+async function handleBeneficiaries({ from, session, text }) {
+  // List beneficiaries
+  if (text.includes('list') || text.includes('show') || text.includes('my contacts') || text.includes('saved')) {
+    const list = insights.listBeneficiaries(session);
+    if (!list) {
+      await whatsappService.sendText(from,
+        `👥 *No saved contacts yet*
+
+After sending money to someone, reply *"Save [name]'s details"* to save them for next time.`
+      );
+      return;
+    }
+    await whatsappService.sendText(from, list);
+    return;
+  }
+
+  await whatsappService.sendText(from,
+    `👥 *Saved Contacts*
+
+After a transfer, say *"Save John's details"* to remember them.
+
+Next time just say *"Send £50 to John"* without re-entering bank details!`
   );
 }
 

@@ -55,6 +55,8 @@ function defaultSession(phoneNumber) {
     kycStatus: null,
     kycVerified: false,
     kycSessionId: null,
+    alerts: {},
+    beneficiaries: {},
   };
 }
 
@@ -81,6 +83,8 @@ async function loadFromDatabase(phoneNumber, session) {
     if (user.truelayer_expires_at) session.truelayerExpiresAt = user.truelayer_expires_at;
     if (user.balance) session.balance = parseFloat(user.balance);
     if (user.banking_country) session.bankingCountry = user.banking_country;
+    if (user.alerts) session.alerts = typeof user.alerts === 'string' ? JSON.parse(user.alerts) : user.alerts;
+    if (user.beneficiaries) session.beneficiaries = typeof user.beneficiaries === 'string' ? JSON.parse(user.beneficiaries) : user.beneficiaries;
 
     logger.info(`Session restored from DB for ${phoneNumber}: onboarded=${session.isOnboarded}`);
   } catch (err) {
@@ -156,6 +160,8 @@ async function update(phoneNumber, updates) {
       if ('truelayerExpiresAt' in updates) dbData.truelayerExpiresAt = updates.truelayerExpiresAt;
       if ('balance' in updates) dbData.balance = updates.balance;
       if ('bankingCountry' in updates) dbData.bankingCountry = updates.bankingCountry;
+      if ('alerts' in updates) dbData.alerts = JSON.stringify(updates.alerts);
+      if ('beneficiaries' in updates) dbData.beneficiaries = JSON.stringify(updates.beneficiaries);
       if (Object.keys(dbData).length > 0) {
         await db.upsertUser(phoneNumber, dbData);
       }

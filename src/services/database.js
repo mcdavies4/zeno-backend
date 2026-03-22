@@ -76,6 +76,8 @@ async function createTables() {
     ALTER TABLE users ADD COLUMN IF NOT EXISTS last_balance_check TIMESTAMP;
     ALTER TABLE users ADD COLUMN IF NOT EXISTS kyc_attempt_count INTEGER DEFAULT 0;
     ALTER TABLE users ADD COLUMN IF NOT EXISTS banking_country VARCHAR(5) DEFAULT 'UK';
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS alerts JSONB DEFAULT '{}';
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS beneficiaries JSONB DEFAULT '{}';
   `);
   logger.info('PostgreSQL tables ready');
 }

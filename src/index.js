@@ -32,6 +32,7 @@ app.get('/security', (req, res) => res.sendFile(path.join(__dirname, '../securit
 app.get('/sitemap.xml', (req, res) => res.sendFile(path.join(__dirname, '../sitemap.xml')));
 app.get('/robots.txt', (req, res) => res.sendFile(path.join(__dirname, '../robots.txt')));
 app.get('/favicon.svg', (req, res) => res.sendFile(path.join(__dirname, '../favicon.svg')));
+app.get('/og-image.png', (req, res) => res.sendFile(path.join(__dirname, '../og-image.png')));
 
 // ─── API ROUTES ───────────────────────────────────────
 app.use('/webhook', webhookRouter);

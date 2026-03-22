@@ -13,6 +13,7 @@ const { verifyPin } = require('../utils/pinUtils');
 const banking = require('../services/banking');
 const insights = require('../services/insights');
 const bills = require('../services/bills');
+const feesService = require('../services/fees');
 const searchService = require('../services/search');
 const logger = require('../utils/logger');
 
@@ -244,7 +245,14 @@ async function initiateTransfer({ chatId, session }) {
   }
   await sessionStore.update(chatId, { awaitingPin: true });
   await telegramService.sendText(chatId,
-    `🔐 *Security Check*\n\nEnter your 4-digit PIN to authorise *£${transfer.amount}* to *${transfer.recipientName}*.\n\n_Never share your PIN with anyone._`
+    (() => {
+      const { detectCountry } = require('../utils/countryDetect');
+      const country = detectCountry(chatId, session);
+      const fee = transfer.fee || feesService.calculateFee(transfer.amount, country.code);
+      const s = fee.symbol;
+      const total = (Number(transfer.amount) + fee.totalFee).toLocaleString('en', { minimumFractionDigits: 2 });
+      return `🔐 *Security Check*\n\nEnter your PIN to authorise:\n• *${s}${Number(transfer.amount).toLocaleString('en', { minimumFractionDigits: 2 })}* to *${transfer.recipientName}*\n• Fee: *${s}${fee.totalFee.toFixed(2)}*\n• Total: *${s}${total}*\n\n_Never share your PIN with anyone._`;
+    })()
   );
 }
 
@@ -263,7 +271,13 @@ async function executeTransfer({ chatId, session }) {
     });
     await sessionStore.clearPendingTransfer(chatId);
     await telegramService.sendText(chatId,
-      `✅ *Transfer Successful!*\n\n• Amount: *£${transfer.amount}*\n• To: *${transfer.recipientName}*\n• New balance: *£${result.newBalance}*`
+(() => {
+        const { detectCountry } = require('../utils/countryDetect');
+        const country = detectCountry(chatId, session);
+        const fee = transfer.fee || feesService.calculateFee(transfer.amount, country.code);
+        const s = fee.symbol;
+        return `✅ *Transfer Successful!*\n\n• Amount: *${s}${Number(transfer.amount).toLocaleString('en', { minimumFractionDigits: 2 })}*\n• Fee: ${s}${fee.totalFee.toFixed(2)}\n• Total deducted: *${s}${(Number(transfer.amount) + fee.totalFee).toLocaleString('en', { minimumFractionDigits: 2 })}*\n• To: *${transfer.recipientName}*`;
+      })()
     );
   } catch (err) {
     await sessionStore.clearPendingTransfer(chatId);

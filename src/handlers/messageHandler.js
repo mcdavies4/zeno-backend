@@ -11,6 +11,7 @@ const { verifyPin } = require('../utils/pinUtils');
 const banking = require('../services/banking');
 const insights = require('../services/insights');
 const bills = require('../services/bills');
+const feesService = require('../services/fees');
 const searchService = require('../services/search');
 const logger = require('../utils/logger');
 
@@ -246,8 +247,10 @@ async function initiateTransfer({ from, session }) {
   const symbol = country.symbol;
 
   await sessionStore.update(from, { awaitingPin: true });
+  const fee = transfer.fee || feesService.calculateFee(transfer.amount, country.code);
+  const totalWithFee = (Number(transfer.amount) + fee.totalFee).toLocaleString('en', { minimumFractionDigits: 2 });
   await whatsappService.sendText(from,
-    `🔐 *Security Check*\n\nPlease enter your 4-digit Zeno PIN to authorise this transfer of *${symbol}${transfer.amount.toLocaleString()}* to *${transfer.recipientName}*.\n\n_Never share your PIN with anyone, including Zeno support._`
+    `🔐 *Security Check*\n\nEnter your 4-digit Zeno PIN to authorise:\n• *${symbol}${Number(transfer.amount).toLocaleString('en', { minimumFractionDigits: 2 })}* to *${transfer.recipientName}*\n• Fee: *${symbol}${fee.totalFee.toFixed(2)}*\n• Total: *${symbol}${totalWithFee}*\n\n_Never share your PIN with anyone, including Zeno support._`
   );
 }
 
@@ -294,12 +297,15 @@ async function executeTransfer({ from, session }) {
 
     await sessionStore.clearPendingTransfer(from);
 
+    const fee = transfer.fee || feesService.calculateFee(transfer.amount, country.code);
     await whatsappService.sendText(from,
       `✅ *Transfer Successful!*\n\n` +
-      `• Amount: *${symbol}${transfer.amount.toLocaleString()}*\n` +
+      `• Amount: *${symbol}${Number(transfer.amount).toLocaleString('en', { minimumFractionDigits: 2 })}*\n` +
+      `• Fee: ${symbol}${fee.totalFee.toFixed(2)}\n` +
+      `• Total deducted: *${symbol}${(Number(transfer.amount) + fee.totalFee).toLocaleString('en', { minimumFractionDigits: 2 })}*\n` +
       `• To: *${transfer.recipientName}*\n` +
       `• Reference: ${transfer.reference}\n` +
-      `• Transaction ID: ${result.transactionId}\n\n` +
+      `• ID: ${result.transactionId}\n\n` +
       `_Need anything else? Just ask!_`
     );
 

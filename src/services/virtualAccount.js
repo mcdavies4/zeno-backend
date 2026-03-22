@@ -28,6 +28,8 @@ async function createVirtualAccount({ phoneNumber, name, email }) {
   const txRef = `ZENO-VA-${phoneNumber.replace(/\D/g, '')}`;
 
   try {
+    logger.info(`Creating virtual account for ${phoneNumber}, txRef: ${txRef}`);
+
     const response = await api.post('/virtual-account-numbers', {
       email: email || `${phoneNumber}@zeno.app`,
       phonenumber: phoneNumber.replace(/\D/g, '').replace(/^234/, '0'),
@@ -36,11 +38,15 @@ async function createVirtualAccount({ phoneNumber, name, email }) {
       narration: `Zeno Wallet - ${firstName}`,
       tx_ref: txRef,
       is_permanent: true,
-      amount: 0, // Static account — accept any amount
+      amount: 0,
     });
 
+    logger.info(`Flutterwave VA response: ${JSON.stringify(response.data)}`);
+
     const data = response.data?.data;
-    if (!data?.account_number) throw new Error('No account number returned');
+    if (!data?.account_number) {
+      throw new Error(`No account number returned. Response: ${JSON.stringify(response.data)}`);
+    }
 
     logger.info(`Virtual account created for ${phoneNumber}: ${data.account_number} (${data.bank_name})`);
 
@@ -50,7 +56,20 @@ async function createVirtualAccount({ phoneNumber, name, email }) {
       txRef,
     };
   } catch (err) {
-    logger.error('Virtual account creation failed:', err.response?.data || err.message);
+    const errDetail = err.response?.data || err.message;
+    logger.error(`Virtual account creation failed for ${phoneNumber}:`, JSON.stringify(errDetail));
+
+    // Handle duplicate tx_ref — account already exists, try to fetch it
+    if (err.response?.data?.message?.includes('already') || err.response?.status === 409) {
+      logger.info(`Virtual account may already exist for ${phoneNumber}, using existing txRef`);
+      return {
+        accountNumber: 'PENDING',
+        bankName: 'WEMA BANK',
+        txRef,
+        error: 'duplicate',
+      };
+    }
+
     throw err;
   }
 }

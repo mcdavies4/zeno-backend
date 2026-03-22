@@ -13,6 +13,7 @@ const insights = require('../services/insights');
 const bills = require('../services/bills');
 const feesService = require('../services/fees');
 const security = require('../services/security');
+const virtualAccount = require('../services/virtualAccount');
 const receipts = require('../services/receipts');
 const searchService = require('../services/search');
 const logger = require('../utils/logger');
@@ -95,6 +96,23 @@ async function handleText({ from, contactName, message, session }) {
     return;
   }
 
+
+  // ── Wallet / Virtual Account ─────────────────────
+  if (country.code === 'NG' && ['my account', 'my wallet', 'wallet balance', 'fund wallet', 'top up', 'topup', 'account number', 'zeno account', 'add money'].some(k => lowerText.includes(k))) {
+    if (!session.virtualAccount) {
+      await whatsappService.sendText(from, `⏳ Setting up your Zeno wallet...`);
+      try {
+        const vaData = await virtualAccount.createVirtualAccount({ phoneNumber: from, name: session.name, email: session.email });
+        await sessionStore.update(from, { virtualAccount: vaData, walletBalance: 0 });
+        session.virtualAccount = vaData;
+      } catch(e) {
+        await whatsappService.sendText(from, `Sorry, couldn't set up your wallet right now. Please try again.`);
+        return;
+      }
+    }
+    await whatsappService.sendText(from, virtualAccount.formatWalletMessage(session));
+    return;
+  }
 
   // ── Receipts ─────────────────────────────────────
   if (['receipt', 'last receipt', 'my receipts', 'show receipt', 'transfer receipt'].some(k => lowerText.includes(k))) {
@@ -278,6 +296,17 @@ async function executeTransfer({ from, session }) {
   const country = detectCountry(from, session);
   const symbol = country.symbol;
 
+  // Check wallet balance for Nigerian transfers
+  if (country.code === 'NG') {
+    const fee = transfer.fee || feesService.calculateFee(transfer.amount, country.code);
+    const affordCheck = virtualAccount.canAffordTransfer(session, transfer.amount, fee);
+    if (!affordCheck.canAfford) {
+      await sessionStore.clearPendingTransfer(from);
+      await whatsappService.sendText(from, affordCheck.message);
+      return;
+    }
+  }
+
   // Duplicate detection
   if (security.isDuplicate(session, transfer)) {
     await sessionStore.clearPendingTransfer(from);
@@ -340,6 +369,12 @@ ${limitCheck.reason}`);
     await sessionStore.clearPendingTransfer(from);
 
     const fee = transfer.fee || feesService.calculateFee(transfer.amount, country.code);
+
+    // Debit wallet for Nigerian transfers
+    if (country.code === 'NG') {
+      const walletUpdate = virtualAccount.debitWallet(session, transfer.amount, fee);
+      await sessionStore.update(from, walletUpdate);
+    }
 
     // Generate receipt
     const updatedSession = await sessionStore.get(from);

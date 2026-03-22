@@ -263,4 +263,33 @@ document.getElementById('searchInput').addEventListener('keydown', e => {
 </html>`;
 }
 
+
+// ─── RESET USER (for testing) ─────────────────────────
+router.post('/reset-user', adminAuth, async (req, res) => {
+  const { phone } = req.body;
+  if (!phone) return res.json({ error: 'Phone required' });
+
+  try {
+    const sessionStore = require('../services/sessionStore');
+    // Clear Redis session
+    const { Redis } = require('@upstash/redis');
+    const redis = new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+    });
+    await redis.del(`session:${phone}`);
+
+    // Clear DB
+    const { Pool } = require('pg');
+    const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+    await pool.query('DELETE FROM users WHERE phone_number = $1', [phone]);
+    await pool.end();
+
+    logger.info(`Admin reset user: ${phone}`);
+    res.json({ success: true, message: `User ${phone} reset successfully` });
+  } catch(err) {
+    res.json({ error: err.message });
+  }
+});
+
 module.exports = router;

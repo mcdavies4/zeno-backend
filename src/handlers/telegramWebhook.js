@@ -75,8 +75,30 @@ async function handleTextMessage({ chatId, text, contactName }) {
       return;
     }
 
-    // Intercept KYC keywords directly
     const lowerText = text.toLowerCase();
+
+    // ── Switch country command ────────────────────────
+    if (['switch country', 'change country', 'switch bank', 'change bank country',
+         'switch to nigeria', 'switch to uk', 'nigerian account', 'uk account',
+         'nigeria account', 'change location', 'my nigerian bank', 'my uk bank',
+         'change my country', 'switch my bank'].some(k => lowerText.includes(k))) {
+      await handleTelegramSwitchCountry({ chatId, session, text: lowerText });
+      return;
+    }
+
+    // ── Awaiting country switch response ──────────────
+    if (session.awaitingField === 'country_switch') {
+      if (lowerText === '1' || lowerText.includes('uk') || lowerText.includes('united kingdom') || lowerText.includes('britain') || lowerText.includes('england')) {
+        await telegramSwitchToCountry(chatId, session, 'UK');
+      } else if (lowerText === '2' || lowerText.includes('nigeria') || lowerText.includes('naija')) {
+        await telegramSwitchToCountry(chatId, session, 'NG');
+      } else {
+        await telegramService.sendText(chatId, `Please reply with *1* for 🇬🇧 UK or *2* for 🇳🇬 Nigeria.`);
+      }
+      return;
+    }
+
+    // ── KYC keywords ──────────────────────────────────
     if (['kyc', 'verify', 'verify my identity', 'verification', 'verify identity', 'complete kyc'].some(k => lowerText.includes(k))) {
       if (session.kycVerified) {
         await telegramService.sendText(chatId, `✅ *You're already verified!*
@@ -290,6 +312,76 @@ async function handleAIResponse({ chatId, aiResponse, session }) {
     default:
       await telegramService.sendText(chatId, aiResponse.reply);
   }
+}
+
+// ─── SWITCH COUNTRY (TELEGRAM) ───────────────────────
+async function handleTelegramSwitchCountry({ chatId, session, text }) {
+  const current = session.bankingCountry || 'UK';
+  let newCountry = null;
+
+  if (text.includes('nigeria') || text.includes('naija') || text.includes('nigerian')) {
+    newCountry = 'NG';
+  } else if (text.includes('uk') || text.includes('britain') || text.includes('england') || text.includes('united kingdom')) {
+    newCountry = 'UK';
+  }
+
+  if (newCountry && newCountry === current) {
+    const flag = newCountry === 'NG' ? '🇳🇬' : '🇬🇧';
+    const name = newCountry === 'NG' ? 'Nigeria' : 'United Kingdom';
+    await telegramService.sendText(chatId,
+      `${flag} You're already set to *${name}*!
+
+Your balance and transfers are already using ${newCountry === 'NG' ? '₦ NGN' : '£ GBP'}.`
+    );
+    return;
+  }
+
+  if (newCountry) {
+    await telegramSwitchToCountry(chatId, session, newCountry);
+    return;
+  }
+
+  const currentFlag = current === 'NG' ? '🇳🇬' : '🇬🇧';
+  const currentName = current === 'NG' ? 'Nigeria' : 'United Kingdom';
+  await sessionStore.update(chatId, { awaitingField: 'country_switch' });
+  await telegramService.sendText(chatId,
+    `🌍 *Switch Banking Country*
+
+` +
+    `Currently set to: ${currentFlag} *${currentName}*
+
+` +
+    `Switch to:
+` +
+    `1️⃣ 🇬🇧 United Kingdom (£ GBP)
+` +
+    `2️⃣ 🇳🇬 Nigeria (₦ NGN)
+
+` +
+    `Reply with *1* or *2* to switch.`
+  );
+}
+
+async function telegramSwitchToCountry(chatId, session, countryCode) {
+  const isNG = countryCode === 'NG';
+  const flag = isNG ? '🇳🇬' : '🇬🇧';
+  const name = isNG ? 'Nigeria' : 'United Kingdom';
+  const currency = isNG ? '₦ NGN' : '£ GBP';
+
+  await sessionStore.update(chatId, {
+    bankingCountry: countryCode,
+    awaitingField: null,
+  });
+
+  await telegramService.sendText(chatId,
+    `✅ *Switched to ${flag} ${name}!*
+
+` +
+    `Your account is now set to *${currency}*.
+
+` +
+    `Say *"Connect my bank"* to link your ${isNG ? 'Nigerian' : 'UK'} bank account.`
+  );
 }
 
 module.exports = router;

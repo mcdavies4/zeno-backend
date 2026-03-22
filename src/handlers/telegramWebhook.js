@@ -193,7 +193,7 @@ Your identity has been confirmed. You have full access to all Zeno features.`);
         try {
           const kycService = require('../services/veriff');
           const nameParts = (session.userName || 'User').split(' ');
-          const kycSession = await kycService.createSession({
+          const kycSession = await veriffService.createSession({
             phoneNumber: chatId,
             firstName: nameParts[0],
             lastName: nameParts.slice(1).join(' ') || '',
@@ -261,18 +261,20 @@ async function handlePinConfirmation({ chatId, pin, session }) {
   const isValid = await verifyPin(pin, storedHash);
 
   if (!isValid) {
-    const attempts = (session.pinAttempts || 0) + 1;
-    await sessionStore.update(chatId, { pinAttempts: attempts });
-    if (attempts >= 3) {
-      await sessionStore.update(chatId, { awaitingPin: false, pinAttempts: 0, pendingTransfer: null });
-      await telegramService.sendText(chatId, "❌ Too many incorrect PIN attempts. Transfer cancelled for your security.");
+    const { update: pinUpdate, attempts, locked } = security.recordFailedPin(session);
+    await sessionStore.update(chatId, pinUpdate);
+    if (locked) {
+      await sessionStore.update(chatId, { awaitingPin: false, pendingTransfer: null, pendingBill: null });
+      await telegramService.sendText(chatId,
+        `🔒 *Account Locked*\n\nToo many incorrect PIN attempts. Your account is locked for *24 hours*.\n\nContact support: https://wa.me/2349037745486`
+      );
       return;
     }
     await telegramService.sendText(chatId, `❌ Incorrect PIN. ${3 - attempts} attempt(s) remaining:`);
     return;
   }
 
-  await sessionStore.update(chatId, { awaitingPin: false, pinAttempts: 0 });
+  await sessionStore.update(chatId, { awaitingPin: false, pinAttempts: 0, ...security.clearFailedPin() });
   await executeTransfer({ chatId, session });
 }
 
@@ -434,13 +436,15 @@ async function handleAIResponse({ chatId, aiResponse, session }) {
         const result = await banking.getBalance(chatId, session);
         if (result.success) {
           await telegramService.sendText(chatId, banking.formatBalanceMessage(result.balances, chatId, session));
-          break;
+        } else {
+          await telegramService.sendText(chatId, `⚠️ Couldn't fetch your balance right now. Please try again in a moment.`);
         }
+        break;
       }
       try {
         const authLink = await banking.generateAuthLink(chatId, session);
         await telegramService.sendText(chatId,
-          `💰 *Connect Your Bank*\n\nTap the link below to see your real balance:\n\n${authLink}\n\n<i>Read-only. No card details needed.</i>`
+          `💰 *Connect Your Bank*\n\nTap the link below to see your real balance:\n\n${authLink}\n\nRead-only. No card details needed.`
         );
       } catch(err) {
         await telegramService.sendText(chatId, `⚠️ Bank connection not available right now. Please try again later.`);
@@ -452,12 +456,14 @@ async function handleAIResponse({ chatId, aiResponse, session }) {
         const result = await banking.getTransactions(chatId, session);
         if (result.success) {
           await telegramService.sendText(chatId, banking.formatTransactionsMessage(result.transactions, chatId, session));
-          break;
+        } else {
+          await telegramService.sendText(chatId, `⚠️ Couldn't fetch transactions right now. Please try again in a moment.`);
         }
+        break;
       }
       try {
         const authLink = await banking.generateAuthLink(chatId, session);
-        await telegramService.sendText(chatId, `📋 *Connect Your Bank*\n\nTap the link below to see your transactions:\n\n${authLink}\n\n<i>Read-only. No card details needed.</i>`);
+        await telegramService.sendText(chatId, `📋 *Connect Your Bank*\n\nTap the link below to see your transactions:\n\n${authLink}\n\nRead-only. No card details needed.`);
       } catch(err) {
         await telegramService.sendText(chatId, `⚠️ Bank connection not available right now. Please try again later.`);
       }
@@ -471,9 +477,9 @@ async function handleAIResponse({ chatId, aiResponse, session }) {
         break;
       }
       try {
-        const kycService = require('../services/veriff');
-        const nameParts = (session.userName || 'User').split(' ');
-        const kycSession = await kycService.createSession({
+        const veriffService = require('../services/veriff');
+        const nameParts = (session.name || session.userName || 'Zeno User').split(' ');
+        const kycSession = await veriffService.createSession({
           phoneNumber: chatId,
           firstName: nameParts[0],
           lastName: nameParts.slice(1).join(' ') || '',

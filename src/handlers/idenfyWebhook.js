@@ -1,6 +1,5 @@
 /**
  * iDenfy Webhook Handler
- * Receives verification results and notifies users on WhatsApp/Telegram
  */
 
 const express = require('express');
@@ -10,49 +9,49 @@ const sessionStore = require('../services/sessionStore');
 const messenger = require('../services/messenger');
 const logger = require('../utils/logger');
 
-// Health check
 router.get('/webhook', (req, res) => res.sendStatus(200));
 
-// Verification result webhook
 router.post('/webhook', express.json(), async (req, res) => {
   res.sendStatus(200);
 
   try {
     const payload = req.body;
-    const signature = req.headers['idenfy-signature'];
 
-    logger.info('iDenfy webhook received:', JSON.stringify(payload).substring(0, 200));
+    // Log full payload to understand structure
+    logger.info('iDenfy webhook full payload:', JSON.stringify(payload));
 
-    // Verify signature (temporarily disabled for testing — enable in production)
-    // if (!idenfyService.verifyWebhookSignature(payload, signature)) {
-    //   logger.warn('Invalid iDenfy webhook signature');
-    //   return;
-    // }
+    // iDenfy payload structure:
+    // { final: { status: 'APPROVED'|'DENIED'|... }, scanRef: '...', clientId: '...' }
+    // OR: { status: { overall: 'APPROVED' }, scanRef: '...', clientId: '...' }
+    // OR: { status: 'APPROVED', scanRef: '...', clientId: '...' }
 
-    const status = payload.status;
     const scanRef = payload.scanRef;
-    const clientId = payload.clientId; // This is the phone number we set
+    const clientId = payload.clientId;
 
     if (!clientId) {
       logger.warn('No clientId in iDenfy webhook');
       return;
     }
 
-    // Reconstruct phone number from clientId
-    // clientId was set as last 20 digits of phone number
-    // We need to find the user by scanning sessions
-    // Better: store scanRef → phoneNumber mapping in Redis during session creation
+    // Extract status — handle all possible payload formats
+    let status;
+    if (typeof payload.status === 'string') {
+      status = payload.status;
+    } else if (payload.status?.overall) {
+      status = payload.status.overall;
+    } else if (payload.final?.status) {
+      status = payload.final.status;
+    } else if (payload.autoDocument?.status) {
+      status = payload.autoDocument.status;
+    } else {
+      status = 'REVIEWING';
+    }
 
-    // For now use clientId directly as phone number
-    const phoneNumber = clientId;
+    const phoneNumber = clientId.replace(/\D/g, '');
 
-    logger.info(`iDenfy result for ${phoneNumber}: ${status}`);
+    logger.info(`iDenfy result for ${phoneNumber}: status=${status}, scanRef=${scanRef}`);
 
-    const { text, verified } = idenfyService.getStatusMessage(
-      status,
-      payload.autoDocument,
-      payload.autoFace
-    );
+    const { text, verified } = idenfyService.getStatusMessage(status);
 
     await sessionStore.update(phoneNumber, {
       kycStatus: status.toLowerCase(),
@@ -61,10 +60,10 @@ router.post('/webhook', express.json(), async (req, res) => {
     });
 
     await messenger.sendText(phoneNumber, text);
-    logger.info(`iDenfy notification sent to ${phoneNumber}`);
+    logger.info(`iDenfy notification sent to ${phoneNumber}: ${status}`);
 
   } catch (err) {
-    logger.error('iDenfy webhook error:', err.message);
+    logger.error('iDenfy webhook error:', err.message, err.stack);
   }
 });
 

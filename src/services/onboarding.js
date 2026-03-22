@@ -188,16 +188,45 @@ async function handleStep(from, session, input) {
       logger.info(`New user onboarded: ${name} (${from}) — banking in ${countryChoice.name}`);
 
       const isNigeria = countryChoice.code === 'NG';
+      const firstName = name.split(' ')[0];
 
-      await messenger.sendText(from,
-        `🎉 *Welcome to Zeno, ${name.split(' ')[0]}!*\n\n` +
-        `Your account is set up for ${countryChoice.flag} *${countryChoice.name}*!\n\n` +
+      // Create virtual account for Nigerian users
+      let vaData = null;
+      if (isNigeria) {
+        try {
+          vaData = await virtualAccount.createVirtualAccount({
+            phoneNumber: from,
+            name,
+            email,
+          });
+          await sessionStore.update(from, { virtualAccount: vaData, walletBalance: 0 });
+          logger.info(`Virtual account created for ${from}: ${vaData.accountNumber}`);
+        } catch(e) {
+          logger.error('Virtual account creation failed during onboarding:', e.message);
+        }
+      }
+
+      // Welcome message
+      let welcomeMsg =
+        `🎉 *Welcome to Zeno, ${firstName}!*\n\n` +
+        `Your account is set up for ${countryChoice.flag} *${countryChoice.name}*!\n\n`;
+
+      if (isNigeria && vaData) {
+        welcomeMsg +=
+          `💳 *Your Zeno Wallet Account:*\n` +
+          `🏦 Bank: *${vaData.bankName}*\n` +
+          `🔢 Account No: *${vaData.accountNumber}*\n\n` +
+          `Fund your wallet from any Nigerian bank to start sending money!\n\n`;
+      }
+
+      welcomeMsg +=
         `*One last step* — verify your identity to stay secure.\n\n` +
         `You'll need:\n` +
         `📄 ${isNigeria ? 'A valid ID (NIN, passport or driving licence)' : 'A valid UK ID (passport or driving licence)'}\n` +
         `🤳 A selfie\n\n` +
-        `Getting your verification link...`
-      );
+        `Getting your verification link...`;
+
+      await messenger.sendText(from, welcomeMsg);
 
       // Trigger KYC
       try {
@@ -213,14 +242,14 @@ async function handleStep(from, session, input) {
           `🔐 *Verify Your Identity*\n\n` +
           `Tap the link below:\n\n` +
           `${kycSession.sessionUrl}\n\n` +
-          `_This link expires in 7 days. Fully encrypted and secure._`
+          `This link expires in 7 days. Fully encrypted and secure.`
         );
       } catch(e) {
         logger.error('KYC session creation failed:', e.message);
         await messenger.sendText(from,
           `You can start using Zeno now!\n\n` +
-          `${isNigeria ? '💸 *Send money* — "Send ₦5000 to Chidi"\n💰 *Check balance* — "What\'s my balance?"' : '💸 *Send money* — "Send £50 to John"\n💰 *Check balance* — "What\'s my balance?"'}\n\n` +
-          `Type *'verify my identity'* to complete verification later.`
+          `${isNigeria ? '💸 *Send money* — "Send ₦5000 to John"\n💰 *Check balance* — "What\'s my balance?"' : '💸 *Send money* — "Send £50 to John"\n💰 *Check balance* — "What\'s my balance?"'}\n\n` +
+          `Type *"verify my identity"* to complete verification later.`
         );
       }
       break;

@@ -104,6 +104,10 @@ ${country.code === 'NG' ? '- Extract bank name if mentioned (GTBank, Access, Zen
 
 TONE & STYLE:
 - Warm, friendly, witty — like a helpful mate
+- If user asks for human support, agent, or says they have a complaint:
+  UK users: "Contact our UK support team on WhatsApp: https://wa.me/447883305130 or text +447883305130"
+  Nigeria users: "Contact our Nigeria support team on WhatsApp: https://wa.me/2349037745486"
+  Always provide the clickable link — never just the number alone
 ${country.code === 'NG' ? '- Nigerian English is fine: "abeg", "oga", "wetin" — feel free to use pidgin if user uses it' : '- British English: "quid", "cheers", "brilliant" are fine'}
 - Keep messages SHORT — mobile app. Max 4 lines
 - Use *bold* for amounts and names

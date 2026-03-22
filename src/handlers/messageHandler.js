@@ -93,6 +93,12 @@ async function handleText({ from, contactName, message, session }) {
   }
 
 
+  // ── Support ──────────────────────────────────────
+  if (['support', 'help', 'contact', 'agent', 'human', 'complaint', 'problem', 'issue', 'speak to', 'talk to', 'call us', 'phone number', 'contact us', 'customer service', 'customer care'].some(k => lowerText.includes(k))) {
+    await handleSupport({ id: from, session, sendFn: whatsappService.sendText.bind(whatsappService) });
+    return;
+  }
+
   // ── Transaction search ────────────────────────────
   if (['find', 'search', 'show all', 'show transactions', 'all payments'].some(k => lowerText.includes(k)) && !lowerText.includes('balance') && !lowerText.includes('connect')) {
     await handleSearch({ from, session, text: lowerText });
@@ -509,6 +515,45 @@ async function handleAIResponse({ from, aiResponse, session, text }) {
   }
 }
 
+
+// ─── SUPPORT HANDLER ─────────────────────────────────
+async function handleSupport({ id, session, sendFn }) {
+  const { detectCountry } = require('../utils/countryDetect');
+  const country = detectCountry(id, session);
+
+  if (country.code === 'NG') {
+    await sendFn(id,
+      `🙋 *Need Help?*
+
+` +
+      `Our Nigeria support team is ready to assist you.
+
+` +
+      `📱 *WhatsApp:* https://wa.me/2349037745486
+` +
+      `📞 *Call/Text:* +234 903 774 5486
+
+` +
+      `_Tap the link above to start a chat — we typically reply within a few minutes._`
+    );
+  } else {
+    await sendFn(id,
+      `🙋 *Need Help?*
+
+` +
+      `Our UK support team is ready to assist you.
+
+` +
+      `📱 *WhatsApp:* https://wa.me/447883305130
+` +
+      `📞 *Call/Text:* +44 7883 305130
+
+` +
+      `_Tap the link above to start a chat — we typically reply within a few minutes._`
+    );
+  }
+}
+
 // ─── TRANSACTION SEARCH ──────────────────────────────
 async function handleSearch({ from, session, text }) {
   const country = detectCountry(from, session);
@@ -815,6 +860,45 @@ async function switchToCountry(from, session, countryCode) {
 ` +
     `${isNG ? 'Connect your Nigerian bank:\n• *"Connect my bank"*\n• *"What\'s my balance?"*' : 'Connect your UK bank:\n• *"Connect my bank"*\n• *"What\'s my balance?"*'}`
   );
+}
+
+
+// ─── SUPPORT HANDLER ─────────────────────────────────
+async function handleSupport({ id, session, sendFn }) {
+  const { detectCountry } = require('../utils/countryDetect');
+  const country = detectCountry(id, session);
+
+  if (country.code === 'NG') {
+    await sendFn(id,
+      `🙋 *Need Help?*
+
+` +
+      `Our Nigeria support team is ready to assist you.
+
+` +
+      `📱 *WhatsApp:* https://wa.me/2349037745486
+` +
+      `📞 *Call/Text:* +234 903 774 5486
+
+` +
+      `_Tap the link above to start a chat — we typically reply within a few minutes._`
+    );
+  } else {
+    await sendFn(id,
+      `🙋 *Need Help?*
+
+` +
+      `Our UK support team is ready to assist you.
+
+` +
+      `📱 *WhatsApp:* https://wa.me/447883305130
+` +
+      `📞 *Call/Text:* +44 7883 305130
+
+` +
+      `_Tap the link above to start a chat — we typically reply within a few minutes._`
+    );
+  }
 }
 
 // ─── TRANSACTION SEARCH ──────────────────────────────

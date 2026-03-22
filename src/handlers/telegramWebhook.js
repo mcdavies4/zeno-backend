@@ -102,6 +102,12 @@ async function handleTextMessage({ chatId, text, contactName }) {
     }
 
 
+    // ── Support ──────────────────────────────────────
+    if (['support', 'help', 'contact', 'agent', 'human', 'complaint', 'problem', 'issue', 'speak to', 'talk to', 'call us', 'phone number', 'contact us', 'customer service', 'customer care'].some(k => lowerText.includes(k))) {
+      await handleSupport({ id: chatId, session, sendFn: telegramService.sendText.bind(telegramService) });
+      return;
+    }
+
     // ── Transaction search ────────────────────────────
   if (['find', 'search', 'show all', 'show transactions', 'all payments'].some(k => lowerText.includes(k)) && !lowerText.includes('balance') && !lowerText.includes('connect')) {
       await handleTelegramSearch({ chatId, session, text: lowerText });
@@ -360,6 +366,45 @@ async function handleAIResponse({ chatId, aiResponse, session }) {
 
     default:
       await telegramService.sendText(chatId, aiResponse.reply);
+  }
+}
+
+
+// ─── SUPPORT HANDLER ─────────────────────────────────
+async function handleSupport({ id, session, sendFn }) {
+  const { detectCountry } = require('../utils/countryDetect');
+  const country = detectCountry(id, session);
+
+  if (country.code === 'NG') {
+    await sendFn(id,
+      `🙋 *Need Help?*
+
+` +
+      `Our Nigeria support team is ready to assist you.
+
+` +
+      `📱 *WhatsApp:* https://wa.me/2349037745486
+` +
+      `📞 *Call/Text:* +234 903 774 5486
+
+` +
+      `_Tap the link above to start a chat — we typically reply within a few minutes._`
+    );
+  } else {
+    await sendFn(id,
+      `🙋 *Need Help?*
+
+` +
+      `Our UK support team is ready to assist you.
+
+` +
+      `📱 *WhatsApp:* https://wa.me/447883305130
+` +
+      `📞 *Call/Text:* +44 7883 305130
+
+` +
+      `_Tap the link above to start a chat — we typically reply within a few minutes._`
+    );
   }
 }
 

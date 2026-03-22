@@ -1,6 +1,5 @@
 /**
  * Mono Callback Handler
- * Called after Nigerian user connects their bank via Mono Connect
  */
 
 const express = require('express');
@@ -8,111 +7,151 @@ const router = express.Router();
 const mono = require('../services/mono');
 const sessionStore = require('../services/sessionStore');
 const messenger = require('../services/messenger');
-const { getPlatform } = require('../utils/countryDetect');
 const logger = require('../utils/logger');
 
-// ─── MONO WEBHOOK (server-side events) ───────────────
+// ─── MONO WEBHOOK ─────────────────────────────────────
 router.post('/webhook', express.json(), async (req, res) => {
   res.sendStatus(200);
 
   try {
     const body = req.body;
-    logger.info('Mono webhook full payload:', JSON.stringify(body));
+    logger.info('Mono webhook received:', JSON.stringify(body));
 
     const event = body.event;
     const data = body.data;
 
     if (!event) return;
 
-    if (event === 'mono.events.account_connected' ||
-        event === 'mono.events.reauthorisation_required' ||
-        event === 'mono.events.account_updated') {
+    logger.info(`Mono event type: ${event}`);
 
-      const code = data?.code;
-      if (!code) {
-        logger.warn('No code in Mono webhook');
-        return;
-      }
+    // account_connected — user just connected their bank
+    if (event === 'mono.events.account_connected') {
+      // Mono sends account._id directly in account_connected
+      const accountId = data?.account?._id;
+      const code = data?.code; // sometimes code is sent
 
-      // Exchange code for account ID
-      const result = await mono.exchangeCode(code);
-      const accountId = result?.id;
-      if (!accountId) {
-        logger.warn('No accountId from Mono exchange');
-        return;
-      }
+      logger.info(`Mono account_connected: accountId=${accountId}, code=${!!code}`);
 
-      // Try to get phone number from multiple possible locations
+      // Get phone number from state stored in Redis
       let phoneNumber = null;
 
-      // Option 1: meta.ref (base64 encoded phone)
+      // Try meta fields
       if (data?.meta?.ref) {
         try {
-          phoneNumber = Buffer.from(data.meta.ref, 'base64').toString('utf8');
+          phoneNumber = Buffer.from(String(data.meta.ref), 'base64').toString('utf8');
+          phoneNumber = phoneNumber.replace(/\D/g, '');
         } catch(e) {
-          phoneNumber = data.meta.ref;
+          phoneNumber = String(data.meta.ref).replace(/\D/g, '');
         }
       }
 
-      // Option 2: meta.data (direct phone)
       if (!phoneNumber && data?.meta?.data) {
-        phoneNumber = data.meta.data;
+        phoneNumber = String(data.meta.data).replace(/\D/g, '');
       }
 
-      // Option 3: look up state from Redis
-      if (!phoneNumber && data?.meta?.ref) {
+      // Try Redis lookup by state
+      if (!phoneNumber) {
         try {
           const { Redis } = require('@upstash/redis');
           const redis = new Redis({
             url: process.env.UPSTASH_REDIS_REST_URL,
             token: process.env.UPSTASH_REDIS_REST_TOKEN,
           });
-          phoneNumber = await redis.get(`mono:state:${data.meta.ref}`);
-          if (phoneNumber) logger.info(`Found phone from Redis state: ${phoneNumber}`);
-        } catch(e) {}
+          // Try all pending states
+          const keys = await redis.keys('mono:state:*');
+          logger.info(`Mono Redis keys found: ${keys?.length}`);
+          if (keys?.length > 0) {
+            phoneNumber = await redis.get(keys[0]);
+            if (phoneNumber) phoneNumber = String(phoneNumber).replace(/\D/g, '');
+          }
+        } catch(e) {
+          logger.warn('Redis lookup failed:', e.message);
+        }
       }
 
       if (!phoneNumber) {
-        logger.warn('Could not identify phone number from Mono webhook:', JSON.stringify(data));
+        logger.warn('Could not find phone number for Mono webhook');
+        logger.warn('Full payload:', JSON.stringify(body));
         return;
       }
 
-      // Clean phone number
-      phoneNumber = String(phoneNumber).replace(/\D/g, '');
+      // If we have accountId directly, use it
+      if (accountId) {
+        await sessionStore.update(phoneNumber, {
+          monoAccountId: accountId,
+          bankConnected: true,
+        });
+        await messenger.sendText(phoneNumber,
+          `🎉 *Bank connected successfully!*\n\n` +
+          `Try:\n• *"What's my balance?"*\n• *"Show my transactions"*`
+        );
+        logger.info(`Mono bank connected for ${phoneNumber}: ${accountId}`);
+        return;
+      }
 
-      await sessionStore.update(phoneNumber, {
-        monoAccountId: accountId,
-        bankConnected: true,
-      });
-
-      const platform = getPlatform(phoneNumber);
-      await messenger.sendText(phoneNumber,
-        `🎉 *Bank connected successfully!*\n\n` +
-        `I can now fetch your real balance and transactions.\n\n` +
-        `Try:\n• *"What's my balance?"*\n• *"Show my transactions"*`
-      );
-
-      logger.info(`Mono bank connected for ${phoneNumber}: ${accountId} via ${platform}`);
+      // Otherwise exchange code
+      if (code) {
+        const result = await mono.exchangeCode(code);
+        const newAccountId = result?.id;
+        if (newAccountId) {
+          await sessionStore.update(phoneNumber, {
+            monoAccountId: newAccountId,
+            bankConnected: true,
+          });
+          await messenger.sendText(phoneNumber,
+            `🎉 *Bank connected successfully!*\n\n` +
+            `Try:\n• *"What's my balance?"*\n• *"Show my transactions"*`
+          );
+          logger.info(`Mono bank connected for ${phoneNumber}: ${newAccountId}`);
+        }
+      }
     }
+
+    // account_updated — existing connection refreshed
+    if (event === 'mono.events.account_updated') {
+      const accountId = data?.account?._id;
+      const balance = data?.account?.balance;
+      logger.info(`Mono account_updated: ${accountId}, balance: ${balance}`);
+      // Could update balance in session here if needed
+    }
+
   } catch (err) {
     logger.error('Mono webhook error:', err.message, err.stack);
   }
 });
 
-// ─── MONO CONNECT CALLBACK (browser redirect) ────────
+// ─── MONO CONNECT CALLBACK (browser redirect) ─────────
 router.get('/callback', async (req, res) => {
   const { code, state } = req.query;
 
   logger.info(`Mono callback: code=${!!code}, state=${state}`);
 
-  let phoneNumber;
-  try {
-    phoneNumber = state ? Buffer.from(state, 'base64').toString('utf8') : null;
-    // Clean phone number
-    if (phoneNumber) phoneNumber = phoneNumber.replace(/\D/g, '');
-  } catch(e) {
-    phoneNumber = state;
+  let phoneNumber = null;
+
+  // Decode state
+  if (state) {
+    try {
+      const decoded = Buffer.from(state, 'base64').toString('utf8');
+      phoneNumber = decoded.replace(/\D/g, '');
+    } catch(e) {
+      phoneNumber = state.replace(/\D/g, '');
+    }
   }
+
+  // Also try Redis
+  if (!phoneNumber && state) {
+    try {
+      const { Redis } = require('@upstash/redis');
+      const redis = new Redis({
+        url: process.env.UPSTASH_REDIS_REST_URL,
+        token: process.env.UPSTASH_REDIS_REST_TOKEN,
+      });
+      const stored = await redis.get(`mono:state:${state}`);
+      if (stored) phoneNumber = String(stored).replace(/\D/g, '');
+    } catch(e) {}
+  }
+
+  logger.info(`Mono callback phone: ${phoneNumber}`);
 
   try {
     if (code && phoneNumber) {
@@ -124,24 +163,17 @@ router.get('/callback', async (req, res) => {
           monoAccountId: accountId,
           bankConnected: true,
         });
-
-        const platform = getPlatform(phoneNumber);
         await messenger.sendText(phoneNumber,
-          `🎉 *Bank connected!*\n\n` +
-          `Try:\n• *"What's my balance?"*\n• *"Show my transactions"*`
+          `🎉 *Bank connected!*\n\nTry:\n• *"What's my balance?"*\n• *"Show my transactions"*`
         );
-
-        logger.info(`Mono callback bank connected for ${phoneNumber}: ${accountId}`);
+        logger.info(`Mono callback connected: ${phoneNumber} → ${accountId}`);
       }
     }
 
     res.send(`
       <html>
       <head><meta name="viewport" content="width=device-width, initial-scale=1">
-      <style>
-        body{font-family:sans-serif;text-align:center;padding:60px 20px;background:#0f1923;color:#e2e8f0}
-        h2{color:#00d4aa}p{color:#8b949e}
-      </style>
+      <style>body{font-family:sans-serif;text-align:center;padding:60px 20px;background:#0f1923;color:#e2e8f0}h2{color:#00d4aa}p{color:#8b949e}</style>
       </head>
       <body>
         <div style="font-size:3rem">✅</div>
@@ -151,12 +183,10 @@ router.get('/callback', async (req, res) => {
     `);
   } catch(err) {
     logger.error('Mono callback error:', err.message);
-    res.send(`
-      <html><body style="font-family:sans-serif;text-align:center;padding:60px;background:#0f1923;color:#e2e8f0">
-        <h2 style="color:#ef4444">Connection Failed</h2>
-        <p>Please try again on WhatsApp or Telegram.</p>
-      </body></html>
-    `);
+    res.send(`<html><body style="text-align:center;padding:60px;background:#0f1923;color:#e2e8f0">
+      <h2 style="color:#ef4444">Connection Failed</h2>
+      <p>Please try again.</p>
+    </body></html>`);
   }
 });
 

@@ -90,7 +90,7 @@ router.get('/', adminAuth, async (req, res) => {
 function renderDashboard(stats, key, search) {
   const fmt = (d) => d ? new Date(d).toLocaleString('en-GB', { timeZone: 'Europe/London', dateStyle: 'short', timeStyle: 'short' }) : '—';
   const mask = (p) => p ? p.slice(0, 5) + '••••' + p.slice(-2) : '—';
-  const bal = (b) => b ? `£${parseFloat(b).toFixed(2)}` : '—';
+  const bal = (b, country) => { if (!b) return '—'; const s = country === 'NG' ? '₦' : '£'; return `${s}${parseFloat(b).toLocaleString('en', {minimumFractionDigits:2, maximumFractionDigits:2})}`; };
   const tokenExpiry = (t) => {
     if (!t) return '—';
     const diff = t - Date.now();
@@ -114,7 +114,7 @@ function renderDashboard(stats, key, search) {
       <td>${badge(u.is_onboarded, 'Yes', 'No')}</td>
       <td>${kycBadge(u.kyc_status)}</td>
       <td>${badge(u.bank_connected, 'Yes', 'No')}</td>
-      <td>${bal(u.balance)}</td>
+      <td>${bal(u.balance, u.banking_country)}</td>
       <td>${u.is_frozen ? '<span class="badge red">Frozen</span>' : '<span class="badge gray">Active</span>'}</td>
       <td>${u.pin_attempts > 0 ? `<span class="badge ${u.pin_attempts >= 3 ? 'red' : 'yellow'}">${u.pin_attempts}</span>` : '0'}</td>
       <td style="font-size:.72rem;color:#64748b">${u.kyc_session_id ? u.kyc_session_id.substring(0, 8) + '...' : '—'}</td>
@@ -237,7 +237,7 @@ code{font-family:monospace;font-size:.8rem;background:#0f172a;padding:2px 6px;bo
         <tr>
           <td><code>${mask(t.phone_number)}</code></td>
           <td>${t.type}</td>
-          <td>£${parseFloat(t.amount).toFixed(2)}</td>
+          <td>${t.currency === 'NGN' || t.amount_currency === 'NGN' ? '₦' : '£'}${parseFloat(t.amount).toFixed(2)}</td>
           <td>${t.recipient_name || '—'}</td>
           <td>${t.recipient_sort_code || '—'}</td>
           <td>${t.reference || '—'}</td>
@@ -264,7 +264,38 @@ document.getElementById('searchInput').addEventListener('keydown', e => {
 }
 
 
-// ─── RESET USER (for testing) ─────────────────────────
+
+// ─── RESET USER via GET (browser friendly) ───────────
+router.get('/reset-user', adminAuth, async (req, res) => {
+  const phone = req.query.phone;
+  if (!phone) return res.send('Error: phone query param required. Use ?phone=447876135951');
+
+  try {
+    const { Redis } = require('@upstash/redis');
+    const redis = new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+    });
+    await redis.del(`session:${phone}`);
+
+    const { Pool } = require('pg');
+    const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+    await pool.query('DELETE FROM users WHERE phone_number = $1', [phone]);
+    await pool.end();
+
+    logger.info(`Admin reset user: ${phone}`);
+    res.send(`<html><body style="font-family:sans-serif;padding:40px;background:#0f1923;color:#e2e8f0">
+      <h2 style="color:#00d4aa">✅ User Reset Successfully</h2>
+      <p>Phone: <strong>${phone}</strong> has been cleared.</p>
+      <p>They can now register fresh on WhatsApp or Telegram.</p>
+      <a href="/admin?key=${req.query.key}" style="color:#00d4aa">← Back to Admin</a>
+    </body></html>`);
+  } catch(err) {
+    res.send(`Error: ${err.message}`);
+  }
+});
+
+// ─── RESET USER via POST ─────────────────────────────
 router.post('/reset-user', adminAuth, async (req, res) => {
   const { phone } = req.body;
   if (!phone) return res.json({ error: 'Phone required' });

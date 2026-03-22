@@ -14,6 +14,8 @@ const banking = require('../services/banking');
 const insights = require('../services/insights');
 const bills = require('../services/bills');
 const feesService = require('../services/fees');
+const security = require('../services/security');
+const receipts = require('../services/receipts');
 const searchService = require('../services/search');
 const logger = require('../utils/logger');
 
@@ -59,6 +61,18 @@ async function handleTextMessage({ chatId, text, contactName }) {
 
     // Awaiting PIN
     if (session.awaitingPin) {
+      // Check if locked
+      const lockStatus = security.checkPinLock(session);
+      if (lockStatus.locked) {
+        await telegramService.sendText(chatId,
+          `🔒 *Account Temporarily Locked*
+
+Too many incorrect PIN attempts. Unlocks in *${lockStatus.hoursLeft} hour(s)*.
+
+Contact support: https://wa.me/2349037745486`
+        );
+        return;
+      }
       await handlePinConfirmation({ chatId, pin: text, session });
       return;
     }
@@ -102,6 +116,13 @@ async function handleTextMessage({ chatId, text, contactName }) {
       return;
     }
 
+
+    // ── Receipts ─────────────────────────────────────
+    if (['receipt', 'last receipt', 'my receipts', 'show receipt'].some(k => lowerText.includes(k))) {
+      const last = receipts.getLastReceipt(session);
+      await telegramService.sendText(chatId, last ? last.text : `No receipts yet. Receipts are generated after every transfer.`);
+      return;
+    }
 
     // ── Support ──────────────────────────────────────
     if (['support', 'help', 'contact', 'agent', 'human', 'complaint', 'problem', 'issue', 'speak to', 'talk to', 'call us', 'phone number', 'contact us', 'customer service', 'customer care'].some(k => lowerText.includes(k))) {

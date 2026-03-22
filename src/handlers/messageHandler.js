@@ -12,6 +12,8 @@ const banking = require('../services/banking');
 const insights = require('../services/insights');
 const bills = require('../services/bills');
 const feesService = require('../services/fees');
+const security = require('../services/security');
+const receipts = require('../services/receipts');
 const searchService = require('../services/search');
 const logger = require('../utils/logger');
 
@@ -93,6 +95,23 @@ async function handleText({ from, contactName, message, session }) {
     return;
   }
 
+
+  // ── Receipts ─────────────────────────────────────
+  if (['receipt', 'last receipt', 'my receipts', 'show receipt', 'transfer receipt'].some(k => lowerText.includes(k))) {
+    const num = lowerText.match(/receipt\s+(\d+)/)?.[1];
+    if (num) {
+      const r = (session.receipts || [])[parseInt(num) - 1];
+      await whatsappService.sendText(from, r ? r.text : `No receipt #${num} found.`);
+    } else {
+      const last = receipts.getLastReceipt(session);
+      if (last) {
+        await whatsappService.sendText(from, last.text);
+      } else {
+        await whatsappService.sendText(from, `No receipts yet. Receipts are generated after every transfer.`);
+      }
+    }
+    return;
+  }
 
   // ── Support ──────────────────────────────────────
   if (['support', 'help', 'contact', 'agent', 'human', 'complaint', 'problem', 'issue', 'speak to', 'talk to', 'call us', 'phone number', 'contact us', 'customer service', 'customer care'].some(k => lowerText.includes(k))) {
@@ -231,7 +250,7 @@ async function handlePinConfirmation({ from, pin, session }) {
   }
 
   // PIN correct — proceed with transfer
-  await sessionStore.update(from, { awaitingPin: false, pinAttempts: 0 });
+  await sessionStore.update(from, { awaitingPin: false, pinAttempts: 0, ...security.clearFailedPin() });
   await executeTransfer({ from, session });
 }
 
@@ -258,6 +277,29 @@ async function executeTransfer({ from, session }) {
   const transfer = session.pendingTransfer;
   const country = detectCountry(from, session);
   const symbol = country.symbol;
+
+  // Duplicate detection
+  if (security.isDuplicate(session, transfer)) {
+    await sessionStore.clearPendingTransfer(from);
+    await whatsappService.sendText(from,
+      `⚠️ *Duplicate Transfer Detected*
+
+This looks identical to a transfer you just made. It has been cancelled to protect you.
+
+If this was intentional, please try again in 1 minute.`
+    );
+    return;
+  }
+
+  // Daily limit check
+  const limitCheck = security.checkTransferLimit(transfer.amount, session, country.code);
+  if (!limitCheck.allowed) {
+    await sessionStore.clearPendingTransfer(from);
+    await whatsappService.sendText(from, `⚠️ *Transfer Limit Exceeded*
+
+${limitCheck.reason}`);
+    return;
+  }
 
   await whatsappService.sendText(from, "⏳ Processing your transfer...");
 
@@ -298,16 +340,20 @@ async function executeTransfer({ from, session }) {
     await sessionStore.clearPendingTransfer(from);
 
     const fee = transfer.fee || feesService.calculateFee(transfer.amount, country.code);
-    await whatsappService.sendText(from,
-      `✅ *Transfer Successful!*\n\n` +
-      `• Amount: *${symbol}${Number(transfer.amount).toLocaleString('en', { minimumFractionDigits: 2 })}*\n` +
-      `• Fee: ${symbol}${fee.totalFee.toFixed(2)}\n` +
-      `• Total deducted: *${symbol}${(Number(transfer.amount) + fee.totalFee).toLocaleString('en', { minimumFractionDigits: 2 })}*\n` +
-      `• To: *${transfer.recipientName}*\n` +
-      `• Reference: ${transfer.reference}\n` +
-      `• ID: ${result.transactionId}\n\n` +
-      `_Need anything else? Just ask!_`
-    );
+
+    // Generate receipt
+    const updatedSession = await sessionStore.get(from);
+    const receipt = receipts.generateReceipt({
+      transfer, result, fee,
+      countryCode: country.code,
+      userName: updatedSession.name,
+    });
+    const receiptUpdate = receipts.storeReceipt(updatedSession, receipt);
+    const dailyUpdate = security.recordLastTransfer(transfer);
+    const spentUpdate = security.recordTransfer(updatedSession, transfer.amount, country.code);
+    await sessionStore.update(from, { ...receiptUpdate, ...dailyUpdate, ...spentUpdate });
+
+    await whatsappService.sendText(from, receipt.text);
 
     // Offer to save beneficiary if not already saved
     const existing = insights.getBeneficiary(session, transfer.recipientName);

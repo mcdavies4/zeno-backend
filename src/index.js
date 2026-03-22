@@ -7,7 +7,7 @@ const path = require('path');
 
 const webhookRouter = require('./handlers/webhook');
 const truelayerRouter = require('./handlers/truelayerCallback');
-const idenfyRouter = require('./handlers/idenfyWebhook');
+const veriffWebhook = require('./handlers/veriffWebhook');
 const adminRouter = require('./handlers/adminDashboard');
 const telegramRouter = require('./handlers/telegramWebhook');
 const monoRouter = require('./handlers/monoCallback');
@@ -38,7 +38,7 @@ app.get('/favicon.svg', (req, res) => res.sendFile(path.join(__dirname, '../favi
 // ─── API ROUTES ───────────────────────────────────────
 app.use('/webhook', webhookRouter);
 app.use('/truelayer', truelayerRouter);
-app.use('/idenfy', idenfyRouter);      // New iDenfy handler
+app.use('/veriff', veriffWebhook);
 app.use('/admin', adminRouter);
 app.use('/telegram', telegramRouter);
 app.use('/mono', monoRouter);
@@ -48,7 +48,7 @@ app.get('/health', (req, res) => {
     status: 'ok',
     service: 'Zeno WhatsApp Banking AI',
     markets: ['UK 🇬🇧', 'Nigeria 🇳🇬'],
-    kyc: 'iDenfy',
+    kyc: 'Veriff',
     database: database.isReady() ? 'postgresql' : 'unavailable',
     timestamp: new Date().toISOString(),
   });
@@ -60,7 +60,7 @@ async function start() {
   app.listen(PORT, async () => {
     logger.info(`Zeno backend running on port ${PORT}`);
     logger.info(`Markets: UK 🇬🇧 Nigeria 🇳🇬`);
-    logger.info(`KYC: iDenfy`);
+    logger.info(`KYC: Veriff`);
     logger.info(`Database: ${database.isReady() ? 'PostgreSQL' : 'unavailable'}`);
 
     if (process.env.TELEGRAM_BOT_TOKEN) {

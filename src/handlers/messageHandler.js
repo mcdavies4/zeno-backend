@@ -91,7 +91,7 @@ async function handleText({ from, contactName, message, session }) {
   const lowerText = text.toLowerCase();
   const country = detectCountry(from, session);
 
-  // ── KYC keywords — send real iDenfy link ──────────────
+  // ── KYC keywords ──────────────────────────────────────
   if (['kyc', 'verify my identity', 'verify identity', 'identity verification', 'complete kyc', 'complete verification'].some(k => lowerText.includes(k)) || lowerText === 'verify') {
     await handleAIResponse({ from, aiResponse: { intent: 'KYC' }, session, text });
     return;
@@ -563,7 +563,7 @@ async function handleAIResponse({ from, aiResponse, session, text }) {
       break;
 
     case 'KYC': {
-      // Send iDenfy verification link
+      // Send Veriff verification link
       if (session.kycVerified) {
         await whatsappService.sendText(from,
           `✅ *You're already verified!*\n\nYour identity has been confirmed. You have full access to all Zeno features.`
@@ -571,9 +571,9 @@ async function handleAIResponse({ from, aiResponse, session, text }) {
         break;
       }
       try {
-        const kycService = require('../services/idenfy');
-        const nameParts = (session.userName || 'User').split(' ');
-        const kycSession = await kycService.createSession({
+        const veriffService = require('../services/veriff');
+        const nameParts = (session.name || session.userName || 'Zeno User').split(' ');
+        const kycSession = await veriffService.createSession({
           phoneNumber: from,
           firstName: nameParts[0],
           lastName: nameParts.slice(1).join(' ') || '',
@@ -583,7 +583,7 @@ async function handleAIResponse({ from, aiResponse, session, text }) {
           `🔐 *Verify Your Identity*\n\n` +
           `Tap the link below to complete verification:\n\n` +
           `${kycSession.sessionUrl}\n\n` +
-          `_Takes less than 2 minutes. Fully encrypted and secure._`
+          `Takes less than 2 minutes. Fully encrypted and secure.`
         );
       } catch (err) {
         logger.error('KYC session error:', err.message);

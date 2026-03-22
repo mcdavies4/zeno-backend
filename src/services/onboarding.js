@@ -201,9 +201,9 @@ async function handleStep(from, session, input) {
 
       // Trigger KYC
       try {
-        const kycService = require('./idenfy');
+        const veriffService = require('./veriff');
         const nameParts = name.split(' ');
-        const kycSession = await kycService.createSession({
+        const kycSession = await veriffService.createSession({
           phoneNumber: from,
           firstName: nameParts[0] || name,
           lastName: nameParts.slice(1).join(' ') || '',

@@ -255,7 +255,7 @@ async function handleAIResponse({ chatId, aiResponse, session }) {
       try {
         const authLink = await banking.generateAuthLink(chatId, session);
         await telegramService.sendText(chatId,
-          `💰 *Connect Your Bank*\n\nTap the link below to see your real balance:\n\n${authLink}\n\n_Read-only. No card details needed._`
+          `💰 *Connect Your Bank*\n\nTap the link below to see your real balance:\n\n${authLink}\n\n<i>Read-only. No card details needed.</i>`
         );
       } catch(err) {
         await telegramService.sendText(chatId, `⚠️ Bank connection not available right now. Please try again later.`);
@@ -272,7 +272,7 @@ async function handleAIResponse({ chatId, aiResponse, session }) {
       }
       try {
         const authLink = await banking.generateAuthLink(chatId, session);
-        await telegramService.sendText(chatId, `📋 *Connect Your Bank*\n\nTap the link below to see your transactions:\n\n${authLink}\n\n_Read-only. No card details needed._`);
+        await telegramService.sendText(chatId, `📋 *Connect Your Bank*\n\nTap the link below to see your transactions:\n\n${authLink}\n\n<i>Read-only. No card details needed.</i>`);
       } catch(err) {
         await telegramService.sendText(chatId, `⚠️ Bank connection not available right now. Please try again later.`);
       }

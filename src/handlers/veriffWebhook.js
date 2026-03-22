@@ -11,12 +11,14 @@ const logger = require('../utils/logger');
 
 router.get('/webhook', (req, res) => res.sendStatus(200));
 
-router.post('/webhook', express.json(), async (req, res) => {
+router.post('/webhook', express.json({ strict: false }), async (req, res) => {
   res.sendStatus(200);
 
   try {
     const payload = req.body;
+    logger.info('Veriff webhook headers:', JSON.stringify(req.headers));
     logger.info('Veriff webhook full payload:', JSON.stringify(payload));
+    logger.info('Veriff payload type:', typeof payload, 'keys:', Object.keys(payload || {}).join(','));
 
     // Veriff sends different payload formats — handle all of them
     const verification =

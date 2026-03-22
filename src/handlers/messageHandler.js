@@ -81,7 +81,36 @@ async function handleText({ from, contactName, message, session }) {
     return;
   }
 
-  // Let Claude interpret the message
+  const lowerText = text.toLowerCase();
+
+  // ── KYC keywords — send real iDenfy link ──────────────
+  if (['kyc', 'verify my identity', 'verify identity', 'identity verification', 'complete kyc', 'complete verification'].some(k => lowerText.includes(k)) || lowerText === 'verify') {
+    await handleAIResponse({ from, aiResponse: { intent: 'KYC' }, session, text });
+    return;
+  }
+
+  // ── Switch country command ────────────────────────────
+  if (['switch country', 'change country', 'switch bank', 'change bank country',
+       'switch to nigeria', 'switch to uk', 'nigerian account', 'uk account',
+       'nigeria account', 'change location', 'my nigerian bank', 'my uk bank',
+       'change my country', 'switch my bank'].some(k => lowerText.includes(k))) {
+    await handleSwitchCountry({ from, session, text: lowerText });
+    return;
+  }
+
+  // ── Awaiting country switch response ──────────────────
+  if (session.awaitingField === 'country_switch') {
+    if (lowerText === '1' || lowerText.includes('uk') || lowerText.includes('united kingdom') || lowerText.includes('britain') || lowerText.includes('england')) {
+      await switchToCountry(from, session, 'UK');
+    } else if (lowerText === '2' || lowerText.includes('nigeria') || lowerText.includes('naija')) {
+      await switchToCountry(from, session, 'NG');
+    } else {
+      await whatsappService.sendText(from, `Please reply with *1* for 🇬🇧 UK or *2* for 🇳🇬 Nigeria.`);
+    }
+    return;
+  }
+
+  // ── Let Claude interpret the message ──────────────────
   const aiResponse = await claudeService.processMessage({
     userMessage: text,
     contactName,
@@ -430,6 +459,77 @@ async function switchToCountry(from, session, countryCode) {
 
 ` +
     `${isNG ? 'Connect your Nigerian bank:\n• *"Connect my bank"*\n• *"What\'s my balance?"*' : 'Connect your UK bank:\n• *"Connect my bank"*\n• *"What\'s my balance?"*'}`
+  );
+}
+
+// ─── SWITCH COUNTRY ──────────────────────────────────
+async function handleSwitchCountry({ from, session, text }) {
+  const current = session.bankingCountry || 'UK';
+  let newCountry = null;
+
+  if (text.includes('nigeria') || text.includes('naija') || text.includes('nigerian')) {
+    newCountry = 'NG';
+  } else if (text.includes('uk') || text.includes('britain') || text.includes('england') || text.includes('united kingdom')) {
+    newCountry = 'UK';
+  }
+
+  if (newCountry && newCountry === current) {
+    const flag = newCountry === 'NG' ? '🇳🇬' : '🇬🇧';
+    const name = newCountry === 'NG' ? 'Nigeria' : 'United Kingdom';
+    await whatsappService.sendText(from,
+      `${flag} You're already set to *${name}*!
+
+Your balance and transfers are already using ${newCountry === 'NG' ? '₦ NGN' : '£ GBP'}.`
+    );
+    return;
+  }
+
+  if (newCountry) {
+    await switchToCountry(from, session, newCountry);
+    return;
+  }
+
+  // Show options
+  const currentFlag = current === 'NG' ? '🇳🇬' : '🇬🇧';
+  const currentName = current === 'NG' ? 'Nigeria' : 'United Kingdom';
+  await sessionStore.update(from, { awaitingField: 'country_switch' });
+  await whatsappService.sendText(from,
+    `🌍 *Switch Banking Country*
+
+` +
+    `Currently set to: ${currentFlag} *${currentName}*
+
+` +
+    `Switch to:
+` +
+    `1️⃣ 🇬🇧 United Kingdom (£ GBP)
+` +
+    `2️⃣ 🇳🇬 Nigeria (₦ NGN)
+
+` +
+    `Reply with *1* or *2* to switch.`
+  );
+}
+
+async function switchToCountry(from, session, countryCode) {
+  const isNG = countryCode === 'NG';
+  const flag = isNG ? '🇳🇬' : '🇬🇧';
+  const name = isNG ? 'Nigeria' : 'United Kingdom';
+  const currency = isNG ? '₦ NGN' : '£ GBP';
+
+  await sessionStore.update(from, {
+    bankingCountry: countryCode,
+    awaitingField: null,
+  });
+
+  await whatsappService.sendText(from,
+    `✅ *Switched to ${flag} ${name}!*
+
+` +
+    `Your account is now set to *${currency}*.
+
+` +
+    `${isNG ? 'Connect your Nigerian bank:\n• Say *"Connect my bank"*\n• Then check *"What\'s my balance?"*' : 'Connect your UK bank:\n• Say *"Connect my bank"*\n• Then check *"What\'s my balance?"*'}`
   );
 }
 

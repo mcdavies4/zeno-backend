@@ -99,7 +99,7 @@ async function handleText({ from, contactName, message, session }) {
 
 
   // ── Wallet / Virtual Account ─────────────────────
-  if (country.code === 'NG' && ['my account', 'my wallet', 'wallet balance', 'fund wallet', 'top up', 'topup', 'account number', 'zeno account', 'add money'].some(k => lowerText.includes(k))) {
+  if (country.code === 'NG' && !lowerText.includes('connect') && ['my account', 'my wallet', 'wallet balance', 'fund wallet', 'account number', 'zeno account', 'add money'].some(k => lowerText.includes(k))) {
     if (!session.virtualAccount) {
       await whatsappService.sendText(from, `⏳ Setting up your Zeno wallet...`);
       try {
@@ -514,16 +514,21 @@ async function handleAIResponse({ from, aiResponse, session, text }) {
         const result = await banking.getBalance(from, session);
         if (result.success) {
           await whatsappService.sendText(from, banking.formatBalanceMessage(result.balances, from, session));
-          break;
+        } else {
+          await whatsappService.sendText(from, `⚠️ Couldn't fetch your balance right now. Please try again in a moment.`);
         }
+        break;
       }
-      const authLink = await banking.generateAuthLink(from, session);
-      await whatsappService.sendText(from,
-        `💰 To show your real balance, connect your bank first!\n\n` +
-        `Tap the link below — it's secure and takes 30 seconds:\n\n` +
-        `${authLink}\n\n` +
-        `_Read-only access. No card details needed._`
-      );
+      try {
+        const authLink = await banking.generateAuthLink(from, session);
+        await whatsappService.sendText(from,
+          `💰 Connect your bank to see your real balance!\n\n` +
+          `Tap the link below — secure and takes 30 seconds:\n\n` +
+          `${authLink}\n\nRead-only access. No card details needed.`
+        );
+      } catch(e) {
+        await whatsappService.sendText(from, `⚠️ Bank connection not available right now. Please try again.`);
+      }
       break;
     }
 
@@ -533,13 +538,19 @@ async function handleAIResponse({ from, aiResponse, session, text }) {
         const result = await banking.getTransactions(from, session);
         if (result.success) {
           await whatsappService.sendText(from, banking.formatTransactionsMessage(result.transactions, from, session));
-          break;
+        } else {
+          await whatsappService.sendText(from, `⚠️ Couldn't fetch transactions right now. Please try again in a moment.`);
         }
+        break;
       }
-      const authLink = await banking.generateAuthLink(from, session);
-      await whatsappService.sendText(from,
-        `📋 Connect your bank to see real transactions!\n\n${authLink}`
-      );
+      try {
+        const authLink = await banking.generateAuthLink(from, session);
+        await whatsappService.sendText(from,
+          `📋 Connect your bank to see your transactions!\n\n${authLink}\n\nRead-only access. No card details needed.`
+        );
+      } catch(e) {
+        await whatsappService.sendText(from, `⚠️ Bank connection not available right now. Please try again.`);
+      }
       break;
     }
 

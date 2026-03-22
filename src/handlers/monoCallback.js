@@ -107,12 +107,63 @@ router.post('/webhook', express.json(), async (req, res) => {
       }
     }
 
-    // account_updated — existing connection refreshed
+    // account_updated — fires right after account_connected with full account data
     if (event === 'mono.events.account_updated') {
       const accountId = data?.account?._id;
       const balance = data?.account?.balance;
       logger.info(`Mono account_updated: ${accountId}, balance: ${balance}`);
-      // Could update balance in session here if needed
+
+      if (!accountId) return;
+
+      // Get phone number from Redis
+      let phoneNumber = null;
+      try {
+        const { Redis } = require('@upstash/redis');
+        const redis = new Redis({
+          url: process.env.UPSTASH_REDIS_REST_URL,
+          token: process.env.UPSTASH_REDIS_REST_TOKEN,
+        });
+        const keys = await redis.keys('mono:state:*');
+        logger.info(`Mono Redis keys: ${JSON.stringify(keys)}`);
+        if (keys?.length > 0) {
+          // Get most recent key
+          phoneNumber = await redis.get(keys[keys.length - 1]);
+          if (phoneNumber) phoneNumber = String(phoneNumber).replace(/\D/g, '');
+        }
+      } catch(e) {
+        logger.warn('Redis lookup failed:', e.message);
+      }
+
+      if (!phoneNumber) {
+        logger.warn('No phone found for account_updated');
+        return;
+      }
+
+      // Check if already connected to avoid duplicate messages
+      const session = await sessionStore.get(phoneNumber);
+      if (session.monoAccountId === accountId) {
+        logger.info(`Mono already connected for ${phoneNumber}`);
+        return;
+      }
+
+      const balanceInNaira = balance ? balance / 100 : 0;
+
+      await sessionStore.update(phoneNumber, {
+        monoAccountId: accountId,
+        bankConnected: true,
+        balance: balanceInNaira,
+      });
+
+      await messenger.sendText(phoneNumber,
+        `🎉 *Bank connected successfully!*
+
+` +
+        `Try:
+• *"What's my balance?"*
+• *"Show my transactions"*`
+      );
+
+      logger.info(`Mono bank connected via account_updated for ${phoneNumber}: ${accountId}`);
     }
 
   } catch (err) {

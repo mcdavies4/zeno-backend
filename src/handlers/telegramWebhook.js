@@ -123,7 +123,7 @@ Your identity has been confirmed. You have full access to all Zeno features.`);
 ${kycSession.sessionUrl}
 
 ` +
-            `_Takes less than 2 minutes. Fully encrypted and secure._`
+            `Takes less than 2 minutes. Fully encrypted and secure.`
           );
         } catch (err) {
           logger.error('KYC session error:', err.message);
@@ -296,8 +296,8 @@ async function handleAIResponse({ chatId, aiResponse, session }) {
         await sessionStore.update(chatId, { kycSessionId: kycSession.sessionId });
         await telegramService.sendText(chatId,
           `🔐 *Verify Your Identity*\n\n` +
-          `[Tap here to verify](${kycSession.sessionUrl})\n\n` +
-          `_Takes less than 2 minutes. Fully encrypted and secure._`
+          `🔐 *Verify Your Identity*\n\nTap the link below:\n\n${kycSession.sessionUrl}\n\n` +
+          `Takes less than 2 minutes. Fully encrypted and secure.`
         );
       } catch (err) {
         await telegramService.sendText(chatId,
@@ -308,12 +308,14 @@ async function handleAIResponse({ chatId, aiResponse, session }) {
     }
 
     case 'CONNECT_BANK': {
-      const authLink = await banking.generateAuthLink(chatId, session);
-      await telegramService.sendText(chatId,
-        `🏦 *Connect Your Bank*\n\n` +
-        `[Tap here to connect your bank](${authLink})\n\n` +
-        `_Read-only access. No card details needed._`
-      );
+      try {
+        const authLink = await banking.generateAuthLink(chatId, session);
+        await telegramService.sendText(chatId,
+          `🏦 *Connect Your Bank*\n\nTap the link below to connect your bank:\n\n${authLink}\n\nRead-only access. No card details needed.`
+        );
+      } catch(err) {
+        await telegramService.sendText(chatId, `⚠️ Bank connection not available right now. Please try again later.`);
+      }
       break;
     }
 

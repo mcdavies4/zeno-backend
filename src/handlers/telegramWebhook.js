@@ -11,6 +11,7 @@ const transferService = require('../services/transfer');
 const { checkAndHandleOnboarding } = require('../services/onboarding');
 const { verifyPin } = require('../utils/pinUtils');
 const banking = require('../services/banking');
+const insights = require('../services/insights');
 const logger = require('../utils/logger');
 
 router.post('/webhook', express.json(), async (req, res) => {
@@ -95,6 +96,24 @@ async function handleTextMessage({ chatId, text, contactName }) {
       } else {
         await telegramService.sendText(chatId, `Please reply with *1* for 🇬🇧 UK or *2* for 🇳🇬 Nigeria.`);
       }
+      return;
+    }
+
+    // ── Spending analysis ────────────────────────────
+    if (['spending', 'analyse', 'analysis', 'breakdown', 'categories', 'where is my money', 'how much did i spend', 'spending report'].some(k => lowerText.includes(k))) {
+      await handleTelegramSpendingAnalysis({ chatId, session });
+      return;
+    }
+
+    // ── Alerts ────────────────────────────────────────
+    if (['set alert', 'alert me', 'notify me', 'warn me', 'low balance alert', 'transaction alert', 'my alerts', 'show alerts', 'list alerts'].some(k => lowerText.includes(k))) {
+      await handleTelegramAlerts({ chatId, session, text: lowerText });
+      return;
+    }
+
+    // ── Beneficiaries ─────────────────────────────────
+    if (['save contact', 'save beneficiary', 'remember', 'saved contacts', 'my contacts', 'list contacts', 'show contacts', 'saved recipients'].some(k => lowerText.includes(k))) {
+      await handleTelegramBeneficiaries({ chatId, session, text: lowerText });
       return;
     }
 
@@ -322,6 +341,119 @@ async function handleAIResponse({ chatId, aiResponse, session }) {
     default:
       await telegramService.sendText(chatId, aiResponse.reply);
   }
+}
+
+// ─── SPENDING ANALYSIS (TELEGRAM) ───────────────────
+async function handleTelegramSpendingAnalysis({ chatId, session }) {
+  const { detectCountry } = require('../utils/countryDetect');
+  const country = detectCountry(chatId, session);
+  const symbol = country.symbol;
+
+  if (!banking.isBankConnected(session, chatId)) {
+    try {
+      const authLink = await banking.generateAuthLink(chatId, session);
+      await telegramService.sendText(chatId, `📊 Connect your bank first to see spending analysis!
+
+${authLink}`);
+    } catch(e) {
+      await telegramService.sendText(chatId, `Connect your bank first!`);
+    }
+    return;
+  }
+
+  await telegramService.sendText(chatId, `📊 Analysing your spending...`);
+
+  try {
+    const result = await banking.getTransactions(chatId, session);
+    if (!result.success || !result.transactions?.length) {
+      await telegramService.sendText(chatId, `No recent transactions found to analyse.`);
+      return;
+    }
+    const analysis = insights.analyseSpending(result.transactions, symbol);
+    const msg = insights.formatAnalysis(analysis, symbol, 'recently');
+    await telegramService.sendText(chatId, msg);
+  } catch(err) {
+    logger.error('Telegram spending analysis error:', err.message);
+    await telegramService.sendText(chatId, `Couldn't fetch spending data right now.`);
+  }
+}
+
+// ─── ALERTS (TELEGRAM) ───────────────────────────────
+async function handleTelegramAlerts({ chatId, session, text }) {
+  const { detectCountry } = require('../utils/countryDetect');
+  const country = detectCountry(chatId, session);
+  const symbol = country.symbol;
+
+  if (text.includes('my alerts') || text.includes('show alerts') || text.includes('list alerts')) {
+    const alerts = session.alerts || {};
+    if (!Object.keys(alerts).length) {
+      await telegramService.sendText(chatId,
+        `🔔 *No alerts set*
+
+You can set:
+• "Alert me when balance below ${symbol}500"
+• "Alert me for transactions over ${symbol}200"`
+      );
+      return;
+    }
+    let msg = `🔔 *Your Alerts*
+
+`;
+    if (alerts.lowBalance) msg += `• Low balance: below *${symbol}${alerts.lowBalance}*
+`;
+    if (alerts.largeTransaction) msg += `• Large transaction: over *${symbol}${alerts.largeTransaction}*
+`;
+    await telegramService.sendText(chatId, msg.trim());
+    return;
+  }
+
+  const alert = insights.parseAlertCommand(text);
+  if (!alert) {
+    await telegramService.sendText(chatId,
+      `🔔 *Set an Alert*
+
+Try:
+• "Alert me when balance below ${symbol}500"
+• "Alert me for transactions over ${symbol}200"`
+    );
+    return;
+  }
+
+  const currentAlerts = session.alerts || {};
+  currentAlerts[alert.type] = alert.amount;
+  await sessionStore.update(chatId, { alerts: currentAlerts });
+
+  const alertDesc = alert.type === 'lowBalance'
+    ? `balance drops below *${symbol}${alert.amount}*`
+    : `any transaction over *${symbol}${alert.amount}*`;
+
+  await telegramService.sendText(chatId, `✅ *Alert Set!*
+
+I'll notify you when ${alertDesc}.`);
+}
+
+// ─── BENEFICIARIES (TELEGRAM) ────────────────────────
+async function handleTelegramBeneficiaries({ chatId, session, text }) {
+  if (text.includes('list') || text.includes('show') || text.includes('my contacts') || text.includes('saved')) {
+    const list = insights.listBeneficiaries(session);
+    if (!list) {
+      await telegramService.sendText(chatId,
+        `👥 *No saved contacts yet*
+
+After sending money, contacts are saved automatically!`
+      );
+      return;
+    }
+    await telegramService.sendText(chatId, list);
+    return;
+  }
+  await telegramService.sendText(chatId,
+    `👥 *Saved Contacts*
+
+Contacts are saved automatically after each transfer.
+
+Say "Show my contacts" to see them.`
+  );
 }
 
 // ─── SWITCH COUNTRY (TELEGRAM) ───────────────────────

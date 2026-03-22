@@ -15,6 +15,7 @@ const insights = require('../services/insights');
 const bills = require('../services/bills');
 const feesService = require('../services/fees');
 const security = require('../services/security');
+const virtualAccount = require('../services/virtualAccount');
 const receipts = require('../services/receipts');
 const searchService = require('../services/search');
 const logger = require('../utils/logger');
@@ -166,6 +167,23 @@ Contact support: https://wa.me/2349037745486`
     }
 
     // ── KYC keywords ──────────────────────────────────
+    // ── Wallet / Virtual Account ─────────────────────
+    if (session.bankingCountry === 'NG' && ['my account', 'my wallet', 'wallet balance', 'fund wallet', 'top up', 'topup', 'account number', 'zeno account', 'add money'].some(k => lowerText.includes(k))) {
+      if (!session.virtualAccount) {
+        await telegramService.sendText(chatId, `⏳ Setting up your Zeno wallet...`);
+        try {
+          const vaData = await virtualAccount.createVirtualAccount({ phoneNumber: chatId, name: session.name, email: session.email });
+          await sessionStore.update(chatId, { virtualAccount: vaData, walletBalance: 0 });
+          session.virtualAccount = vaData;
+        } catch(e) {
+          await telegramService.sendText(chatId, `Sorry, couldn't set up your wallet right now. Please try again.`);
+          return;
+        }
+      }
+      await telegramService.sendText(chatId, virtualAccount.formatWalletMessage(session));
+      return;
+    }
+
     if (['kyc', 'verify', 'verify my identity', 'verification', 'verify identity', 'complete kyc'].some(k => lowerText.includes(k))) {
       if (session.kycVerified) {
         await telegramService.sendText(chatId, `✅ *You're already verified!*
@@ -279,28 +297,115 @@ async function initiateTransfer({ chatId, session }) {
 
 async function executeTransfer({ chatId, session }) {
   const transfer = session.pendingTransfer;
-  await telegramService.sendText(chatId, "⏳ Processing your transfer...");
-  try {
-    const result = await transferService.sendPayment({
-      fromUser: chatId,
-      recipientName: transfer.recipientName,
-      recipientSortCode: transfer.sortCode,
-      recipientAccountNumber: transfer.accountNumber,
-      amount: transfer.amount,
-      reference: transfer.reference,
-      currency: 'GBP',
-    });
+  const { detectCountry } = require('../utils/countryDetect');
+  const country = detectCountry(chatId, session);
+  const fee = transfer.fee || feesService.calculateFee(transfer.amount, country.code);
+  const s = fee.symbol;
+
+  // Wallet balance check for Nigerian transfers
+  if (country.code === 'NG') {
+    const affordCheck = virtualAccount.canAffordTransfer(session, transfer.amount, fee);
+    if (!affordCheck.canAfford) {
+      await sessionStore.clearPendingTransfer(chatId);
+      await telegramService.sendText(chatId, affordCheck.message);
+      return;
+    }
+  }
+
+  // Duplicate detection
+  if (security.isDuplicate(session, transfer)) {
     await sessionStore.clearPendingTransfer(chatId);
     await telegramService.sendText(chatId,
-(() => {
-        const { detectCountry } = require('../utils/countryDetect');
-        const country = detectCountry(chatId, session);
-        const fee = transfer.fee || feesService.calculateFee(transfer.amount, country.code);
-        const s = fee.symbol;
-        return `✅ *Transfer Successful!*\n\n• Amount: *${s}${Number(transfer.amount).toLocaleString('en', { minimumFractionDigits: 2 })}*\n• Fee: ${s}${fee.totalFee.toFixed(2)}\n• Total deducted: *${s}${(Number(transfer.amount) + fee.totalFee).toLocaleString('en', { minimumFractionDigits: 2 })}*\n• To: *${transfer.recipientName}*`;
-      })()
+      `⚠️ *Duplicate Transfer Detected*
+
+This looks identical to a recent transfer. Cancelled for your protection. Try again in 1 minute.`
     );
+    return;
+  }
+
+  // Daily limit check
+  const limitCheck = security.checkTransferLimit(transfer.amount, session, country.code);
+  if (!limitCheck.allowed) {
+    await sessionStore.clearPendingTransfer(chatId);
+    await telegramService.sendText(chatId, `⚠️ *Transfer Limit Exceeded*
+
+${limitCheck.reason}`);
+    return;
+  }
+
+  await telegramService.sendText(chatId, "⏳ Processing your transfer...");
+
+  try {
+    let result;
+
+    if (country.code === 'NG') {
+      const { findBankCode } = require('../utils/nigerianBanks');
+      const bankInfo = transfer.bankCode ? { code: transfer.bankCode } : findBankCode(transfer.bankName);
+      if (!bankInfo) {
+        await sessionStore.clearPendingTransfer(chatId);
+        await telegramService.sendText(chatId, `❌ Couldn't identify the bank. Please specify clearly e.g. "GTBank", "Access Bank".`);
+        return;
+      }
+      const flutterwaveService = require('../services/flutterwave');
+      result = await flutterwaveService.sendPayment({
+        recipientName: transfer.recipientName,
+        recipientAccountNumber: transfer.accountNumber,
+        recipientBankCode: bankInfo.code,
+        amount: transfer.amount,
+        reference: transfer.reference,
+        narration: transfer.reference || 'Zeno Transfer',
+      });
+    } else {
+      result = await transferService.sendPayment({
+        fromUser: chatId,
+        recipientName: transfer.recipientName,
+        recipientSortCode: transfer.sortCode,
+        recipientAccountNumber: transfer.accountNumber,
+        amount: transfer.amount,
+        reference: transfer.reference,
+        currency: 'GBP',
+      });
+    }
+
+    await sessionStore.clearPendingTransfer(chatId);
+
+    // Debit wallet for Nigerian transfers
+    if (country.code === 'NG') {
+      const walletUpdate = virtualAccount.debitWallet(session, transfer.amount, fee);
+      await sessionStore.update(chatId, walletUpdate);
+    }
+
+    // Generate and store receipt
+    const updatedSession = await sessionStore.get(chatId);
+    const receiptData = receipts.generateReceipt({
+      transfer, result, fee,
+      countryCode: country.code,
+      userName: updatedSession.name,
+    });
+    const receiptUpdate = receipts.storeReceipt(updatedSession, receiptData);
+    const dailyUpdate = security.recordLastTransfer(transfer);
+    const spentUpdate = security.recordTransfer(updatedSession, transfer.amount, country.code);
+    await sessionStore.update(chatId, { ...receiptUpdate, ...dailyUpdate, ...spentUpdate });
+
+    await telegramService.sendText(chatId, receiptData.text);
+
+    // Auto-save beneficiary
+    const existing = insights.getBeneficiary(updatedSession, transfer.recipientName);
+    if (!existing && (transfer.accountNumber || transfer.sortCode || transfer.bankCode)) {
+      const beneficiaries = insights.saveBeneficiary(updatedSession, transfer.recipientName, {
+        accountNumber: transfer.accountNumber,
+        sortCode: transfer.sortCode,
+        bankCode: transfer.bankCode,
+        bankName: transfer.bankName,
+      });
+      await sessionStore.update(chatId, { beneficiaries });
+      await telegramService.sendText(chatId,
+        `💾 *${transfer.recipientName}* saved to contacts! Next time just say "Send to ${transfer.recipientName}".`
+      );
+    }
+
   } catch (err) {
+    logger.error('Telegram transfer error:', err.message);
     await sessionStore.clearPendingTransfer(chatId);
     await telegramService.sendText(chatId, `❌ Transfer failed. ${err.userMessage || 'Please try again.'}`);
   }

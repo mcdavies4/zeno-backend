@@ -13,6 +13,7 @@ const telegramRouter = require('./handlers/telegramWebhook');
 const monoRouter = require('./handlers/monoCallback');
 const database = require('./services/database');
 const { startScheduler } = require('./services/scheduler');
+const flutterwaveWebhook = require('./handlers/flutterwaveWebhook');
 const logger = require('./utils/logger');
 
 const app = express();

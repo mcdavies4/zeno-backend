@@ -57,6 +57,14 @@ function defaultSession(phoneNumber) {
     kycSessionId: null,
     alerts: {},
     beneficiaries: {},
+    termsAccepted: false,
+    termsAcceptedAt: null,
+    pinLockedUntil: null,
+    failedPinAttempts: 0,
+    receipts: [],
+    lastTransfer: null,
+    virtualAccount: null,
+    walletBalance: 0,
   };
 }
 
@@ -85,6 +93,13 @@ async function loadFromDatabase(phoneNumber, session) {
     if (user.banking_country) session.bankingCountry = user.banking_country;
     if (user.alerts) session.alerts = typeof user.alerts === 'string' ? JSON.parse(user.alerts) : user.alerts;
     if (user.beneficiaries) session.beneficiaries = typeof user.beneficiaries === 'string' ? JSON.parse(user.beneficiaries) : user.beneficiaries;
+    if (user.terms_accepted) session.termsAccepted = user.terms_accepted;
+    if (user.terms_accepted_at) session.termsAcceptedAt = user.terms_accepted_at;
+    if (user.pin_locked_until) session.pinLockedUntil = user.pin_locked_until;
+    if (user.failed_pin_attempts) session.failedPinAttempts = user.failed_pin_attempts;
+    if (user.receipts) session.receipts = typeof user.receipts === 'string' ? JSON.parse(user.receipts) : user.receipts;
+    if (user.virtual_account) session.virtualAccount = typeof user.virtual_account === 'string' ? JSON.parse(user.virtual_account) : user.virtual_account;
+    if (user.wallet_balance) session.walletBalance = parseFloat(user.wallet_balance) || 0;
 
     logger.info(`Session restored from DB for ${phoneNumber}: onboarded=${session.isOnboarded}`);
   } catch (err) {
@@ -162,6 +177,13 @@ async function update(phoneNumber, updates) {
       if ('bankingCountry' in updates) dbData.bankingCountry = updates.bankingCountry;
       if ('alerts' in updates) dbData.alerts = JSON.stringify(updates.alerts);
       if ('beneficiaries' in updates) dbData.beneficiaries = JSON.stringify(updates.beneficiaries);
+      if ('termsAccepted' in updates) dbData.termsAccepted = updates.termsAccepted;
+      if ('termsAcceptedAt' in updates) dbData.termsAcceptedAt = updates.termsAcceptedAt;
+      if ('pinLockedUntil' in updates) dbData.pinLockedUntil = updates.pinLockedUntil;
+      if ('failedPinAttempts' in updates) dbData.failedPinAttempts = updates.failedPinAttempts;
+      if ('receipts' in updates) dbData.receipts = JSON.stringify(updates.receipts);
+      if ('virtualAccount' in updates) dbData.virtualAccount = JSON.stringify(updates.virtualAccount);
+      if ('walletBalance' in updates) dbData.walletBalance = updates.walletBalance;
       if (Object.keys(dbData).length > 0) {
         await db.upsertUser(phoneNumber, dbData);
       }

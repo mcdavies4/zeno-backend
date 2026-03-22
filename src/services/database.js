@@ -78,6 +78,13 @@ async function createTables() {
     ALTER TABLE users ADD COLUMN IF NOT EXISTS banking_country VARCHAR(5) DEFAULT 'UK';
     ALTER TABLE users ADD COLUMN IF NOT EXISTS alerts JSONB DEFAULT '{}';
     ALTER TABLE users ADD COLUMN IF NOT EXISTS beneficiaries JSONB DEFAULT '{}';
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS terms_accepted BOOLEAN DEFAULT false;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS terms_accepted_at TIMESTAMP;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS pin_locked_until TIMESTAMP;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS failed_pin_attempts INTEGER DEFAULT 0;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS receipts JSONB DEFAULT '[]';
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS virtual_account JSONB DEFAULT NULL;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS wallet_balance DECIMAL(15,2) DEFAULT 0.00;
   `);
   logger.info('PostgreSQL tables ready');
 }

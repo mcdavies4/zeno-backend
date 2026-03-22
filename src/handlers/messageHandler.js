@@ -10,6 +10,7 @@ const { checkAndHandleOnboarding } = require('../services/onboarding');
 const { verifyPin } = require('../utils/pinUtils');
 const banking = require('../services/banking');
 const insights = require('../services/insights');
+const bills = require('../services/bills');
 const logger = require('../utils/logger');
 
 /**
@@ -87,6 +88,12 @@ async function handleText({ from, contactName, message, session }) {
   // ── KYC keywords — send real iDenfy link ──────────────
   if (['kyc', 'verify my identity', 'verify identity', 'identity verification', 'complete kyc', 'complete verification'].some(k => lowerText.includes(k)) || lowerText === 'verify') {
     await handleAIResponse({ from, aiResponse: { intent: 'KYC' }, session, text });
+    return;
+  }
+
+  // ── Airtime & Bills (Nigeria only) ───────────────
+  if (country.code === 'NG' && ['airtime', 'recharge', 'top up', 'topup', 'buy data', 'data bundle', 'electricity', 'nepa', 'disco', 'dstv', 'gotv', 'cable tv', 'pay bill'].some(k => lowerText.includes(k))) {
+    await handleBillPayment({ from, session, text: lowerText, country });
     return;
   }
 
@@ -301,6 +308,74 @@ async function executeTransfer({ from, session }) {
   }
 }
 
+// ─── EXECUTE BILL PAYMENT ────────────────────────────
+async function executeBillPayment({ from, session }) {
+  const bill = session.pendingBill;
+  if (!bill) return;
+
+  await whatsappService.sendText(from, `⏳ Processing payment...`);
+
+  try {
+    let result;
+
+    if (bill.type === 'airtime') {
+      result = await bills.buyAirtime({ phone: bill.phone, amount: bill.amount, network: bill.network });
+      await sessionStore.update(from, { pendingBill: null });
+      await whatsappService.sendText(from,
+        `✅ *Airtime Purchased!*
+
+` +
+        `• Amount: *₦${bill.amount.toLocaleString()}*
+` +
+        `• Number: *${bill.phone}*
+` +
+        `• Network: ${bill.network.toUpperCase()}
+
+` +
+        `_Airtime delivered instantly._`
+      );
+    } else if (bill.type === 'electricity') {
+      result = await bills.payElectricity({ meterNumber: bill.meterNumber, amount: bill.amount, disco: bill.disco });
+      await sessionStore.update(from, { pendingBill: null });
+      await whatsappService.sendText(from,
+        `✅ *Electricity Paid!*
+
+` +
+        `• Amount: *₦${bill.amount.toLocaleString()}*
+` +
+        `• Meter: *${bill.meterNumber}*
+` +
+        `• Provider: ${bill.disco.toUpperCase()}
+
+` +
+        `_Token will be sent to your registered number._`
+      );
+    } else if (bill.type === 'tv') {
+      result = await bills.payTV({ smartCardNumber: bill.smartCardNumber, amount: bill.amount, provider: bill.provider });
+      await sessionStore.update(from, { pendingBill: null });
+      await whatsappService.sendText(from,
+        `✅ *${bill.provider.toUpperCase()} Subscription Paid!*
+
+` +
+        `• Amount: *₦${bill.amount.toLocaleString()}*
+` +
+        `• Smart Card: *${bill.smartCardNumber}*
+
+` +
+        `_Subscription renewed successfully._`
+      );
+    }
+  } catch (err) {
+    logger.error('Bill payment failed:', err.message);
+    await sessionStore.update(from, { pendingBill: null });
+    await whatsappService.sendText(from,
+      `❌ *Payment Failed*
+
+${err.userMessage || 'Could not complete payment. Please try again.'}`
+    );
+  }
+}
+
 // ─── AI RESPONSE ROUTER ───────────────────────────────
 async function handleAIResponse({ from, aiResponse, session, text }) {
   switch (aiResponse.intent) {
@@ -419,6 +494,54 @@ async function handleAIResponse({ from, aiResponse, session, text }) {
     default:
       await whatsappService.sendText(from, aiResponse.reply);
   }
+}
+
+// ─── BILL PAYMENTS & AIRTIME ─────────────────────────
+async function handleBillPayment({ from, session, text, country }) {
+  const parsed = bills.parseBillCommand(text);
+
+  if (!parsed) {
+    await whatsappService.sendText(from,
+      `📱 *Bills & Airtime*
+
+` +
+      `I can help you with:
+` +
+      `• *Airtime:* "Buy ₦500 airtime for 08012345678"
+` +
+      `• *Electricity:* "Pay Ikeja Electric ₦5000 meter 12345678"
+` +
+      `• *DSTV:* "Pay DSTV ₦6500 smartcard 1234567890"
+` +
+      `• *Data:* "Buy MTN data 1000 for 08012345678"`
+    );
+    return;
+  }
+
+  // Store pending bill and ask for PIN
+  await sessionStore.update(from, {
+    pendingBill: parsed,
+    awaitingPin: true,
+  });
+
+  let summary = '';
+  if (parsed.type === 'airtime') {
+    summary = `₦${parsed.amount.toLocaleString()} airtime for *${parsed.phone}* (${parsed.network.toUpperCase()})`;
+  } else if (parsed.type === 'electricity') {
+    summary = `₦${parsed.amount.toLocaleString()} electricity (${parsed.disco.toUpperCase()}) meter *${parsed.meterNumber}*`;
+  } else if (parsed.type === 'tv') {
+    summary = `₦${parsed.amount.toLocaleString()} ${parsed.provider.toUpperCase()} card *${parsed.smartCardNumber}*`;
+  }
+
+  await whatsappService.sendText(from,
+    `📋 *Bill Payment Summary*
+
+` +
+    `${summary}
+
+` +
+    `🔐 Enter your PIN to confirm:`
+  );
 }
 
 // ─── SPENDING ANALYSIS ───────────────────────────────
@@ -616,6 +739,54 @@ async function switchToCountry(from, session, countryCode) {
 
 ` +
     `${isNG ? 'Connect your Nigerian bank:\n• *"Connect my bank"*\n• *"What\'s my balance?"*' : 'Connect your UK bank:\n• *"Connect my bank"*\n• *"What\'s my balance?"*'}`
+  );
+}
+
+// ─── BILL PAYMENTS & AIRTIME ─────────────────────────
+async function handleBillPayment({ from, session, text, country }) {
+  const parsed = bills.parseBillCommand(text);
+
+  if (!parsed) {
+    await whatsappService.sendText(from,
+      `📱 *Bills & Airtime*
+
+` +
+      `I can help you with:
+` +
+      `• *Airtime:* "Buy ₦500 airtime for 08012345678"
+` +
+      `• *Electricity:* "Pay Ikeja Electric ₦5000 meter 12345678"
+` +
+      `• *DSTV:* "Pay DSTV ₦6500 smartcard 1234567890"
+` +
+      `• *Data:* "Buy MTN data 1000 for 08012345678"`
+    );
+    return;
+  }
+
+  // Store pending bill and ask for PIN
+  await sessionStore.update(from, {
+    pendingBill: parsed,
+    awaitingPin: true,
+  });
+
+  let summary = '';
+  if (parsed.type === 'airtime') {
+    summary = `₦${parsed.amount.toLocaleString()} airtime for *${parsed.phone}* (${parsed.network.toUpperCase()})`;
+  } else if (parsed.type === 'electricity') {
+    summary = `₦${parsed.amount.toLocaleString()} electricity (${parsed.disco.toUpperCase()}) meter *${parsed.meterNumber}*`;
+  } else if (parsed.type === 'tv') {
+    summary = `₦${parsed.amount.toLocaleString()} ${parsed.provider.toUpperCase()} card *${parsed.smartCardNumber}*`;
+  }
+
+  await whatsappService.sendText(from,
+    `📋 *Bill Payment Summary*
+
+` +
+    `${summary}
+
+` +
+    `🔐 Enter your PIN to confirm:`
   );
 }
 

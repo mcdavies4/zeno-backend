@@ -12,6 +12,7 @@ const adminRouter = require('./handlers/adminDashboard');
 const telegramRouter = require('./handlers/telegramWebhook');
 const monoRouter = require('./handlers/monoCallback');
 const database = require('./services/database');
+const { startScheduler } = require('./services/scheduler');
 const logger = require('./utils/logger');
 
 const app = express();
@@ -32,7 +33,6 @@ app.get('/security', (req, res) => res.sendFile(path.join(__dirname, '../securit
 app.get('/sitemap.xml', (req, res) => res.sendFile(path.join(__dirname, '../sitemap.xml')));
 app.get('/robots.txt', (req, res) => res.sendFile(path.join(__dirname, '../robots.txt')));
 app.get('/favicon.svg', (req, res) => res.sendFile(path.join(__dirname, '../favicon.svg')));
-app.get('/og-image.png', (req, res) => res.sendFile(path.join(__dirname, '../og-image.png')));
 
 // ─── API ROUTES ───────────────────────────────────────
 app.use('/webhook', webhookRouter);
@@ -67,6 +67,10 @@ async function start() {
         const telegramService = require('./services/telegram');
         await telegramService.setWebhook('https://api.joinzeno.co.uk');
         logger.info('Telegram webhook registered');
+
+    // Start daily balance scheduler
+    startScheduler();
+    logger.info('Daily scheduler started — summaries at 7:00 AM UTC');
       } catch (err) {
         logger.warn('Telegram webhook failed:', err.message);
       }

@@ -779,22 +779,22 @@ async function handleStatement({ id, session, text, sendFn, platform }) {
     return;
   }
 
-  const dateRange = statementsService.parseDateRange(text);
+  const req = statementsService.parseStatementRequest(text);
   const isCSV = text.includes('csv') || text.includes('excel') || text.includes('spreadsheet');
   const isReport = text.includes('report') || text.includes('spending report');
 
-  await sendFn(id, `⏳ Generating your ${isCSV ? 'CSV export' : 'PDF statement'} for *${dateRange.label}*...`);
+  await sendFn(id, `⏳ Generating your ${isCSV ? 'CSV export' : 'PDF statement'} for *${req.label}*...`);
 
   try {
     const result = await banking.getTransactions(id, session);
     if (!result.success || !result.transactions?.length) {
-      await sendFn(id, `No transactions found for ${dateRange.label}.`);
+      await sendFn(id, `No transactions found for ${req.label}.`);
       return;
     }
 
-    const filtered = statementsService.filterByDate(result.transactions, dateRange.from, dateRange.to);
+    const filtered = statementsService.filterByDate(result.transactions, req.from, req.to);
     if (!filtered.length) {
-      await sendFn(id, `No transactions found for ${dateRange.label}.`);
+      await sendFn(id, `No transactions found for ${req.label}.`);
       return;
     }
 
@@ -803,11 +803,11 @@ async function handleStatement({ id, session, text, sendFn, platform }) {
 
     if (isCSV) {
       const csv = statementsService.generateCSV(filtered, symbol, session.name, dateRange);
-      const filename = `Zeno-${safeName}-${dateRange.label.replace(/\s+/g, '-')}-${timestamp}.csv`;
+      const filename = `Zeno-${safeName}-${req.label.replace(/\s+/g, '-')}-${timestamp}.csv`;
       const url = await statementsService.saveAndGetUrl(Buffer.from(csv), filename, 'text/csv');
       await sendFn(id,
         `✅ *CSV Export Ready!*\n\n` +
-        `📊 Period: *${dateRange.label}*\n` +
+        `📊 Period: *${req.label}*\n` +
         `📝 Transactions: *${filtered.length}*\n\n` +
         `Download your file:\n${url}\n\nLink expires in 24 hours.`
       );
@@ -821,11 +821,11 @@ async function handleStatement({ id, session, text, sendFn, platform }) {
         dateRange,
         countryCode: country.code,
       });
-      const filename = `Zeno-Statement-${safeName}-${dateRange.label.replace(/\s+/g, '-')}-${timestamp}.pdf`;
+      const filename = `Zeno-Statement-${safeName}-${req.label.replace(/\s+/g, '-')}-${timestamp}.pdf`;
       const url = await statementsService.saveAndGetUrl(pdfBuffer, filename, 'application/pdf');
       await sendFn(id,
         `✅ *Bank Statement Ready!*\n\n` +
-        `📄 Period: *${dateRange.label}*\n` +
+        `📄 Period: *${req.label}*\n` +
         `📝 Transactions: *${filtered.length}*\n\n` +
         `Download your statement:\n${url}\n\nLink expires in 24 hours.`
       );

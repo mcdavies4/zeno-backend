@@ -276,11 +276,22 @@ router.get('/reset-user', adminAuth, async (req, res) => {
       url: process.env.UPSTASH_REDIS_REST_URL,
       token: process.env.UPSTASH_REDIS_REST_TOKEN,
     });
+    // Delete all possible Redis session keys
     await redis.del(`session:${phone}`);
+    await redis.del(`session:+${phone}`);
+    // Also clear any mono state keys for this user
+    const keys = await redis.keys(`mono:state:*`);
+    for (const key of (keys || [])) {
+      const val = await redis.get(key);
+      if (val && String(val).replace(/\D/g, '') === phone) {
+        await redis.del(key);
+      }
+    }
 
     const { Pool } = require('pg');
     const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
     await pool.query('DELETE FROM users WHERE phone_number = $1', [phone]);
+    await pool.query('DELETE FROM users WHERE phone_number = $1', [`+${phone}`]);
     await pool.end();
 
     logger.info(`Admin reset user: ${phone}`);

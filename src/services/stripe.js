@@ -182,6 +182,98 @@ async function createPayment({ fromCustomerId, fromAccountId, amount, recipientN
   }
 }
 
+// ─── STRIPE IDENTITY (KYC) ───────────────────────────
+async function createIdentitySession({ phoneNumber, email, name }) {
+  const stripe = getStripe();
+  try {
+    const session = await stripe.identity.verificationSessions.create({
+      type: 'document',
+      provided_details: {
+        email: email || `${phoneNumber}@zeno.app`,
+        phone: phoneNumber,
+      },
+      metadata: {
+        phoneNumber: String(phoneNumber),
+      },
+      return_url: `https://api.joinzeno.co.uk/stripe/identity-callback?phone=${encodeURIComponent(phoneNumber)}`,
+    });
+
+    logger.info(`Stripe Identity session created for ${phoneNumber}: ${session.id}`);
+
+    return {
+      sessionId: session.id,
+      url: session.url,
+      status: session.status,
+    };
+  } catch (err) {
+    logger.error('Stripe Identity session error:', err.message);
+    throw err;
+  }
+}
+
+function getIdentityStatusMessage(status) {
+  const messages = {
+    verified: {
+      text:
+        `✅ *Identity Verified!*
+
+` +
+        `Your identity has been confirmed. You now have full access to Zeno!
+
+` +
+        `You can now:
+` +
+        `💸 Send money
+` +
+        `💰 Check your balance
+` +
+        `📊 Track your spending
+
+` +
+        `Welcome to Zeno! 🎉`,
+      verified: true,
+    },
+    requires_input: {
+      text:
+        `❌ *Verification Failed*
+
+` +
+        `We couldn't verify your identity. Please try again with:
+` +
+        `• A clear photo of your ID
+` +
+        `• Good lighting
+` +
+        `• All 4 corners of the ID visible
+
+` +
+        `Type *"verify my identity"* to try again.`,
+      verified: false,
+    },
+    canceled: {
+      text:
+        `⚠️ *Verification Cancelled*
+
+` +
+        `You cancelled the verification. Type *"verify my identity"* to try again.`,
+      verified: false,
+    },
+    processing: {
+      text:
+        `⏳ *Verification Processing*
+
+` +
+        `Your documents are being reviewed. We'll notify you when complete.`,
+      verified: false,
+    },
+  };
+
+  return messages[status] || {
+    text: `⚠️ Verification status: *${status}*. Type *"verify my identity"* if you need help.`,
+    verified: false,
+  };
+}
+
 module.exports = {
   createFinancialConnectionSession,
   getConnectedAccounts,
@@ -190,4 +282,6 @@ module.exports = {
   formatBalanceMessage,
   formatTransactionsMessage,
   createPayment,
+  createIdentitySession,
+  getIdentityStatusMessage,
 };

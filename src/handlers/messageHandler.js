@@ -592,9 +592,9 @@ async function handleAIResponse({ from, aiResponse, session, text }) {
         break;
       }
       try {
-        const veriffService = require('../services/veriff');
+        const stripeService = require('../services/stripe');
         const nameParts = (session.name || session.userName || 'Zeno User').split(' ');
-        const kycSession = await veriffService.createSession({
+        const kycSession = await stripeService.createIdentitySession({
           phoneNumber: from,
           firstName: nameParts[0],
           lastName: nameParts.slice(1).join(' ') || '',
@@ -603,7 +603,7 @@ async function handleAIResponse({ from, aiResponse, session, text }) {
         await whatsappService.sendText(from,
           `🔐 *Verify Your Identity*\n\n` +
           `Tap the link below to complete verification:\n\n` +
-          `${kycSession.sessionUrl}\n\n` +
+          `${kycSession.url}\n\n` +
           `Takes less than 2 minutes. Fully encrypted and secure.`
         );
       } catch (err) {

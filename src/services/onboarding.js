@@ -232,9 +232,9 @@ async function handleStep(from, session, input) {
 
       // Trigger KYC
       try {
-        const veriffService = require('./veriff');
+        const stripeService = require('./stripe');
         const nameParts = name.split(' ');
-        const kycSession = await veriffService.createSession({
+        const kycSession = await stripeService.createIdentitySession({
           phoneNumber: from,
           firstName: nameParts[0] || name,
           lastName: nameParts.slice(1).join(' ') || '',
@@ -243,7 +243,7 @@ async function handleStep(from, session, input) {
         await messenger.sendText(from,
           `🔐 *Verify Your Identity*\n\n` +
           `Tap the link below:\n\n` +
-          `${kycSession.sessionUrl}\n\n` +
+          `${kycSession.url}\n\n` +
           `This link expires in 7 days. Fully encrypted and secure.`
         );
       } catch(e) {

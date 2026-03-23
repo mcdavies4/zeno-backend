@@ -213,9 +213,9 @@ Contact support: https://wa.me/2349037745486`
 Your identity has been confirmed. You have full access to all Zeno features.`);
       } else {
         try {
-          const kycService = require('../services/veriff');
+          const stripeService = require('../services/stripe');
           const nameParts = (session.userName || 'User').split(' ');
-          const kycSession = await veriffService.createSession({
+          const kycSession = await stripeService.createIdentitySession({
             phoneNumber: chatId,
             firstName: nameParts[0],
             lastName: nameParts.slice(1).join(' ') || '',
@@ -227,7 +227,7 @@ Your identity has been confirmed. You have full access to all Zeno features.`);
 ` +
             `Tap the link below:
 
-${kycSession.sessionUrl}
+${kycSession.url}
 
 ` +
             `Takes less than 2 minutes. Fully encrypted and secure.`
@@ -499,9 +499,9 @@ async function handleAIResponse({ chatId, aiResponse, session }) {
         break;
       }
       try {
-        const veriffService = require('../services/veriff');
+        const stripeService = require('../services/stripe');
         const nameParts = (session.name || session.userName || 'Zeno User').split(' ');
-        const kycSession = await veriffService.createSession({
+        const kycSession = await stripeService.createIdentitySession({
           phoneNumber: chatId,
           firstName: nameParts[0],
           lastName: nameParts.slice(1).join(' ') || '',
@@ -509,7 +509,7 @@ async function handleAIResponse({ chatId, aiResponse, session }) {
         await sessionStore.update(chatId, { kycSessionId: kycSession.sessionId });
         await telegramService.sendText(chatId,
           `🔐 *Verify Your Identity*\n\n` +
-          `🔐 *Verify Your Identity*\n\nTap the link below:\n\n${kycSession.sessionUrl}\n\n` +
+          `🔐 *Verify Your Identity*\n\nTap the link below:\n\n${kycSession.url}\n\n` +
           `Takes less than 2 minutes. Fully encrypted and secure.`
         );
       } catch (err) {

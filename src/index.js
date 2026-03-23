@@ -60,7 +60,7 @@ app.get('/health', (req, res) => {
     status: 'ok',
     service: 'Zeno WhatsApp Banking AI',
     markets: ['UK 🇬🇧', 'Nigeria 🇳🇬'],
-    kyc: 'Veriff', ukBanking: 'Stripe', ngBanking: 'Mono',
+    kyc: 'Stripe Identity', ukBanking: 'Stripe', ngBanking: 'Mono',
     database: database.isReady() ? 'postgresql' : 'unavailable',
     timestamp: new Date().toISOString(),
   });

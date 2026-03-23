@@ -68,6 +68,29 @@ router.get('/callback', async (req, res) => {
   }
 });
 
+// ─── IDENTITY CALLBACK ───────────────────────────────
+router.get('/identity-callback', async (req, res) => {
+  const { phone } = req.query;
+  const phoneNumber = phone?.replace(/\D/g, '');
+  logger.info(`Stripe Identity callback: phone=${phoneNumber}`);
+
+  res.send(`
+    <html>
+    <head><meta name="viewport" content="width=device-width,initial-scale=1">
+    <style>body{font-family:sans-serif;text-align:center;padding:60px 20px;background:#0f1923;color:#e2e8f0}h2{color:#00d4aa}</style>
+    </head>
+    <body>
+      <div style="font-size:3rem">✅</div>
+      <h2>Verification Submitted!</h2>
+      <p style="color:#8b949e">Your documents are being reviewed. We'll message you on WhatsApp or Telegram shortly.</p>
+      <p style="margin-top:20px">
+        <a href="https://wa.me/447459233682" style="color:#25d366;margin-right:16px">Open WhatsApp</a>
+        <a href="https://t.me/ZenoUKbot" style="color:#229ed9">Open Telegram</a>
+      </p>
+    </body></html>
+  `);
+});
+
 // ─── STRIPE WEBHOOK ───────────────────────────────────
 router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   const sig = req.headers['stripe-signature'];
@@ -89,12 +112,38 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
 
     if (event.type === 'financial_connections.account.created') {
       const account = event.data.object;
-      logger.info(`FC account created: ${account.id}, customer: ${account.account_holder?.customer}`);
+      logger.info(`FC account created: ${account.id}`);
     }
 
     if (event.type === 'payment_intent.succeeded') {
       const pi = event.data.object;
       logger.info(`Payment succeeded: ${pi.id}`);
+    }
+
+    // ── Stripe Identity Events ──────────────────────
+    if (event.type === 'identity.verification_session.verified' ||
+        event.type === 'identity.verification_session.requires_input') {
+
+      const vs = event.data.object;
+      const phoneNumber = vs.metadata?.phoneNumber?.replace(/\D/g, '');
+      logger.info(`Stripe Identity ${event.type}: ${vs.id}, phone=${phoneNumber}, status=${vs.status}`);
+
+      if (!phoneNumber) {
+        logger.warn('No phone in Stripe Identity metadata');
+        return;
+      }
+
+      const stripeService = require('../services/stripe');
+      const { text, verified } = stripeService.getIdentityStatusMessage(vs.status);
+
+      await sessionStore.update(phoneNumber, {
+        kycStatus: vs.status,
+        kycVerified: verified,
+        kycSessionId: vs.id,
+      });
+
+      await messenger.sendText(phoneNumber, text);
+      logger.info(`Stripe Identity result sent to ${phoneNumber}: ${vs.status}`);
     }
 
   } catch (err) {

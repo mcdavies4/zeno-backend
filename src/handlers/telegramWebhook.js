@@ -21,6 +21,7 @@ const searchService = require('../services/search');
 const statementsService = require('../services/statements');
 const emailService = require('../services/email');
 const logger = require('../utils/logger');
+const messenger = require('../services/messenger');
 
 router.post('/webhook', express.json(), async (req, res) => {
   res.sendStatus(200);

@@ -17,6 +17,7 @@ const virtualAccount = require('../services/virtualAccount');
 const receipts = require('../services/receipts');
 const searchService = require('../services/search');
 const statementsService = require('../services/statements');
+const emailService = require('../services/email');
 const logger = require('../utils/logger');
 
 /**
@@ -119,6 +120,12 @@ async function handleText({ from, contactName, message, session }) {
       }
     }
     await whatsappService.sendText(from, virtualAccount.formatWalletMessage(session));
+    return;
+  }
+
+  // ── Email CSV ────────────────────────────────────
+  if (lowerText.includes('email my csv') || lowerText.includes('email csv') || lowerText.includes('send csv') || lowerText.includes('send my csv')) {
+    await handleEmailCSV({ from, session });
     return;
   }
 
@@ -670,6 +677,7 @@ async function handleSupport({ id, session, sendFn }) {
 // ─── STATEMENT / REPORT / CSV ─────────────────────────
 async function handleStatement({ id, session, text, sendFn, platform }) {
   const statementsService = require('../services/statements');
+const emailService = require('../services/email');
   const country = detectCountry(id, session);
   const symbol = country.symbol;
 
@@ -799,6 +807,67 @@ ${csv.split('\n').slice(0, 6).join('\n')}
     } catch(err) {
       logger.error('Statement error:', err.message);
       await sendFn(id, `Sorry, couldn't generate your statement right now. Please try again.`);
+    }
+  }
+}
+
+// ─── EMAIL CSV ───────────────────────────────────────
+async function handleEmailCSV({ from, session }) {
+  const email = session.email;
+  if (!email) {
+    await whatsappService.sendText(from, `No email address on file. Please contact support.`);
+    return;
+  }
+
+  if (!banking.isBankConnected(session, from)) {
+    await whatsappService.sendText(from, `Connect your bank first before exporting transactions.`);
+    return;
+  }
+
+  await whatsappService.sendText(from, `⏳ Generating your CSV and sending to *${email}*...`);
+
+  try {
+    const country = detectCountry(from, session);
+    const result = await banking.getTransactions(from, session);
+    if (!result.success || !result.transactions?.length) {
+      await whatsappService.sendText(from, `No transactions found to export.`);
+      return;
+    }
+
+    const csv = statementsService.generateCSV(result.transactions, country.symbol);
+    const now = new Date();
+    const filename = `Zeno-Transactions-${(session.name || 'User').replace(/\s+/g, '-')}-${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}.csv`;
+
+    await emailService.sendCSV({
+      toEmail: email,
+      toName: session.name || 'Zeno User',
+      csvData: csv,
+      filename,
+      transactionCount: result.transactions.length,
+      symbol: country.symbol,
+      period: 'Recent transactions',
+    });
+
+    await whatsappService.sendText(from,
+      `✅ *CSV Sent!*
+
+` +
+      `Your transactions have been emailed to *${email}*
+
+` +
+      `• ${result.transactions.length} transactions
+` +
+      `• File: ${filename}
+
+` +
+      `Check your inbox — it may take a few minutes to arrive.`
+    );
+  } catch(err) {
+    logger.error('Email CSV error:', err.message);
+    if (err.message.includes('auth') || err.message.includes('SMTP')) {
+      await whatsappService.sendText(from, `Email service not configured yet. Please contact support.`);
+    } else {
+      await whatsappService.sendText(from, `Sorry, couldn't send the email right now. Please try again.`);
     }
   }
 }
@@ -1114,352 +1183,5 @@ async function switchToCountry(from, session, countryCode) {
   );
 }
 
-
-// ─── SUPPORT HANDLER ─────────────────────────────────
-async function handleSupport({ id, session, sendFn }) {
-  const { detectCountry } = require('../utils/countryDetect');
-  const country = detectCountry(id, session);
-
-  if (country.code === 'NG') {
-    await sendFn(id,
-      `🙋 *Need Help?*
-
-` +
-      `Our Nigeria support team is ready to assist you.
-
-` +
-      `📱 *WhatsApp:* https://wa.me/2349037745486
-` +
-      `📞 *Call/Text:* +234 903 774 5486
-
-` +
-      `_Tap the link above to start a chat — we typically reply within a few minutes.`
-    );
-  } else {
-    await sendFn(id,
-      `🙋 *Need Help?*
-
-` +
-      `Our UK support team is ready to assist you.
-
-` +
-      `📱 *WhatsApp:* https://wa.me/447883305130
-` +
-      `📞 *Call/Text:* +44 7883 305130
-
-` +
-      `_Tap the link above to start a chat — we typically reply within a few minutes.`
-    );
-  }
-}
-
-
-
-// ─── TRANSACTION SEARCH ──────────────────────────────
-async function handleSearch({ from, session, text }) {
-  const country = detectCountry(from, session);
-
-  if (!banking.isBankConnected(session, from)) {
-    await whatsappService.sendText(from, `Connect your bank first to search transactions!`);
-    return;
-  }
-
-  await whatsappService.sendText(from, `🔍 Searching transactions...`);
-
-  try {
-    const result = await banking.getTransactions(from, session);
-    if (!result.success || !result.transactions?.length) {
-      await whatsappService.sendText(from, `No transactions found.`);
-      return;
-    }
-
-    const results = searchService.searchTransactions(result.transactions, text);
-    const msg = searchService.formatSearchResults(results, country.symbol, text);
-    await whatsappService.sendText(from, msg);
-  } catch(err) {
-    logger.error('Search error:', err.message);
-    await whatsappService.sendText(from, `Couldn't search transactions right now.`);
-  }
-}
-
-// ─── EXCHANGE RATE ────────────────────────────────────
-async function handleExchange({ from, session, text }) {
-  const parsed = searchService.parseExchangeQuery(text);
-  if (!parsed) {
-    await whatsappService.sendText(from,
-      `💱 Try:
-• "What's £1 in naira?"
-• "Convert $500 to pounds"
-• "Exchange rate today"`
-    );
-    return;
-  }
-
-  try {
-    const { rate, from: f, to: t } = await searchService.getExchangeRate(parsed.from, parsed.to);
-    const converted = (parsed.amount * rate).toLocaleString('en', { maximumFractionDigits: 2 });
-    const symbols = { GBP: '£', NGN: '₦', USD: '$', EUR: '€' };
-
-    await whatsappService.sendText(from,
-      `💱 *Exchange Rate*
-
-` +
-      `${symbols[f] || f}1 = *${symbols[t] || t}${rate.toLocaleString('en', { maximumFractionDigits: 2 })}*
-
-` +
-      (parsed.amount > 1 ? `${symbols[f] || f}${parsed.amount.toLocaleString()} = *${symbols[t] || t}${converted}*
-
-` : '') +
-      `Live rate · ${new Date().toLocaleDateString('en-GB')}`
-    );
-  } catch(err) {
-    await whatsappService.sendText(from, `Couldn't fetch exchange rate right now. Try again shortly.`);
-  }
-}
-
-
-
-
-// ─── BILL PAYMENTS & AIRTIME ─────────────────────────
-async function handleBillPayment({ from, session, text, country }) {
-  const parsed = bills.parseBillCommand(text);
-
-  if (!parsed) {
-    await whatsappService.sendText(from,
-      `📱 *Bills & Airtime*
-
-` +
-      `I can help you with:
-` +
-      `• *Airtime:* "Buy ₦500 airtime for 08012345678"
-` +
-      `• *Electricity:* "Pay Ikeja Electric ₦5000 meter 12345678"
-` +
-      `• *DSTV:* "Pay DSTV ₦6500 smartcard 1234567890"
-` +
-      `• *Data:* "Buy MTN data 1000 for 08012345678"`
-    );
-    return;
-  }
-
-  // Store pending bill and ask for PIN
-  await sessionStore.update(from, {
-    pendingBill: parsed,
-    awaitingPin: true,
-  });
-
-  let summary = '';
-  if (parsed.type === 'airtime') {
-    summary = `₦${parsed.amount.toLocaleString()} airtime for *${parsed.phone}* (${parsed.network.toUpperCase()})`;
-  } else if (parsed.type === 'electricity') {
-    summary = `₦${parsed.amount.toLocaleString()} electricity (${parsed.disco.toUpperCase()}) meter *${parsed.meterNumber}*`;
-  } else if (parsed.type === 'tv') {
-    summary = `₦${parsed.amount.toLocaleString()} ${parsed.provider.toUpperCase()} card *${parsed.smartCardNumber}*`;
-  }
-
-  await whatsappService.sendText(from,
-    `📋 *Bill Payment Summary*
-
-` +
-    `${summary}
-
-` +
-    `🔐 Enter your PIN to confirm:`
-  );
-}
-
-// ─── SPENDING ANALYSIS ───────────────────────────────
-async function handleSpendingAnalysis({ from, session }) {
-  const country = detectCountry(from, session);
-  const symbol = country.symbol;
-
-  if (!banking.isBankConnected(session, from)) {
-    try {
-      const authLink = await banking.generateAuthLink(from, session);
-      await whatsappService.sendText(from,
-        `📊 Connect your bank first to see spending analysis!
-
-${authLink}`
-      );
-    } catch(e) {
-      await whatsappService.sendText(from, `Connect your bank first to see spending analysis!`);
-    }
-    return;
-  }
-
-  await whatsappService.sendText(from, `📊 Analysing your spending...`);
-
-  try {
-    const result = await banking.getTransactions(from, session);
-    if (!result.success || !result.transactions?.length) {
-      await whatsappService.sendText(from, `No recent transactions found to analyse.`);
-      return;
-    }
-
-    const analysis = insights.analyseSpending(result.transactions, symbol);
-    const msg = insights.formatAnalysis(analysis, symbol, 'recently');
-    await whatsappService.sendText(from, msg);
-  } catch(err) {
-    logger.error('Spending analysis error:', err.message);
-    await whatsappService.sendText(from, `Couldn't fetch spending data right now. Please try again.`);
-  }
-}
-
-// ─── ALERTS ───────────────────────────────────────────
-async function handleAlerts({ from, session, text }) {
-  const country = detectCountry(from, session);
-  const symbol = country.symbol;
-
-  // Show existing alerts
-  if (text.includes('my alerts') || text.includes('show alerts') || text.includes('list alerts')) {
-    const alerts = session.alerts || {};
-    if (!Object.keys(alerts).length) {
-      await whatsappService.sendText(from,
-        `🔔 *No alerts set*
-
-You can set:
-• *"Alert me when balance below ${symbol}500"*
-• *"Alert me for transactions over ${symbol}200"*`
-      );
-      return;
-    }
-    let msg = `🔔 *Your Alerts*
-
-`;
-    if (alerts.lowBalance) msg += `• Low balance: below *${symbol}${alerts.lowBalance}*
-`;
-    if (alerts.largeTransaction) msg += `• Large transaction: over *${symbol}${alerts.largeTransaction}*
-`;
-    await whatsappService.sendText(from, msg.trim());
-    return;
-  }
-
-  // Parse and set new alert
-  const alert = insights.parseAlertCommand(text);
-  if (!alert) {
-    await whatsappService.sendText(from,
-      `🔔 *Set an Alert*
-
-Try:
-• *"Alert me when balance below ${symbol}500"*
-• *"Alert me for transactions over ${symbol}200"*`
-    );
-    return;
-  }
-
-  const currentAlerts = session.alerts || {};
-  currentAlerts[alert.type] = alert.amount;
-  await sessionStore.update(from, { alerts: currentAlerts });
-
-  const alertDesc = alert.type === 'lowBalance'
-    ? `balance drops below *${symbol}${alert.amount}*`
-    : `any transaction over *${symbol}${alert.amount}*`;
-
-  await whatsappService.sendText(from,
-    `✅ *Alert Set!*
-
-I'll notify you when ${alertDesc}.
-
-To see all alerts: *"Show my alerts"*
-To remove: *"Remove alerts"*`
-  );
-}
-
-// ─── BENEFICIARIES ────────────────────────────────────
-async function handleBeneficiaries({ from, session, text }) {
-  // List beneficiaries
-  if (text.includes('list') || text.includes('show') || text.includes('my contacts') || text.includes('saved')) {
-    const list = insights.listBeneficiaries(session);
-    if (!list) {
-      await whatsappService.sendText(from,
-        `👥 *No saved contacts yet*
-
-After sending money to someone, reply *"Save [name]'s details"* to save them for next time.`
-      );
-      return;
-    }
-    await whatsappService.sendText(from, list);
-    return;
-  }
-
-  await whatsappService.sendText(from,
-    `👥 *Saved Contacts*
-
-After a transfer, say *"Save John's details"* to remember them.
-
-Next time just say *"Send £50 to John"* without re-entering bank details!`
-  );
-}
-
-// ─── SWITCH COUNTRY ──────────────────────────────────
-async function handleSwitchCountry({ from, session, text }) {
-  const current = session.bankingCountry || 'UK';
-  let newCountry = null;
-
-  if (text.includes('nigeria') || text.includes('naija') || text.includes('nigerian')) {
-    newCountry = 'NG';
-  } else if (text.includes('uk') || text.includes('britain') || text.includes('england') || text.includes('united kingdom')) {
-    newCountry = 'UK';
-  }
-
-  if (newCountry && newCountry === current) {
-    const flag = newCountry === 'NG' ? '🇳🇬' : '🇬🇧';
-    const name = newCountry === 'NG' ? 'Nigeria' : 'United Kingdom';
-    await whatsappService.sendText(from,
-      `${flag} You're already set to *${name}*!
-
-Your balance and transfers are already using ${newCountry === 'NG' ? '₦ NGN' : '£ GBP'}.`
-    );
-    return;
-  }
-
-  if (newCountry) {
-    await switchToCountry(from, session, newCountry);
-    return;
-  }
-
-  // Show options
-  const currentFlag = current === 'NG' ? '🇳🇬' : '🇬🇧';
-  const currentName = current === 'NG' ? 'Nigeria' : 'United Kingdom';
-  await sessionStore.update(from, { awaitingField: 'country_switch' });
-  await whatsappService.sendText(from,
-    `🌍 *Switch Banking Country*
-
-` +
-    `Currently set to: ${currentFlag} *${currentName}*
-
-` +
-    `Switch to:
-` +
-    `1️⃣ 🇬🇧 United Kingdom (£ GBP)
-` +
-    `2️⃣ 🇳🇬 Nigeria (₦ NGN)
-
-` +
-    `Reply with *1* or *2* to switch.`
-  );
-}
-
-async function switchToCountry(from, session, countryCode) {
-  const isNG = countryCode === 'NG';
-  const flag = isNG ? '🇳🇬' : '🇬🇧';
-  const name = isNG ? 'Nigeria' : 'United Kingdom';
-  const currency = isNG ? '₦ NGN' : '£ GBP';
-
-  await sessionStore.update(from, {
-    bankingCountry: countryCode,
-    awaitingField: null,
-  });
-
-  await whatsappService.sendText(from,
-    `✅ *Switched to ${flag} ${name}!*
-
-` +
-    `Your account is now set to *${currency}*.
-
-` +
-    `${isNG ? 'Connect your Nigerian bank:\n• Say *"Connect my bank"*\n• Then check *"What\'s my balance?"*' : 'Connect your UK bank:\n• Say *"Connect my bank"*\n• Then check *"What\'s my balance?"*'}`
-  );
-}
 
 module.exports = { handle };

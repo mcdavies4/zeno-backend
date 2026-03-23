@@ -17,7 +17,6 @@ const virtualAccount = require('../services/virtualAccount');
 const receipts = require('../services/receipts');
 const searchService = require('../services/search');
 const statementsService = require('../services/statements');
-const emailService = require('../services/email');
 const logger = require('../utils/logger');
 
 /**
@@ -120,12 +119,6 @@ async function handleText({ from, contactName, message, session }) {
       }
     }
     await whatsappService.sendText(from, virtualAccount.formatWalletMessage(session));
-    return;
-  }
-
-  // ── Email CSV ────────────────────────────────────
-  if (lowerText.includes('email my csv') || lowerText.includes('email csv') || lowerText.includes('send csv') || lowerText.includes('send my csv')) {
-    await handleEmailCSV({ from, session });
     return;
   }
 
@@ -677,7 +670,6 @@ async function handleSupport({ id, session, sendFn }) {
 // ─── STATEMENT / REPORT / CSV ─────────────────────────
 async function handleStatement({ id, session, text, sendFn, platform }) {
   const statementsService = require('../services/statements');
-const emailService = require('../services/email');
   const country = detectCountry(id, session);
   const symbol = country.symbol;
 
@@ -807,67 +799,6 @@ ${csv.split('\n').slice(0, 6).join('\n')}
     } catch(err) {
       logger.error('Statement error:', err.message);
       await sendFn(id, `Sorry, couldn't generate your statement right now. Please try again.`);
-    }
-  }
-}
-
-// ─── EMAIL CSV ───────────────────────────────────────
-async function handleEmailCSV({ from, session }) {
-  const email = session.email;
-  if (!email) {
-    await whatsappService.sendText(from, `No email address on file. Please contact support.`);
-    return;
-  }
-
-  if (!banking.isBankConnected(session, from)) {
-    await whatsappService.sendText(from, `Connect your bank first before exporting transactions.`);
-    return;
-  }
-
-  await whatsappService.sendText(from, `⏳ Generating your CSV and sending to *${email}*...`);
-
-  try {
-    const country = detectCountry(from, session);
-    const result = await banking.getTransactions(from, session);
-    if (!result.success || !result.transactions?.length) {
-      await whatsappService.sendText(from, `No transactions found to export.`);
-      return;
-    }
-
-    const csv = statementsService.generateCSV(result.transactions, country.symbol);
-    const now = new Date();
-    const filename = `Zeno-Transactions-${(session.name || 'User').replace(/\s+/g, '-')}-${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}.csv`;
-
-    await emailService.sendCSV({
-      toEmail: email,
-      toName: session.name || 'Zeno User',
-      csvData: csv,
-      filename,
-      transactionCount: result.transactions.length,
-      symbol: country.symbol,
-      period: 'Recent transactions',
-    });
-
-    await whatsappService.sendText(from,
-      `✅ *CSV Sent!*
-
-` +
-      `Your transactions have been emailed to *${email}*
-
-` +
-      `• ${result.transactions.length} transactions
-` +
-      `• File: ${filename}
-
-` +
-      `Check your inbox — it may take a few minutes to arrive.`
-    );
-  } catch(err) {
-    logger.error('Email CSV error:', err.message);
-    if (err.message.includes('auth') || err.message.includes('SMTP')) {
-      await whatsappService.sendText(from, `Email service not configured yet. Please contact support.`);
-    } else {
-      await whatsappService.sendText(from, `Sorry, couldn't send the email right now. Please try again.`);
     }
   }
 }
@@ -1223,67 +1154,6 @@ async function handleSupport({ id, session, sendFn }) {
 }
 
 
-
-// ─── EMAIL CSV ───────────────────────────────────────
-async function handleEmailCSV({ from, session }) {
-  const email = session.email;
-  if (!email) {
-    await whatsappService.sendText(from, `No email address on file. Please contact support.`);
-    return;
-  }
-
-  if (!banking.isBankConnected(session, from)) {
-    await whatsappService.sendText(from, `Connect your bank first before exporting transactions.`);
-    return;
-  }
-
-  await whatsappService.sendText(from, `⏳ Generating your CSV and sending to *${email}*...`);
-
-  try {
-    const country = detectCountry(from, session);
-    const result = await banking.getTransactions(from, session);
-    if (!result.success || !result.transactions?.length) {
-      await whatsappService.sendText(from, `No transactions found to export.`);
-      return;
-    }
-
-    const csv = statementsService.generateCSV(result.transactions, country.symbol);
-    const now = new Date();
-    const filename = `Zeno-Transactions-${(session.name || 'User').replace(/\s+/g, '-')}-${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}.csv`;
-
-    await emailService.sendCSV({
-      toEmail: email,
-      toName: session.name || 'Zeno User',
-      csvData: csv,
-      filename,
-      transactionCount: result.transactions.length,
-      symbol: country.symbol,
-      period: 'Recent transactions',
-    });
-
-    await whatsappService.sendText(from,
-      `✅ *CSV Sent!*
-
-` +
-      `Your transactions have been emailed to *${email}*
-
-` +
-      `• ${result.transactions.length} transactions
-` +
-      `• File: ${filename}
-
-` +
-      `Check your inbox — it may take a few minutes to arrive.`
-    );
-  } catch(err) {
-    logger.error('Email CSV error:', err.message);
-    if (err.message.includes('auth') || err.message.includes('SMTP')) {
-      await whatsappService.sendText(from, `Email service not configured yet. Please contact support.`);
-    } else {
-      await whatsappService.sendText(from, `Sorry, couldn't send the email right now. Please try again.`);
-    }
-  }
-}
 
 // ─── TRANSACTION SEARCH ──────────────────────────────
 async function handleSearch({ from, session, text }) {

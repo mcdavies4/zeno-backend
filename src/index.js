@@ -14,6 +14,7 @@ const monoRouter = require('./handlers/monoCallback');
 const database = require('./services/database');
 const { startScheduler } = require('./services/scheduler');
 const flutterwaveWebhook = require('./handlers/flutterwaveWebhook');
+const stripeCallback = require('./handlers/stripeCallback');
 const logger = require('./utils/logger');
 
 const app = express();
@@ -61,7 +62,7 @@ app.get('/health', (req, res) => {
     status: 'ok',
     service: 'Zeno WhatsApp Banking AI',
     markets: ['UK 🇬🇧', 'Nigeria 🇳🇬'],
-    kyc: 'Veriff',
+    kyc: 'Veriff', ukBanking: 'Stripe', ngBanking: 'Mono',
     database: database.isReady() ? 'postgresql' : 'unavailable',
     timestamp: new Date().toISOString(),
   });

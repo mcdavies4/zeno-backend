@@ -39,6 +39,19 @@ app.get('/favicon.svg', (req, res) => res.sendFile(path.join(__dirname, '../favi
 app.use('/webhook', webhookRouter);
 app.use('/truelayer', truelayerRouter);
 app.use('/veriff', veriffWebhook);
+
+// Serve generated statement files
+app.use('/statements', (req, res, next) => {
+  const filename = req.path.replace('/', '');
+  // Security — only allow alphanumeric, dash, dot
+  if (!/^[a-zA-Z0-9_\-\.]+$/.test(filename)) return res.status(403).send('Forbidden');
+  const filepath = path.join('/tmp/zeno-statements', filename);
+  if (require('fs').existsSync(filepath)) {
+    res.sendFile(filepath);
+  } else {
+    res.status(404).send('File not found or expired');
+  }
+});
 app.use('/admin', adminRouter);
 app.use('/telegram', telegramRouter);
 app.use('/mono', monoRouter);

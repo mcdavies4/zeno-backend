@@ -18,6 +18,7 @@ const security = require('../services/security');
 const virtualAccount = require('../services/virtualAccount');
 const receipts = require('../services/receipts');
 const searchService = require('../services/search');
+const statementsService = require('../services/statements');
 const logger = require('../utils/logger');
 
 router.post('/webhook', express.json(), async (req, res) => {
@@ -118,6 +119,12 @@ Contact support: https://wa.me/2349037745486`
     }
 
 
+    // ── Statements / Reports / CSV ───────────────────
+    if (['statement', 'bank statement', 'download statement', 'spending report', 'monthly report', 'export csv', 'export transactions', 'csv', 'transaction history', 'account statement'].some(k => lowerText.includes(k))) {
+      await handleStatement({ id: chatId, session, text: lowerText, sendFn: telegramService.sendText.bind(telegramService), platform: 'telegram' });
+      return;
+    }
+
     // ── Receipts ─────────────────────────────────────
     if (['receipt', 'last receipt', 'my receipts', 'show receipt'].some(k => lowerText.includes(k))) {
       const last = receipts.getLastReceipt(session);
@@ -167,6 +174,12 @@ Contact support: https://wa.me/2349037745486`
     }
 
     // ── KYC keywords ──────────────────────────────────
+    // ── Statements, CSV Export ───────────────────────
+    if (['statement', 'bank statement', 'download statement', 'export', 'csv', 'spending report', 'my statement', 'transaction history', 'download transactions'].some(k => lowerText.includes(k))) {
+      await handleStatement({ id: chatId, session, text: lowerText, sendFn: telegramService.sendText.bind(telegramService), platform: 'telegram' });
+      return;
+    }
+
     // ── Wallet / Virtual Account ─────────────────────
     if (session.bankingCountry === 'NG' && ['my account', 'my wallet', 'wallet balance', 'fund wallet', 'top up', 'topup', 'account number', 'zeno account', 'add money'].some(k => lowerText.includes(k))) {
       if (!session.virtualAccount) {
@@ -292,7 +305,7 @@ async function initiateTransfer({ chatId, session }) {
       const fee = transfer.fee || feesService.calculateFee(transfer.amount, country.code);
       const s = fee.symbol;
       const total = (Number(transfer.amount) + fee.totalFee).toLocaleString('en', { minimumFractionDigits: 2 });
-      return `🔐 *Security Check*\n\nEnter your PIN to authorise:\n• *${s}${Number(transfer.amount).toLocaleString('en', { minimumFractionDigits: 2 })}* to *${transfer.recipientName}*\n• Fee: *${s}${fee.totalFee.toFixed(2)}*\n• Total: *${s}${total}*\n\n_Never share your PIN with anyone._`;
+      return `🔐 *Security Check*\n\nEnter your PIN to authorise:\n• *${s}${Number(transfer.amount).toLocaleString('en', { minimumFractionDigits: 2 })}* to *${transfer.recipientName}*\n• Fee: *${s}${fee.totalFee.toFixed(2)}*\n• Total: *${s}${total}*\n\nNever share your PIN with anyone.`;
     })()
   );
 }
@@ -534,7 +547,7 @@ async function handleSupport({ id, session, sendFn }) {
       `📞 *Call/Text:* +234 903 774 5486
 
 ` +
-      `_Tap the link above to start a chat — we typically reply within a few minutes._`
+      `Tap the link above to start a chat — we typically reply within a few minutes.`
     );
   } else {
     await sendFn(id,
@@ -549,8 +562,145 @@ async function handleSupport({ id, session, sendFn }) {
       `📞 *Call/Text:* +44 7883 305130
 
 ` +
-      `_Tap the link above to start a chat — we typically reply within a few minutes._`
+      `Tap the link above to start a chat — we typically reply within a few minutes.`
     );
+  }
+}
+
+
+// ─── STATEMENT / REPORT / CSV ─────────────────────────
+async function handleStatement({ id, session, text, sendFn, platform }) {
+  const statementsService = require('../services/statements');
+  const country = detectCountry(id, session);
+  const symbol = country.symbol;
+
+  if (!banking.isBankConnected(session, id)) {
+    await sendFn(id, `Connect your bank first to download statements!
+
+Say *"connect my bank"* to get started.`);
+    return;
+  }
+
+  const req = statementsService.parseStatementRequest(text);
+
+  // CSV export — works from cached transactions
+  if (req.type === 'csv') {
+    await sendFn(id, `⏳ Generating your CSV export...`);
+    try {
+      const result = await banking.getTransactions(id, session);
+      if (!result.success || !result.transactions?.length) {
+        await sendFn(id, `No transactions found to export.`);
+        return;
+      }
+      const csv = statementsService.generateCSV(result.transactions, symbol);
+      const lineCount = result.transactions.length;
+      await sendFn(id,
+        `📋 *CSV Export Ready*
+
+` +
+        `${lineCount} transactions exported.
+
+` +
+        `Your CSV data:
+\`\`\`
+${csv.split('\n').slice(0, 6).join('\n')}
+...\`\`\`
+
+` +
+        `Reply *"email my CSV"* and we'll send the full file to your registered email.`
+      );
+    } catch(err) {
+      logger.error('CSV export error:', err.message);
+      await sendFn(id, `Sorry, couldn't generate CSV right now. Please try again.`);
+    }
+    return;
+  }
+
+  // Spending Report — works from cached transactions
+  if (req.type === 'report') {
+    await sendFn(id, `⏳ Generating your spending report...`);
+    try {
+      const result = await banking.getTransactions(id, session);
+      if (!result.success || !result.transactions?.length) {
+        await sendFn(id, `No transactions found to generate report.`);
+        return;
+      }
+      const report = statementsService.generateSpendingReport(result.transactions, session);
+      await sendFn(id, report);
+    } catch(err) {
+      logger.error('Report error:', err.message);
+      await sendFn(id, `Sorry, couldn't generate report right now. Please try again.`);
+    }
+    return;
+  }
+
+  // PDF Statement — Nigeria via Mono, UK via transaction data
+  if (req.type === 'pdf') {
+    await sendFn(id, `⏳ Requesting your bank statement (${req.periodLabel})...`);
+    try {
+      if (country.code === 'NG' && session.monoAccountId) {
+        // Request PDF from Mono
+        const stmtReq = await statementsService.requestMonoStatement(session.monoAccountId, req.period);
+
+        if (stmtReq.pdfUrl) {
+          await sendFn(id,
+            `📄 *Bank Statement Ready*
+
+` +
+            `Your ${req.periodLabel} bank statement:
+
+` +
+            `${stmtReq.pdfUrl}
+
+` +
+            `This link expires in 7 days.`
+          );
+        } else if (stmtReq.jobId) {
+          // Poll for up to 30 seconds
+          await sendFn(id, `Statement is being generated, please wait...`);
+          let pdfUrl = null;
+          for (let i = 0; i < 6; i++) {
+            await new Promise(r => setTimeout(r, 5000));
+            const poll = await statementsService.pollMonoStatement(session.monoAccountId, stmtReq.jobId);
+            if (poll.pdfUrl) { pdfUrl = poll.pdfUrl; break; }
+          }
+          if (pdfUrl) {
+            await sendFn(id,
+              `📄 *Bank Statement Ready*
+
+` +
+              `Your ${req.periodLabel} bank statement:
+
+` +
+              `${pdfUrl}
+
+` +
+              `This link expires in 7 days.`
+            );
+          } else {
+            await sendFn(id, `⏳ Your statement is still being generated. Try again in a minute.`);
+          }
+        }
+      } else {
+        // UK or no Mono — generate from transaction data
+        const result = await banking.getTransactions(id, session);
+        if (!result.success || !result.transactions?.length) {
+          await sendFn(id, `No transactions found for your statement.`);
+          return;
+        }
+        const report = statementsService.generateSpendingReport(result.transactions, session, req.periodLabel);
+        await sendFn(id, report);
+        await sendFn(id,
+          `Full PDF statements are coming soon for UK accounts!
+
+` +
+          `In the meantime, say *"spending report"* for a detailed breakdown or *"export CSV"* to download your transactions.`
+        );
+      }
+    } catch(err) {
+      logger.error('Statement error:', err.message);
+      await sendFn(id, `Sorry, couldn't generate your statement right now. Please try again.`);
+    }
   }
 }
 
@@ -610,10 +760,80 @@ async function handleTelegramExchange({ chatId, session, text }) {
       (parsed.amount > 1 ? `${symbols[f] || f}${parsed.amount.toLocaleString()} = *${symbols[t] || t}${converted}*
 
 ` : '') +
-      `_Live rate · ${new Date().toLocaleDateString('en-GB')}_`
+      `Live rate · ${new Date().toLocaleDateString('en-GB')}_`
     );
   } catch(err) {
     await telegramService.sendText(chatId, `Couldn't fetch exchange rate right now.`);
+  }
+}
+
+
+// ─── STATEMENTS HANDLER ──────────────────────────────
+async function handleStatement({ id, session, text, sendFn, platform }) {
+  const statementsService = require('../services/statements');
+  const country = detectCountry(id, session);
+  const symbol = country.symbol;
+
+  if (!banking.isBankConnected(session, id)) {
+    await sendFn(id, `Connect your bank first to generate statements!`);
+    return;
+  }
+
+  const dateRange = statementsService.parseDateRange(text);
+  const isCSV = text.includes('csv') || text.includes('excel') || text.includes('spreadsheet');
+  const isReport = text.includes('report') || text.includes('spending report');
+
+  await sendFn(id, `⏳ Generating your ${isCSV ? 'CSV export' : 'PDF statement'} for *${dateRange.label}*...`);
+
+  try {
+    const result = await banking.getTransactions(id, session);
+    if (!result.success || !result.transactions?.length) {
+      await sendFn(id, `No transactions found for ${dateRange.label}.`);
+      return;
+    }
+
+    const filtered = statementsService.filterByDate(result.transactions, dateRange.from, dateRange.to);
+    if (!filtered.length) {
+      await sendFn(id, `No transactions found for ${dateRange.label}.`);
+      return;
+    }
+
+    const timestamp = Date.now();
+    const safeName = (session.name || 'User').replace(/[^a-zA-Z]/g, '');
+
+    if (isCSV) {
+      const csv = statementsService.generateCSV(filtered, symbol, session.name, dateRange);
+      const filename = `Zeno-${safeName}-${dateRange.label.replace(/\s+/g, '-')}-${timestamp}.csv`;
+      const url = await statementsService.saveAndGetUrl(Buffer.from(csv), filename, 'text/csv');
+      await sendFn(id,
+        `✅ *CSV Export Ready!*\n\n` +
+        `📊 Period: *${dateRange.label}*\n` +
+        `📝 Transactions: *${filtered.length}*\n\n` +
+        `Download your file:\n${url}\n\nLink expires in 24 hours.`
+      );
+    } else {
+      const pdfBuffer = await statementsService.generatePDFStatement({
+        transactions: filtered,
+        symbol,
+        userName: session.name,
+        bankName: session.bankName,
+        accountNumber: session.accountNumber,
+        dateRange,
+        countryCode: country.code,
+      });
+      const filename = `Zeno-Statement-${safeName}-${dateRange.label.replace(/\s+/g, '-')}-${timestamp}.pdf`;
+      const url = await statementsService.saveAndGetUrl(pdfBuffer, filename, 'application/pdf');
+      await sendFn(id,
+        `✅ *Bank Statement Ready!*\n\n` +
+        `📄 Period: *${dateRange.label}*\n` +
+        `📝 Transactions: *${filtered.length}*\n\n` +
+        `Download your statement:\n${url}\n\nLink expires in 24 hours.`
+      );
+    }
+
+  } catch (err) {
+    logger.error('Statement generation error:', err.message);
+    await sendFn(id, `Sorry, couldn't generate your statement right now. Please try again.`);
   }
 }
 

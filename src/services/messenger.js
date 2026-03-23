@@ -23,7 +23,9 @@ function isTelegram(chatId) {
 }
 
 async function sendText(chatId, text) {
-  if (isTelegram(chatId)) {
+  const telegram = isTelegram(chatId);
+  logger.info(`Messenger routing ${chatId} → ${telegram ? 'Telegram' : 'WhatsApp'}`);
+  if (telegram) {
     return telegramService.sendText(chatId, text);
   }
   return whatsappService.sendText(chatId, text);

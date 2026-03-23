@@ -58,14 +58,17 @@ async function pollMonoStatement(accountId, jobId) {
 
 // ─── GENERATE CSV FROM TRANSACTIONS ──────────────────
 function generateCSV(transactions, symbol = '£') {
-  const header = 'Date,Description,Amount,Type,Balance\n';
+  const header = 'Date,Description,Type,Amount,Balance\n';
   const rows = transactions.map(tx => {
     const date = tx.date ? new Date(tx.date).toLocaleDateString('en-GB') : '';
-    const desc = (tx.description || tx.narration || '').replace(/,/g, ' ');
+    const desc = (tx.description || tx.narration || 'Unknown').replace(/,/g, ' ').replace(/"/g, "'");
     const amount = Math.abs(tx.amount || 0).toFixed(2);
-    const type = tx.amount < 0 || tx.type === 'debit' ? 'Debit' : 'Credit';
-    const balance = tx.balance ? Math.abs(tx.balance).toFixed(2) : '';
-    return `${date},"${desc}",${symbol}${amount},${type},${symbol}${balance}`;
+    const type = (tx.amount < 0 || tx.type === 'debit') ? 'Debit' : 'Credit';
+    // Balance might be in kobo (NG) — divide if suspiciously large
+    let bal = tx.balance ? Math.abs(tx.balance) : 0;
+    if (symbol === '₦' && bal > 1000000) bal = bal / 100; // convert kobo to naira
+    const balance = bal > 0 ? bal.toFixed(2) : '';
+    return `${date},"${desc}",${type},${symbol}${amount},${balance ? symbol + balance : ''}`;
   }).join('\n');
 
   return header + rows;

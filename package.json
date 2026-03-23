@@ -21,7 +21,7 @@
     "uuid": "^9.0.0",
     "@upstash/redis": "^1.28.0",
     "pg": "^8.11.0",
-    "pdf-lib": "^1.17.1"
+    "nodemailer": "^6.9.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.2",

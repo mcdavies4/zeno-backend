@@ -19,6 +19,7 @@ const virtualAccount = require('../services/virtualAccount');
 const receipts = require('../services/receipts');
 const searchService = require('../services/search');
 const statementsService = require('../services/statements');
+const emailService = require('../services/email');
 const logger = require('../utils/logger');
 
 router.post('/webhook', express.json(), async (req, res) => {
@@ -118,6 +119,12 @@ Contact support: https://wa.me/2349037745486`
       return;
     }
 
+
+    // ── Email CSV ────────────────────────────────────
+    if (lowerText.includes('email my csv') || lowerText.includes('email csv') || lowerText.includes('send csv') || lowerText.includes('send my csv')) {
+      await handleTelegramEmailCSV({ chatId, session });
+      return;
+    }
 
     // ── Statements / Reports / CSV ───────────────────
     if (['statement', 'bank statement', 'download statement', 'spending report', 'monthly report', 'export csv', 'export transactions', 'csv', 'transaction history', 'account statement'].some(k => lowerText.includes(k))) {
@@ -571,6 +578,7 @@ async function handleSupport({ id, session, sendFn }) {
 // ─── STATEMENT / REPORT / CSV ─────────────────────────
 async function handleStatement({ id, session, text, sendFn, platform }) {
   const statementsService = require('../services/statements');
+const emailService = require('../services/email');
   const country = detectCountry(id, session);
   const symbol = country.symbol;
 
@@ -704,6 +712,53 @@ ${csv.split('\n').slice(0, 6).join('\n')}
   }
 }
 
+// ─── EMAIL CSV (TELEGRAM) ────────────────────────────
+async function handleTelegramEmailCSV({ chatId, session }) {
+  const email = session.email;
+  if (!email) {
+    await telegramService.sendText(chatId, `No email address on file. Please contact support.`);
+    return;
+  }
+  if (!banking.isBankConnected(session, chatId)) {
+    await telegramService.sendText(chatId, `Connect your bank first before exporting transactions.`);
+    return;
+  }
+  await telegramService.sendText(chatId, `⏳ Generating your CSV and sending to *${email}*...`);
+  try {
+    const { detectCountry } = require('../utils/countryDetect');
+    const country = detectCountry(chatId, session);
+    const result = await banking.getTransactions(chatId, session);
+    if (!result.success || !result.transactions?.length) {
+      await telegramService.sendText(chatId, `No transactions found to export.`);
+      return;
+    }
+    const csv = statementsService.generateCSV(result.transactions, country.symbol);
+    const now = new Date();
+    const filename = `Zeno-Transactions-${(session.name || 'User').replace(/\s+/g, '-')}-${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}.csv`;
+    await emailService.sendCSV({
+      toEmail: email,
+      toName: session.name || 'Zeno User',
+      csvData: csv,
+      filename,
+      transactionCount: result.transactions.length,
+      symbol: country.symbol,
+      period: 'Recent transactions',
+    });
+    await telegramService.sendText(chatId,
+      `✅ *CSV Sent!*
+
+` +
+      `Emailed to *${email}*
+• ${result.transactions.length} transactions
+
+Check your inbox!`
+    );
+  } catch(err) {
+    logger.error('Telegram email CSV error:', err.message);
+    await telegramService.sendText(chatId, `Sorry, couldn't send the email right now. Please try again.`);
+  }
+}
+
 // ─── TRANSACTION SEARCH (TELEGRAM) ───────────────────
 async function handleTelegramSearch({ chatId, session, text }) {
   const { detectCountry } = require('../utils/countryDetect');
@@ -767,75 +822,6 @@ async function handleTelegramExchange({ chatId, session, text }) {
   }
 }
 
-
-// ─── STATEMENTS HANDLER ──────────────────────────────
-async function handleStatement({ id, session, text, sendFn, platform }) {
-  const statementsService = require('../services/statements');
-  const country = detectCountry(id, session);
-  const symbol = country.symbol;
-
-  if (!banking.isBankConnected(session, id)) {
-    await sendFn(id, `Connect your bank first to generate statements!`);
-    return;
-  }
-
-  const dateRange = statementsService.parseDateRange(text);
-  const isCSV = text.includes('csv') || text.includes('excel') || text.includes('spreadsheet');
-  const isReport = text.includes('report') || text.includes('spending report');
-
-  await sendFn(id, `⏳ Generating your ${isCSV ? 'CSV export' : 'PDF statement'} for *${dateRange.label}*...`);
-
-  try {
-    const result = await banking.getTransactions(id, session);
-    if (!result.success || !result.transactions?.length) {
-      await sendFn(id, `No transactions found for ${dateRange.label}.`);
-      return;
-    }
-
-    const filtered = statementsService.filterByDate(result.transactions, dateRange.from, dateRange.to);
-    if (!filtered.length) {
-      await sendFn(id, `No transactions found for ${dateRange.label}.`);
-      return;
-    }
-
-    const timestamp = Date.now();
-    const safeName = (session.name || 'User').replace(/[^a-zA-Z]/g, '');
-
-    if (isCSV) {
-      const csv = statementsService.generateCSV(filtered, symbol, session.name, dateRange);
-      const filename = `Zeno-${safeName}-${dateRange.label.replace(/\s+/g, '-')}-${timestamp}.csv`;
-      const url = await statementsService.saveAndGetUrl(Buffer.from(csv), filename, 'text/csv');
-      await sendFn(id,
-        `✅ *CSV Export Ready!*\n\n` +
-        `📊 Period: *${dateRange.label}*\n` +
-        `📝 Transactions: *${filtered.length}*\n\n` +
-        `Download your file:\n${url}\n\nLink expires in 24 hours.`
-      );
-    } else {
-      const pdfBuffer = await statementsService.generatePDFStatement({
-        transactions: filtered,
-        symbol,
-        userName: session.name,
-        bankName: session.bankName,
-        accountNumber: session.accountNumber,
-        dateRange,
-        countryCode: country.code,
-      });
-      const filename = `Zeno-Statement-${safeName}-${dateRange.label.replace(/\s+/g, '-')}-${timestamp}.pdf`;
-      const url = await statementsService.saveAndGetUrl(pdfBuffer, filename, 'application/pdf');
-      await sendFn(id,
-        `✅ *Bank Statement Ready!*\n\n` +
-        `📄 Period: *${dateRange.label}*\n` +
-        `📝 Transactions: *${filtered.length}*\n\n` +
-        `Download your statement:\n${url}\n\nLink expires in 24 hours.`
-      );
-    }
-
-  } catch (err) {
-    logger.error('Statement generation error:', err.message);
-    await sendFn(id, `Sorry, couldn't generate your statement right now. Please try again.`);
-  }
-}
 
 // ─── BILL PAYMENT (TELEGRAM) ─────────────────────────
 async function handleTelegramBillPayment({ chatId, session, text }) {

@@ -104,7 +104,7 @@ async function handleStep(from, session, input) {
         onboardingData: { ...session.onboardingData, email },
       });
       await messenger.sendText(from,
-        `✅ Got it!\n\nNow create a *4-digit PIN* to secure your account.\n\n🔐 You'll use this to authorise every payment.\n\n_Never share your PIN with anyone._`
+        `✅ Got it!\n\nNow create a *4-digit PIN* to secure your account.\n\n🔐 You'll use this to authorise every payment.\n\nNever share your PIN with anyone.`
       );
       break;
     }
@@ -152,7 +152,7 @@ async function handleStep(from, session, input) {
         `Which country is your *bank account* in?\n\n` +
         `1️⃣ 🇬🇧 United Kingdom\n` +
         `2️⃣ 🇳🇬 Nigeria\n\n` +
-        `_Reply with 1 or 2 — you can always add more countries later._`
+        `Reply with 1 or 2 — you can always add more countries later.`
       );
       break;
     }
@@ -169,7 +169,7 @@ async function handleStep(from, session, input) {
 
       if (!countryChoice) {
         await messenger.sendText(from,
-          `Please choose your bank country:\n\n1️⃣ 🇬🇧 United Kingdom\n2️⃣ 🇳🇬 Nigeria\n\n_Reply with 1 or 2_`
+          `Please choose your bank country:\n\n1️⃣ 🇬🇧 United Kingdom\n2️⃣ 🇳🇬 Nigeria\n\nReply with 1 or 2`
         );
         return;
       }

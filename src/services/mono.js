@@ -174,7 +174,7 @@ function formatTransactionsMessage(transactions) {
   transactions.forEach(tx => {
     const sign = tx.type === 'debit' ? '↑' : '↓';
     const amount = Math.abs(tx.amount).toLocaleString('en-NG', { minimumFractionDigits: 2 });
-    msg += `${sign} ₦${amount} — ${tx.description}\n_${tx.date}_\n\n`;
+    msg += `${sign} ₦${amount} — ${tx.description}\n${tx.date}\n\n`;
   });
   return msg.trim();
 }

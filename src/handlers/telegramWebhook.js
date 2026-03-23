@@ -20,6 +20,7 @@ const receipts = require('../services/receipts');
 const searchService = require('../services/search');
 const statementsService = require('../services/statements');
 const emailService = require('../services/email');
+const pdfGenerator = require('../services/pdfGenerator');
 const logger = require('../utils/logger');
 const messenger = require('../services/messenger');
 
@@ -121,7 +122,13 @@ Contact support: https://wa.me/2349037745486`
     }
 
 
-    // ── Email CSV ────────────────────────────────────
+    // ── Email PDF Statement ──────────────────────────
+  if (lowerText.includes('email my statement') || lowerText.includes('email statement') || lowerText.includes('email pdf') || lowerText.includes('send my statement') || lowerText.includes('send statement')) {
+    await handleTelegramEmailPDF({ chatId, session });
+    return;
+  }
+
+  // ── Email CSV ────────────────────────────────────
     if (lowerText.includes('email my csv') || lowerText.includes('email csv') || lowerText.includes('send csv') || lowerText.includes('send my csv')) {
       await handleTelegramEmailCSV({ chatId, session });
       return;
@@ -580,6 +587,7 @@ async function handleSupport({ id, session, sendFn }) {
 async function handleStatement({ id, session, text, sendFn, platform }) {
   const statementsService = require('../services/statements');
 const emailService = require('../services/email');
+const pdfGenerator = require('../services/pdfGenerator');
   const country = detectCountry(id, session);
   const symbol = country.symbol;
 
@@ -710,6 +718,59 @@ ${csv.split('\n').slice(0, 6).join('\n')}
       logger.error('Statement error:', err.message);
       await sendFn(id, `Sorry, couldn't generate your statement right now. Please try again.`);
     }
+  }
+}
+
+
+// ─── EMAIL PDF STATEMENT (TELEGRAM) ──────────────────
+async function handleTelegramEmailPDF({ chatId, session }) {
+  const email = session.email;
+  if (!email) {
+    await telegramService.sendText(chatId, `No email on file. Please contact support.`);
+    return;
+  }
+  if (!banking.isBankConnected(session, chatId)) {
+    await telegramService.sendText(chatId, `Connect your bank first before generating a statement.`);
+    return;
+  }
+
+  await telegramService.sendText(chatId, `⏳ Generating your PDF statement and sending to *${email}*...`);
+
+  try {
+    const { detectCountry } = require('../utils/countryDetect');
+    const country = detectCountry(chatId, session);
+    const result = await banking.getTransactions(chatId, session);
+    if (!result.success || !result.transactions?.length) {
+      await telegramService.sendText(chatId, `No transactions found.`);
+      return;
+    }
+
+    const pdfBuffer = await pdfGenerator.generateStatementPDF({
+      transactions: result.transactions,
+      userName: session.name || 'Account Holder',
+      symbol: country.symbol,
+      countryCode: country.code,
+      period: 'Recent Transactions',
+    });
+
+    const now = new Date();
+    const filename = `Zeno-Statement-${(session.name || 'User').replace(/\s+/g, '-')}-${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}.pdf`;
+
+    await emailService.sendPDF({
+      toEmail: email,
+      toName: session.name || 'Zeno User',
+      pdfBuffer,
+      filename,
+      transactionCount: result.transactions.length,
+      period: 'Recent Transactions',
+    });
+
+    await telegramService.sendText(chatId,
+      `✅ *Statement Sent!*\n\nEmailed to *${email}*\n• ${result.transactions.length} transactions\n• Professional PDF\n\nCheck your inbox!`
+    );
+  } catch(err) {
+    logger.error('Telegram PDF email error:', err.message);
+    await telegramService.sendText(chatId, `Sorry, couldn't generate the PDF right now.`);
   }
 }
 

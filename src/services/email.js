@@ -104,4 +104,53 @@ async function sendStatement({ toEmail, toName, pdfUrl, period }) {
   }
 }
 
-module.exports = { sendCSV, sendStatement };
+async function sendPDF({ toEmail, toName, pdfBuffer, filename, transactionCount, period }) {
+  try {
+    const transporter = createTransporter();
+    const now = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+
+    await transporter.sendMail({
+      from: `Zeno Banking <${process.env.SMTP_USER}>`,
+      to: `${toName} <${toEmail}>`,
+      subject: `Your Zeno Bank Statement — ${period || now}`,
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px">
+          <div style="background:#1a6b4a;padding:24px;border-radius:8px;text-align:center;margin-bottom:24px">
+            <h1 style="color:white;margin:0;font-size:28px">Zeno</h1>
+            <p style="color:rgba(255,255,255,0.8);margin:4px 0 0">AI Banking Assistant</p>
+          </div>
+          <h2 style="color:#1a1a1a">Your Bank Statement is Ready</h2>
+          <p style="color:#666">Hi ${toName.split(' ')[0]},</p>
+          <p style="color:#666">Your bank statement PDF is attached to this email.</p>
+          <div style="background:#f5f5f5;border-radius:8px;padding:16px;margin:20px 0">
+            <p style="margin:4px 0;color:#1a1a1a"><strong>Transactions:</strong> ${transactionCount}</p>
+            <p style="margin:4px 0;color:#1a1a1a"><strong>Period:</strong> ${period || 'Recent'}</p>
+            <p style="margin:4px 0;color:#1a1a1a"><strong>Format:</strong> PDF</p>
+            <p style="margin:4px 0;color:#1a1a1a"><strong>Generated:</strong> ${now}</p>
+          </div>
+          <p style="color:#666">Open the attached PDF to view your full statement with transaction details.</p>
+          <p style="color:#999;font-size:11px">Note: This is a Zeno-generated summary, not an official bank statement.</p>
+          <hr style="border:none;border-top:1px solid #eee;margin:24px 0">
+          <p style="color:#999;font-size:12px;text-align:center">
+            Powered by Zeno · <a href="https://www.joinzeno.co.uk" style="color:#1a6b4a">joinzeno.co.uk</a>
+          </p>
+        </div>
+      `,
+      attachments: [
+        {
+          filename,
+          content: pdfBuffer,
+          contentType: 'application/pdf',
+        },
+      ],
+    });
+
+    logger.info(`PDF email sent to ${toEmail}`);
+    return true;
+  } catch (err) {
+    logger.error('PDF email failed:', err.message);
+    throw err;
+  }
+}
+
+module.exports = { sendCSV, sendStatement, sendPDF };

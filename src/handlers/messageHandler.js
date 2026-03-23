@@ -101,12 +101,6 @@ async function handleText({ from, contactName, message, session }) {
   }
 
 
-  // ── Statements, CSV Export ───────────────────────
-  if (['statement', 'bank statement', 'download statement', 'export', 'csv', 'spending report', 'my statement', 'transaction history', 'download transactions'].some(k => lowerText.includes(k))) {
-    await handleStatement({ id: from, session, text: lowerText, sendFn: whatsappService.sendText.bind(whatsappService), platform: 'whatsapp' });
-    return;
-  }
-
   // ── Wallet / Virtual Account ─────────────────────
   if (country.code === 'NG' && !lowerText.includes('connect') && ['my account', 'my wallet', 'wallet balance', 'fund wallet', 'account number', 'zeno account', 'add money'].some(k => lowerText.includes(k))) {
     if (!session.virtualAccount) {
@@ -137,7 +131,7 @@ async function handleText({ from, contactName, message, session }) {
   }
 
   // ── Statements / Reports / CSV ───────────────────
-  if (['statement', 'bank statement', 'download statement', 'spending report', 'monthly report', 'export csv', 'export transactions', 'csv', 'transaction history', 'account statement'].some(k => lowerText.includes(k))) {
+  if (['bank statement', 'download statement', 'spending report', 'monthly report', 'export csv', 'export transactions', 'transaction history', 'account statement', 'my statement'].some(k => lowerText.includes(k)) && !lowerText.includes('email') && !lowerText.includes('send')) {
     await handleStatement({ id: from, session, text: lowerText, sendFn: whatsappService.sendText.bind(whatsappService), platform: 'whatsapp' });
     return;
   }
@@ -698,9 +692,14 @@ Say *"connect my bank"* to get started.`);
 
   const req = statementsService.parseStatementRequest(text);
 
-  // CSV export — works from cached transactions
+  // CSV export — email directly
   if (req.type === 'csv') {
-    await sendFn(id, `⏳ Generating your CSV export...`);
+    const email = session.email;
+    if (!email) {
+      await sendFn(id, `No email address on file. Please contact support.`);
+      return;
+    }
+    await sendFn(id, `⏳ Generating your CSV and sending to *${email}*...`);
     try {
       const result = await banking.getTransactions(id, session);
       if (!result.success || !result.transactions?.length) {
@@ -708,25 +707,23 @@ Say *"connect my bank"* to get started.`);
         return;
       }
       const csv = statementsService.generateCSV(result.transactions, symbol);
-      const lineCount = result.transactions.length;
+      const now = new Date();
+      const filename = `Zeno-Transactions-${(session.name || 'User').replace(/\s+/g, '-')}-${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}.csv`;
+      await emailService.sendCSV({
+        toEmail: email,
+        toName: session.name || 'Zeno User',
+        csvData: csv,
+        filename,
+        transactionCount: result.transactions.length,
+        symbol,
+        period: req.periodLabel || 'Recent transactions',
+      });
       await sendFn(id,
-        `📋 *CSV Export Ready*
-
-` +
-        `${lineCount} transactions exported.
-
-` +
-        `Your CSV data:
-\`\`\`
-${csv.split('\n').slice(0, 6).join('\n')}
-...\`\`\`
-
-` +
-        `Reply *"email my CSV"* and we'll send the full file to your registered email.`
+        `✅ *CSV Sent!*\n\nYour transactions emailed to *${email}*\n• ${result.transactions.length} transactions\n\nCheck your inbox!`
       );
     } catch(err) {
       logger.error('CSV export error:', err.message);
-      await sendFn(id, `Sorry, couldn't generate CSV right now. Please try again.`);
+      await sendFn(id, `Sorry, couldn't send the CSV right now. Please try again.`);
     }
     return;
   }

@@ -85,6 +85,8 @@ async function createTables() {
     ALTER TABLE users ADD COLUMN IF NOT EXISTS receipts JSONB DEFAULT '[]';
     ALTER TABLE users ADD COLUMN IF NOT EXISTS virtual_account JSONB DEFAULT NULL;
     ALTER TABLE users ADD COLUMN IF NOT EXISTS wallet_balance DECIMAL(15,2) DEFAULT 0.00;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_account_id VARCHAR(255);
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_customer_id VARCHAR(255);
   `);
   logger.info('PostgreSQL tables ready');
 }

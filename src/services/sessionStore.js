@@ -65,6 +65,8 @@ function defaultSession(phoneNumber) {
     lastTransfer: null,
     virtualAccount: null,
     walletBalance: 0,
+    stripeAccountId: null,
+    stripeCustomerId: null,
   };
 }
 
@@ -185,6 +187,8 @@ async function update(phoneNumber, updates) {
       if ('receipts' in updates) dbData.receipts = JSON.stringify(updates.receipts);
       if ('virtualAccount' in updates) dbData.virtualAccount = JSON.stringify(updates.virtualAccount);
       if ('walletBalance' in updates) dbData.walletBalance = updates.walletBalance;
+      if ('stripeAccountId' in updates) dbData.stripeAccountId = updates.stripeAccountId;
+      if ('stripeCustomerId' in updates) dbData.stripeCustomerId = updates.stripeCustomerId;
       if (Object.keys(dbData).length > 0) {
         await db.upsertUser(phoneNumber, dbData);
       }

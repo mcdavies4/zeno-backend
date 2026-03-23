@@ -188,14 +188,17 @@ async function createIdentitySession({ phoneNumber, email, name }) {
   try {
     const session = await stripe.identity.verificationSessions.create({
       type: 'document',
-      provided_details: {
-        email: email || `${phoneNumber}@zeno.app`,
-        phone: phoneNumber,
-      },
       metadata: {
         phoneNumber: String(phoneNumber),
       },
       return_url: `https://api.joinzeno.co.uk/stripe/identity-callback?phone=${encodeURIComponent(phoneNumber)}`,
+      options: {
+        document: {
+          allowed_types: ['passport', 'driving_license', 'id_card'],
+          require_live_capture: true,
+          require_matching_selfie: true,
+        },
+      },
     });
 
     logger.info(`Stripe Identity session created for ${phoneNumber}: ${session.id}`);

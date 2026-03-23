@@ -42,7 +42,7 @@ function generateReceipt({ transfer, result, fee, countryCode, userName }) {
     ``,
     `✅ *Status: SUCCESSFUL*`,
     `━━━━━━━━━━━━━━━━━━━━`,
-    `_Powered by Zeno · joinzeno.co.uk_`,
+    `Powered by Zeno · joinzeno.co.uk`,
   ].filter(l => l !== '').join('\n');
 
   return { receiptId, text: lines };

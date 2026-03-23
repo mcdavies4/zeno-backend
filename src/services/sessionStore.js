@@ -79,7 +79,7 @@ async function loadFromDatabase(phoneNumber, session) {
 
     // Restore persistent data from DB
     if (user.name) session.userName = user.name;
-    if (user.email) session.userEmail = user.email;
+    if (user.email) session.email = user.email;
     if (user.pin_hash) session.userPin = user.pin_hash;
     if (user.is_onboarded) session.isOnboarded = user.is_onboarded;
     if (user.kyc_status) session.kycStatus = user.kyc_status;
@@ -163,6 +163,7 @@ async function update(phoneNumber, updates) {
     if (db.isReady()) {
       const dbData = {};
       if ('userName' in updates) dbData.name = updates.userName;
+      if ('email' in updates) dbData.email = updates.email;
       if ('userEmail' in updates) dbData.email = updates.userEmail;
       if ('userPin' in updates) dbData.pinHash = updates.userPin;
       if ('isOnboarded' in updates) dbData.isOnboarded = updates.isOnboarded;

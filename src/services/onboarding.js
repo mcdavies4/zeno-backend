@@ -180,6 +180,8 @@ async function handleStep(from, session, input) {
         isOnboarded: true,
         onboardingStep: STEPS.COMPLETE,
         onboardingData: null,
+        name,
+        email,
         bankingCountry: countryChoice.code,
         balance: 0,
         recentTransactions: [],

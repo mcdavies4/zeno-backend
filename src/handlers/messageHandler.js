@@ -584,7 +584,7 @@ async function handleAIResponse({ from, aiResponse, session, text }) {
       break;
 
     case 'KYC': {
-      // Send Veriff verification link
+      // Send Stripe Identity verification link
       if (session.kycVerified) {
         await whatsappService.sendText(from,
           `✅ *You're already verified!*\n\nYour identity has been confirmed. You have full access to all Zeno features.`

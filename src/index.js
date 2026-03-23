@@ -6,7 +6,6 @@ const rateLimit = require('express-rate-limit');
 const path = require('path');
 
 const webhookRouter = require('./handlers/webhook');
-const veriffWebhook = require('./handlers/veriffWebhook');
 const adminRouter = require('./handlers/adminDashboard');
 const telegramRouter = require('./handlers/telegramWebhook');
 const monoRouter = require('./handlers/monoCallback');
@@ -37,7 +36,6 @@ app.get('/favicon.svg', (req, res) => res.sendFile(path.join(__dirname, '../favi
 
 // ─── API ROUTES ───────────────────────────────────────
 app.use('/webhook', webhookRouter);
-app.use('/veriff', veriffWebhook);
 
 // Serve generated statement files
 app.use('/statements', (req, res, next) => {
@@ -72,7 +70,7 @@ async function start() {
   app.listen(PORT, async () => {
     logger.info(`Zeno backend running on port ${PORT}`);
     logger.info(`Markets: UK 🇬🇧 Nigeria 🇳🇬`);
-    logger.info(`KYC: Veriff`);
+    logger.info('KYC: Stripe Identity');
     logger.info(`Database: ${database.isReady() ? 'PostgreSQL' : 'unavailable'}`);
 
     if (process.env.TELEGRAM_BOT_TOKEN) {

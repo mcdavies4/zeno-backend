@@ -292,7 +292,7 @@ async function initiateTransfer({ chatId, session }) {
       const fee = transfer.fee || feesService.calculateFee(transfer.amount, country.code);
       const s = fee.symbol;
       const total = (Number(transfer.amount) + fee.totalFee).toLocaleString('en', { minimumFractionDigits: 2 });
-      return `🔐 *Security Check*\n\nEnter your PIN to authorise:\n• *${s}${Number(transfer.amount).toLocaleString('en', { minimumFractionDigits: 2 })}* to *${transfer.recipientName}*\n• Fee: *${s}${fee.totalFee.toFixed(2)}*\n• Total: *${s}${total}*\n\n_Never share your PIN with anyone._`;
+      return `🔐 *Security Check*\n\nEnter your PIN to authorise:\n• *${s}${Number(transfer.amount).toLocaleString('en', { minimumFractionDigits: 2 })}* to *${transfer.recipientName}*\n• Fee: *${s}${fee.totalFee.toFixed(2)}*\n• Total: *${s}${total}*\n\nNever share your PIN with anyone.`;
     })()
   );
 }
@@ -534,7 +534,7 @@ async function handleSupport({ id, session, sendFn }) {
       `📞 *Call/Text:* +234 903 774 5486
 
 ` +
-      `_Tap the link above to start a chat — we typically reply within a few minutes._`
+      `Tap the link above to start a chat — we typically reply within a few minutes.`
     );
   } else {
     await sendFn(id,
@@ -549,7 +549,7 @@ async function handleSupport({ id, session, sendFn }) {
       `📞 *Call/Text:* +44 7883 305130
 
 ` +
-      `_Tap the link above to start a chat — we typically reply within a few minutes._`
+      `Tap the link above to start a chat — we typically reply within a few minutes.`
     );
   }
 }
@@ -610,7 +610,7 @@ async function handleTelegramExchange({ chatId, session, text }) {
       (parsed.amount > 1 ? `${symbols[f] || f}${parsed.amount.toLocaleString()} = *${symbols[t] || t}${converted}*
 
 ` : '') +
-      `_Live rate · ${new Date().toLocaleDateString('en-GB')}_`
+      `Live rate · ${new Date().toLocaleDateString('en-GB')}_`
     );
   } catch(err) {
     await telegramService.sendText(chatId, `Couldn't fetch exchange rate right now.`);

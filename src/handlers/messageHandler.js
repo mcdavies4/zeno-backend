@@ -288,7 +288,7 @@ async function initiateTransfer({ from, session }) {
   const fee = transfer.fee || feesService.calculateFee(transfer.amount, country.code);
   const totalWithFee = (Number(transfer.amount) + fee.totalFee).toLocaleString('en', { minimumFractionDigits: 2 });
   await whatsappService.sendText(from,
-    `🔐 *Security Check*\n\nEnter your 4-digit Zeno PIN to authorise:\n• *${symbol}${Number(transfer.amount).toLocaleString('en', { minimumFractionDigits: 2 })}* to *${transfer.recipientName}*\n• Fee: *${symbol}${fee.totalFee.toFixed(2)}*\n• Total: *${symbol}${totalWithFee}*\n\n_Never share your PIN with anyone, including Zeno support._`
+    `🔐 *Security Check*\n\nEnter your 4-digit Zeno PIN to authorise:\n• *${symbol}${Number(transfer.amount).toLocaleString('en', { minimumFractionDigits: 2 })}* to *${transfer.recipientName}*\n• Fee: *${symbol}${fee.totalFee.toFixed(2)}*\n• Total: *${symbol}${totalWithFee}*\n\nNever share your PIN with anyone, including Zeno support.`
   );
 }
 
@@ -439,7 +439,7 @@ async function executeBillPayment({ from, session }) {
         `• Network: ${bill.network.toUpperCase()}
 
 ` +
-        `_Airtime delivered instantly._`
+        `_Airtime delivered instantly.`
       );
     } else if (bill.type === 'electricity') {
       result = await bills.payElectricity({ meterNumber: bill.meterNumber, amount: bill.amount, disco: bill.disco });
@@ -455,7 +455,7 @@ async function executeBillPayment({ from, session }) {
         `• Provider: ${bill.disco.toUpperCase()}
 
 ` +
-        `_Token will be sent to your registered number._`
+        `_Token will be sent to your registered number.`
       );
     } else if (bill.type === 'tv') {
       result = await bills.payTV({ smartCardNumber: bill.smartCardNumber, amount: bill.amount, provider: bill.provider });
@@ -469,7 +469,7 @@ async function executeBillPayment({ from, session }) {
         `• Smart Card: *${bill.smartCardNumber}*
 
 ` +
-        `_Subscription renewed successfully._`
+        `_Subscription renewed successfully.`
       );
     }
   } catch (err) {
@@ -600,7 +600,7 @@ async function handleAIResponse({ from, aiResponse, session, text }) {
         `🏦 *Connect Your Bank*\n\n` +
         `Tap the link below to securely connect your bank account:\n\n` +
         `${authLink}\n\n` +
-        `_Read-only access. No card details needed. Takes 30 seconds._`
+        `_Read-only access. No card details needed. Takes 30 seconds.`
       );
       break;
     }
@@ -633,7 +633,7 @@ async function handleSupport({ id, session, sendFn }) {
       `📞 *Call/Text:* +234 903 774 5486
 
 ` +
-      `_Tap the link above to start a chat — we typically reply within a few minutes._`
+      `_Tap the link above to start a chat — we typically reply within a few minutes.`
     );
   } else {
     await sendFn(id,
@@ -648,7 +648,7 @@ async function handleSupport({ id, session, sendFn }) {
       `📞 *Call/Text:* +44 7883 305130
 
 ` +
-      `_Tap the link above to start a chat — we typically reply within a few minutes._`
+      `_Tap the link above to start a chat — we typically reply within a few minutes.`
     );
   }
 }
@@ -708,7 +708,7 @@ async function handleExchange({ from, session, text }) {
       (parsed.amount > 1 ? `${symbols[f] || f}${parsed.amount.toLocaleString()} = *${symbols[t] || t}${converted}*
 
 ` : '') +
-      `_Live rate · ${new Date().toLocaleDateString('en-GB')}_`
+      `Live rate · ${new Date().toLocaleDateString('en-GB')}`
     );
   } catch(err) {
     await whatsappService.sendText(from, `Couldn't fetch exchange rate right now. Try again shortly.`);
@@ -980,7 +980,7 @@ async function handleSupport({ id, session, sendFn }) {
       `📞 *Call/Text:* +234 903 774 5486
 
 ` +
-      `_Tap the link above to start a chat — we typically reply within a few minutes._`
+      `_Tap the link above to start a chat — we typically reply within a few minutes.`
     );
   } else {
     await sendFn(id,
@@ -995,7 +995,7 @@ async function handleSupport({ id, session, sendFn }) {
       `📞 *Call/Text:* +44 7883 305130
 
 ` +
-      `_Tap the link above to start a chat — we typically reply within a few minutes._`
+      `_Tap the link above to start a chat — we typically reply within a few minutes.`
     );
   }
 }
@@ -1055,7 +1055,7 @@ async function handleExchange({ from, session, text }) {
       (parsed.amount > 1 ? `${symbols[f] || f}${parsed.amount.toLocaleString()} = *${symbols[t] || t}${converted}*
 
 ` : '') +
-      `_Live rate · ${new Date().toLocaleDateString('en-GB')}_`
+      `Live rate · ${new Date().toLocaleDateString('en-GB')}`
     );
   } catch(err) {
     await whatsappService.sendText(from, `Couldn't fetch exchange rate right now. Try again shortly.`);

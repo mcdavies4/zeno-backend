@@ -109,25 +109,30 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
         event.type === 'identity.verification_session.requires_input') {
 
       const vs = event.data.object;
-      const phoneNumber = vs.metadata && vs.metadata.phoneNumber
-        ? vs.metadata.phoneNumber.replace(/\D/g, '')
+      const rawId = vs.metadata && vs.metadata.phoneNumber
+        ? vs.metadata.phoneNumber
         : null;
 
-      logger.info(`Stripe Identity ${event.type}: phone=${phoneNumber}, status=${vs.status}`);
+      logger.info(`Stripe Identity ${event.type}: id=${rawId}, status=${vs.status}`);
 
-      if (!phoneNumber) return;
+      if (!rawId) {
+        logger.warn('No phoneNumber in Stripe Identity metadata');
+        return;
+      }
 
       const stripeService = require('../services/stripe');
       const { text, verified } = stripeService.getIdentityStatusMessage(vs.status);
 
-      await sessionStore.update(phoneNumber, {
+      // Store with the original ID (could be phone number or Telegram chat ID)
+      await sessionStore.update(rawId, {
         kycStatus: vs.status,
         kycVerified: verified,
         kycSessionId: vs.id,
       });
 
-      await messenger.sendText(phoneNumber, text);
-      logger.info(`Identity result sent to ${phoneNumber}: ${vs.status}`);
+      // messenger.sendText handles both WhatsApp (phone) and Telegram (chatId)
+      await messenger.sendText(rawId, text);
+      logger.info(`Identity result sent to ${rawId}: ${vs.status}`);
     }
 
   } catch (err) {

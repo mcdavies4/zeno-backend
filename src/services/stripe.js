@@ -191,7 +191,7 @@ async function createIdentitySession({ phoneNumber, email, name }) {
       metadata: {
         phoneNumber: String(phoneNumber),
       },
-      return_url: `https://api.joinzeno.co.uk/stripe/identity-callback?phone=${encodeURIComponent(phoneNumber)}`,
+      return_url: `https://api.joinzeno.co.uk/stripe/identity-callback?phone=${encodeURIComponent(String(phoneNumber))}`,
       options: {
         document: {
           allowed_types: ['passport', 'driving_license', 'id_card'],

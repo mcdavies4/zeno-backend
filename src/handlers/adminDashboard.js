@@ -334,4 +334,39 @@ router.post('/reset-user', adminAuth, async (req, res) => {
   }
 });
 
+
+// ─── MANUALLY VERIFY USER KYC ────────────────────────
+router.get('/verify-user', adminAuth, async (req, res) => {
+  const { phone } = req.query;
+  if (!phone) return res.send('Error: phone param required');
+
+  try {
+    const sessionStore = require('../services/sessionStore');
+    const messenger = require('../services/messenger');
+
+    await sessionStore.update(phone, {
+      kycStatus: 'verified',
+      kycVerified: true,
+    });
+
+    await messenger.sendText(phone,
+      `✅ *Identity Verified!*\n\n` +
+      `Your identity has been confirmed. You now have full access to Zeno!\n\n` +
+      `You can now:\n` +
+      `💸 Send money\n` +
+      `💰 Check your balance\n` +
+      `📊 Track your spending\n\n` +
+      `Welcome to Zeno! 🎉`
+    );
+
+    res.send(`<html><body style="font-family:sans-serif;padding:40px;background:#0f1923;color:#e2e8f0">
+      <h2 style="color:#00d4aa">✅ User Verified</h2>
+      <p>${phone} has been marked as verified and notified.</p>
+      <a href="/admin?key=${req.query.key}" style="color:#00d4aa">← Back to Admin</a>
+    </body></html>`);
+  } catch(err) {
+    res.send(`Error: ${err.message}`);
+  }
+});
+
 module.exports = router;

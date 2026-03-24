@@ -52,6 +52,8 @@ app.use('/statements', (req, res, next) => {
 app.use('/admin', adminRouter);
 app.use('/telegram', telegramRouter);
 app.use('/mono', monoRouter);
+app.use('/stripe', stripeCallback);
+app.use('/flutterwave', flutterwaveWebhook);
 
 app.get('/health', (req, res) => {
   res.json({

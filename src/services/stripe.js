@@ -36,7 +36,7 @@ async function createFinancialConnectionSession({ phoneNumber, email, name }) {
         type: 'customer',
         customer: customer.id,
       },
-      permissions: ['balances', 'transactions', 'ownership'],
+      permissions: ['balances', 'transactions'],
       filters: { countries: ['GB'] },
       return_url: `https://api.joinzeno.co.uk/stripe/callback?phone=${encodeURIComponent(phoneNumber)}`,
     });

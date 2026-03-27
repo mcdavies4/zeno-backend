@@ -95,7 +95,7 @@ async function handleText({ from, contactName, message, session }) {
   const country = detectCountry(from, session);
 
   // ── KYC keywords ──────────────────────────────────────
-  if (['kyc', 'verify my identity', 'verify identity', 'identity verification', 'complete kyc', 'complete verification'].some(k => lowerText.includes(k)) || lowerText === 'verify') {
+  if (['kyc', 'verify my identity', 'verify identity', 'identity verification', 'complete kyc', 'complete verification', 'bvn', 'nin'].some(k => lowerText.includes(k)) || lowerText === 'verify') {
     await handleAIResponse({ from, aiResponse: { intent: 'KYC' }, session, text });
     return;
   }
@@ -116,6 +116,12 @@ async function handleText({ from, contactName, message, session }) {
     }
     await whatsappService.sendText(from, virtualAccount.formatWalletMessage(session));
     return;
+  }
+
+  // ── BVN/NIN direct entry ────────────────────────
+  if (/^\d{11}$/.test(lowerText.trim()) || (session.onboardingStep === 'awaiting_kyc')) {
+    const handled = await handlePremBlyKYC({ from, text: lowerText.trim(), session });
+    if (handled) return;
   }
 
   // ── Email PDF Statement ──────────────────────────
@@ -593,6 +599,7 @@ async function handleAIResponse({ from, aiResponse, session, text }) {
       }
       try {
         const stripeService = require('../services/stripe');
+const premblyService = require('../services/prembly');
         const nameParts = (session.name || session.userName || 'Zeno User').split(' ');
         const kycSession = await stripeService.createIdentitySession({
           phoneNumber: from,
@@ -931,6 +938,52 @@ async function handleEmailCSV({ from, session }) {
       await whatsappService.sendText(from, `Sorry, couldn't send the email right now. Please try again.`);
     }
   }
+}
+
+
+// ─── PREMBLY BVN/NIN HANDLER ─────────────────────────
+async function handlePremBlyKYC({ from, text, session }) {
+  const prembly = require('../services/prembly');
+
+  // Check if user is in KYC step
+  const inKYCStep = session.onboardingStep === 'awaiting_kyc';
+  const idType = prembly.detectIdType(text);
+
+  if (!idType) {
+    // Not a valid ID number
+    if (inKYCStep) {
+      await whatsappService.sendText(from,
+        `❌ That doesn't look right. Please enter your *11-digit BVN or NIN*:\n\nExample: *22345678901*`
+      );
+      return true;
+    }
+    return false;
+  }
+
+  // Valid 11-digit number — verify it
+  await whatsappService.sendText(from, `⏳ Verifying your ${idType}...`);
+
+  try {
+    let result;
+    if (idType === 'BVN') {
+      result = await prembly.verifyBVN(text);
+    } else {
+      result = await prembly.verifyNIN(text);
+    }
+
+    const { text: msg, verified } = prembly.formatVerificationMessage(result, idType);
+    await sessionStore.update(from, {
+      kycVerified: verified,
+      kycStatus: verified ? 'verified' : 'failed',
+      kycIdType: idType,
+      onboardingStep: 'complete',
+    });
+    await whatsappService.sendText(from, msg);
+  } catch(e) {
+    logger.error('Prembly KYC error:', e.message);
+    await whatsappService.sendText(from, `⚠️ Verification service temporarily unavailable. Please try again in a moment.`);
+  }
+  return true;
 }
 
 // ─── TRANSACTION SEARCH ──────────────────────────────

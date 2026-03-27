@@ -122,6 +122,12 @@ Contact support: https://wa.me/2349037745486`
     }
 
 
+    // ── BVN/NIN direct entry ────────────────────────
+    if (/^\d{11}$/.test(lowerText.trim()) || session.onboardingStep === 'awaiting_kyc') {
+      const handled = await handleTelegramPremblyKYC({ chatId, text: lowerText.trim(), session });
+      if (handled) return;
+    }
+
     // ── Email PDF Statement ──────────────────────────
     if (lowerText.includes('email my statement') || lowerText.includes('email statement') || lowerText.includes('email pdf') || lowerText.includes('send my statement') || lowerText.includes('send statement')) {
       await handleTelegramEmailPDF({ chatId, session });
@@ -206,7 +212,7 @@ Contact support: https://wa.me/2349037745486`
       return;
     }
 
-    if (['kyc', 'verify', 'verify my identity', 'verification', 'verify identity', 'complete kyc'].some(k => lowerText.includes(k))) {
+    if (['kyc', 'verify', 'verify my identity', 'verification', 'verify identity', 'complete kyc', 'bvn', 'nin'].some(k => lowerText.includes(k))) {
       if (session.kycVerified) {
         await telegramService.sendText(chatId, `✅ *You're already verified!*
 
@@ -214,6 +220,7 @@ Your identity has been confirmed. You have full access to all Zeno features.`);
       } else {
         try {
           const stripeService = require('../services/stripe');
+const premblyService = require('../services/prembly');
           const nameParts = (session.userName || 'User').split(' ');
           const kycSession = await stripeService.createIdentitySession({
             phoneNumber: chatId,
@@ -500,6 +507,7 @@ async function handleAIResponse({ chatId, aiResponse, session }) {
       }
       try {
         const stripeService = require('../services/stripe');
+const premblyService = require('../services/prembly');
         const nameParts = (session.name || session.userName || 'Zeno User').split(' ');
         const kycSession = await stripeService.createIdentitySession({
           phoneNumber: chatId,
@@ -769,6 +777,48 @@ async function handleTelegramEmailPDF({ chatId, session }) {
     logger.error('Telegram PDF email error:', err.message);
     await telegramService.sendText(chatId, `Sorry, couldn't generate the PDF right now.`);
   }
+}
+
+
+// ─── PREMBLY BVN/NIN HANDLER (TELEGRAM) ──────────────
+async function handleTelegramPremblyKYC({ chatId, text, session }) {
+  const prembly = require('../services/prembly');
+  const inKYCStep = session.onboardingStep === 'awaiting_kyc';
+  const idType = prembly.detectIdType(text);
+
+  if (!idType) {
+    if (inKYCStep) {
+      await telegramService.sendText(chatId,
+        `❌ That doesn't look right. Please enter your *11-digit BVN or NIN*:\n\nExample: *22345678901*`
+      );
+      return true;
+    }
+    return false;
+  }
+
+  await telegramService.sendText(chatId, `⏳ Verifying your ${idType}...`);
+
+  try {
+    let result;
+    if (idType === 'BVN') {
+      result = await prembly.verifyBVN(text);
+    } else {
+      result = await prembly.verifyNIN(text);
+    }
+
+    const { text: msg, verified } = prembly.formatVerificationMessage(result, idType);
+    await sessionStore.update(chatId, {
+      kycVerified: verified,
+      kycStatus: verified ? 'verified' : 'failed',
+      kycIdType: idType,
+      onboardingStep: 'complete',
+    });
+    await telegramService.sendText(chatId, msg);
+  } catch(e) {
+    logger.error('Prembly KYC Telegram error:', e.message);
+    await telegramService.sendText(chatId, `⚠️ Verification service temporarily unavailable. Please try again.`);
+  }
+  return true;
 }
 
 // ─── EMAIL CSV (TELEGRAM) ────────────────────────────

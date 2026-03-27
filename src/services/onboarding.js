@@ -15,6 +15,7 @@ const STEPS = {
   EMAIL: 'awaiting_email',
   PIN: 'awaiting_pin',
   PIN_CONFIRM: 'awaiting_pin_confirm',
+  KYC: 'awaiting_kyc',
   COMPLETE: 'complete',
 };
 
@@ -200,29 +201,53 @@ async function handleStep(from, session, input) {
 
       await messenger.sendText(from, welcomeMsg);
 
-      // Trigger KYC
+      // Ask for BVN/NIN via Prembly
+      await sessionStore.update(from, { onboardingStep: STEPS.KYC });
+      const prembly = require('./prembly');
+      await messenger.sendText(from, prembly.getKYCPromptMessage());
+      break;
+    }
+
+    case STEPS.KYC: {
+      const prembly = require('./prembly');
+      const idType = prembly.detectIdType(text);
+
+      if (!idType) {
+        await messenger.sendText(from,
+          `❌ That doesn't look right. Please enter your *11-digit BVN or NIN*:\n\nExample: *22345678901*`
+        );
+        return;
+      }
+
+      await messenger.sendText(from, `⏳ Verifying your ${idType}...`);
+
       try {
-        const stripeService = require('./stripe');
-        const nameParts = name.split(' ');
-        const kycSession = await stripeService.createIdentitySession({
-          phoneNumber: from,
-          firstName: nameParts[0] || name,
-          lastName: nameParts.slice(1).join(' ') || '',
+        let result;
+        if (idType === 'BVN') {
+          result = await prembly.verifyBVN(text);
+        } else {
+          result = await prembly.verifyNIN(text);
+        }
+
+        const { text: msg, verified, name: verifiedName } = prembly.formatVerificationMessage(result, idType);
+
+        await sessionStore.update(from, {
+          kycVerified: verified,
+          kycStatus: verified ? 'verified' : 'failed',
+          kycIdType: idType,
+          ...(verifiedName && { name: verifiedName }),
+          onboardingStep: verified ? STEPS.COMPLETE : STEPS.KYC,
         });
-        await sessionStore.update(from, { kycSessionId: kycSession.sessionId });
-        await messenger.sendText(from,
-          `🔐 *Verify Your Identity*\n\n` +
-          `Tap the link below:\n\n` +
-          `${kycSession.url}\n\n` +
-          `This link expires in 7 days. Fully encrypted and secure.`
-        );
+
+        await messenger.sendText(from, msg);
       } catch(e) {
-        logger.error('KYC session creation failed:', e.message);
+        logger.error('Prembly KYC error:', e.message);
         await messenger.sendText(from,
-          `You can start using Zeno now!\n\n` +
-          `💸 *Send money* — "Send ₦5000 to John"\n💰 *Check balance* — "What\'s my balance?"\n\n` +
-          `Type *"verify my identity"* to complete verification later.`
+          `⚠️ Verification service is temporarily unavailable.\n\n` +
+          `You can start using Zeno now and verify later.\n\n` +
+          `Type *"verify my identity"* when ready.`
         );
+        await sessionStore.update(from, { onboardingStep: STEPS.COMPLETE });
       }
       break;
     }

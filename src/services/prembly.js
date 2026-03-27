@@ -32,7 +32,9 @@ async function verifyBVN(bvn) {
       data: data.data || null,
     };
   } catch (err) {
-    logger.error('Prembly BVN error:', err.response?.data || err.message);
+    logger.error('Prembly BVN error:', JSON.stringify(err.response?.data || err.message));
+    logger.error('Prembly BVN status:', err.response?.status);
+    logger.error('Prembly API key set:', !!process.env.PREMBLY_API_KEY);
     throw err;
   }
 }
@@ -53,7 +55,9 @@ async function verifyNIN(nin) {
       data: data.data || null,
     };
   } catch (err) {
-    logger.error('Prembly NIN error:', err.response?.data || err.message);
+    logger.error('Prembly NIN error:', JSON.stringify(err.response?.data || err.message));
+    logger.error('Prembly NIN status:', err.response?.status);
+    logger.error('Prembly API key set:', !!process.env.PREMBLY_API_KEY);
     throw err;
   }
 }

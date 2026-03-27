@@ -12,7 +12,6 @@ const BASE_URL = 'https://api.myidentitypay.com';
 function getHeaders() {
   return {
     'x-api-key': process.env.PREMBLY_API_KEY,
-    'app-id': process.env.PREMBLY_APP_ID,
     'Content-Type': 'application/json',
   };
 }

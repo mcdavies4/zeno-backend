@@ -6,7 +6,7 @@
 const axios = require('axios');
 const logger = require('../utils/logger');
 
-const BASE_URL = 'https://api.myidentitypay.com';
+const BASE_URL = 'https://api.prembly.com';
 
 function getHeaders() {
   return {

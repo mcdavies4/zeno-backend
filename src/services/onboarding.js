@@ -194,10 +194,10 @@ async function handleStep(from, session, input) {
 
       welcomeMsg +=
         `*One last step* — verify your identity to stay secure.\n\n` +
-        `You'll need:\n` +
-        `📄 A valid ID (NIN, passport or driving licence)\n` +
-        `🤳 A selfie\n\n` +
-        `Getting your verification link...`;
+        `You'll need your:\n` +
+        `📄 BVN (Bank Verification Number), or\n` +
+        `🪪 NIN (National Identity Number)\n\n` +
+        `Reply to the next message with your 11-digit BVN or NIN.`;
 
       await messenger.sendText(from, welcomeMsg);
 

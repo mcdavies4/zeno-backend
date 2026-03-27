@@ -15,7 +15,6 @@ const STEPS = {
   EMAIL: 'awaiting_email',
   PIN: 'awaiting_pin',
   PIN_CONFIRM: 'awaiting_pin_confirm',
-  COUNTRY: 'awaiting_country',
   COMPLETE: 'complete',
 };
 
@@ -138,43 +137,15 @@ async function handleStep(from, session, input) {
       const { name, email } = session.onboardingData;
 
       await sessionStore.update(from, {
-        onboardingStep: STEPS.COUNTRY,
+        onboardingStep: STEPS.COMPLETE,
         onboardingData: { ...session.onboardingData, hashedPin },
         userPin: hashedPin,
         userName: name,
         userEmail: email,
       });
 
-      // Ask country selection
-      await messenger.sendText(from,
-        `✅ *PIN set!*\n\n` +
-        `Almost done, *${name.split(' ')[0]}*!\n\n` +
-        `Which country is your *bank account* in?\n\n` +
-        `1️⃣ 🇬🇧 United Kingdom\n` +
-        `2️⃣ 🇳🇬 Nigeria\n\n` +
-        `Reply with 1 or 2 — you can always add more countries later.`
-      );
-      break;
-    }
-
-    case STEPS.COUNTRY: {
-      // Accept 1, 2 or country names
-      let countryChoice = null;
-
-      if (text === '1' || text.toLowerCase().includes('uk') || text.toLowerCase().includes('united kingdom') || text.toLowerCase().includes('britain') || text.toLowerCase().includes('england')) {
-        countryChoice = COUNTRY_OPTIONS['1'];
-      } else if (text === '2' || text.toLowerCase().includes('nigeria') || text.toLowerCase().includes('naija') || text.toLowerCase().includes('ng')) {
-        countryChoice = COUNTRY_OPTIONS['2'];
-      }
-
-      if (!countryChoice) {
-        await messenger.sendText(from,
-          `Please choose your bank country:\n\n1️⃣ 🇬🇧 United Kingdom\n2️⃣ 🇳🇬 Nigeria\n\nReply with 1 or 2`
-        );
-        return;
-      }
-
-      const { name, email, hashedPin } = session.onboardingData;
+      // Auto-set Nigeria — no country selection needed
+      const countryChoice = { code: 'NG', name: 'Nigeria', symbol: '₦', flag: '🇳🇬' };
 
       await sessionStore.update(from, {
         isOnboarded: true,

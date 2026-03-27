@@ -3,210 +3,216 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Zeno — AI Banking on WhatsApp & Telegram | Nigeria</title>
-<meta name="description" content="Zeno is an AI-powered banking assistant on WhatsApp and Telegram. Send money, check balances and track spending — just by chatting. Available in the Nigeria 🇳🇬. No app needed.">
-<meta name="keywords" content="AI banking Nigeria, WhatsApp banking Nigeria, Telegram banking Nigeria, send money Nigeria, Mono Nigeria, Flutterwave transfers, The 36th Company">
-<meta name="author" content="Zeno">
+<title>Zeno — Nigeria's AI Banking Assistant on WhatsApp & Telegram</title>
+<meta name="description" content="Zeno is Nigeria's AI-powered banking assistant on WhatsApp and Telegram. Send money, check balances and track spending — just by chatting. Powered by The 36th Company Ltd.">
+<meta name="keywords" content="AI banking Nigeria, WhatsApp banking Nigeria, Telegram banking Nigeria, send money Nigeria, Mono Nigeria, Flutterwave transfers, The 36th Company, naira transfer">
+<meta name="author" content="The 36th Company Ltd">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://www.joinzeno.co.uk/">
+
+<!-- Open Graph -->
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://www.joinzeno.co.uk/">
-<meta property="og:title" content="Zeno — AI Banking on WhatsApp & Telegram">
-<meta property="og:description" content="Send money, check balances and track spending — all through a chat. Available in Nigeria 🇳🇬.">
-<meta property="og:image" content="https://www.joinzeno.co.uk/og-image.png">
 <meta property="og:site_name" content="Zeno">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"FinancialService","name":"Zeno","description":"AI-powered banking assistant on WhatsApp and Telegram for Nigerian users.","url":"https://www.joinzeno.co.uk","areaServed":[{"@type":"Country","name":"Nigeria"},{"@type":"Country","name":"Nigeria"}],"serviceType":"Banking Assistant","offers":{"@type":"Offer","price":"0","priceCurrency":"GBP"}}</script>
-<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<meta property="og:title" content="Zeno — Nigeria's AI Banking Assistant">
+<meta property="og:description" content="Send money, check balances and track spending — all through WhatsApp or Telegram. No app needed. 🇳🇬">
+<meta property="og:image" content="https://www.joinzeno.co.uk/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="en_NG">
+
+<!-- Twitter / X Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Zeno — Nigeria's AI Banking Assistant">
+<meta name="twitter:description" content="Send money, check balances and track spending — all through WhatsApp or Telegram. 🇳🇬">
+<meta name="twitter:image" content="https://www.joinzeno.co.uk/og-image.png">
+
+<!-- Schema -->
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FinancialService","name":"Zeno","description":"Nigeria's AI-powered banking assistant on WhatsApp and Telegram.","url":"https://www.joinzeno.co.uk","image":"https://www.joinzeno.co.uk/og-image.png","areaServed":[{"@type":"Country","name":"Nigeria"}],"serviceType":"Banking Assistant","offers":{"@type":"Offer","price":"0","priceCurrency":"NGN"}}</script>
+
+<link rel="icon" type="image/png" href="/og-image.png">
+<link rel="apple-touch-icon" href="/og-image.png">
 <meta name="theme-color" content="#1a6b4a">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;1,9..144,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
 <style>
-:root{--bg:#f7f5f0;--white:#fff;--surface:#eeeae2;--accent:#1a6b4a;--al:#e6f4ed;--a2:#25a868;--text:#1c1c1a;--t2:#6b6b5e;--border:rgba(26,26,24,0.1);--wa:#25D366;--tg:#229ED9;--ng:#008751;--r:18px}
+:root{
+  --bg:#f7f5f0;--white:#fff;--surface:#eeeae2;
+  --accent:#1a6b4a;--al:#e6f4ed;--a2:#25a868;
+  --ng:#008751;--wa:#25D366;--tg:#229ED9;
+  --text:#1c1c1a;--t2:#6b6b5e;
+  --border:rgba(26,26,24,0.1);--r:18px
+}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
 
 /* NAV */
-nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:18px 48px;background:rgba(247,245,240,0.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--border)}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:16px 48px;background:rgba(247,245,240,0.95);backdrop-filter:blur(16px);border-bottom:1px solid var(--border)}
 .logo{font-family:'Fraunces',serif;font-weight:700;font-size:1.5rem;letter-spacing:-0.03em;color:var(--text);text-decoration:none}.logo span{color:var(--accent)}
-.nav-links{display:flex;gap:32px;list-style:none}.nav-links a{text-decoration:none;color:var(--t2);font-size:.88rem;font-weight:500;transition:color .2s}.nav-links a:hover{color:var(--text)}
-.nav-cta{display:inline-flex;align-items:center;gap:8px;background:var(--wa);color:white;padding:10px 20px;border-radius:50px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:.85rem;text-decoration:none;transition:all .2s}.nav-cta:hover{background:#20bd5a;transform:translateY(-1px)}
-
-/* COUNTRY SWITCHER */
-.country-bar{background:var(--accent);padding:10px 48px;display:flex;align-items:center;justify-content:center;gap:24px;margin-top:73px}
-.country-btn{display:inline-flex;align-items:center;gap:8px;padding:6px 18px;border-radius:50px;font-size:.82rem;font-weight:600;cursor:pointer;transition:all .2s;border:2px solid transparent;text-decoration:none;color:rgba(255,255,255,0.7)}
-.country-btn:hover,.country-btn.active{background:rgba(255,255,255,0.15);color:white;border-color:rgba(255,255,255,0.3)}
-.country-bar-text{font-size:.8rem;color:rgba(255,255,255,0.6)}
+.nav-links{display:flex;gap:28px;list-style:none}.nav-links a{text-decoration:none;color:var(--t2);font-size:.88rem;font-weight:500;transition:color .2s}.nav-links a:hover{color:var(--text)}
+.nav-cta{display:inline-flex;align-items:center;gap:8px;background:var(--wa);color:white;padding:10px 20px;border-radius:50px;font-weight:600;font-size:.85rem;text-decoration:none;transition:all .2s}.nav-cta:hover{background:#20bd5a;transform:translateY(-1px)}
+.ws{width:18px;height:18px;fill:currentColor}
 
 /* HERO */
-.hero{min-height:calc(100vh - 113px);display:flex;align-items:center;padding:80px 48px 80px;position:relative;overflow:hidden}
-.c1{position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(26,107,74,.07),transparent 70%);top:-150px;right:-100px;pointer-events:none}
-.c2{position:absolute;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(37,211,102,.05),transparent 70%);bottom:-100px;left:-50px;pointer-events:none}
-.hi{max-width:1140px;margin:0 auto;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;position:relative;z-index:2}
+.hero{min-height:100vh;display:flex;align-items:center;padding:120px 48px 80px;position:relative;overflow:hidden;background:var(--bg)}
+.hero-bg1{position:absolute;width:700px;height:700px;border-radius:50%;background:radial-gradient(circle,rgba(26,107,74,.06),transparent 70%);top:-200px;right:-150px;pointer-events:none}
+.hero-bg2{position:absolute;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(0,135,81,.05),transparent 70%);bottom:-150px;left:-100px;pointer-events:none}
+.hero-inner{max-width:1140px;margin:0 auto;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;position:relative;z-index:2}
 
-.badge{display:inline-flex;align-items:center;gap:8px;background:var(--al);border:1px solid rgba(26,107,74,.2);border-radius:50px;padding:5px 14px 5px 8px;font-size:.76rem;font-weight:600;color:var(--accent);margin-bottom:24px}
-.bd{width:6px;height:6px;background:var(--accent);border-radius:50%;animation:blink 2s infinite}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:var(--al);border:1px solid rgba(26,107,74,.2);border-radius:50px;padding:6px 16px 6px 10px;font-size:.76rem;font-weight:600;color:var(--accent);margin-bottom:24px}
+.badge-dot{width:7px;height:7px;background:var(--ng);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(.85)}}
 
 h1{font-family:'Fraunces',serif;font-size:clamp(2.4rem,4.5vw,3.8rem);font-weight:700;line-height:1.08;letter-spacing:-.03em;margin-bottom:20px}
 h1 em{font-style:italic;color:var(--accent)}
-.hs{color:var(--t2);font-size:1rem;line-height:1.7;max-width:440px;font-weight:300;margin-bottom:36px}
+.hero-sub{color:var(--t2);font-size:1rem;line-height:1.75;max-width:440px;font-weight:300;margin-bottom:36px}
 
-.hb{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:48px}
-.bwa{display:inline-flex;align-items:center;gap:10px;background:var(--wa);color:white;padding:13px 24px;border-radius:50px;font-weight:700;font-size:.9rem;text-decoration:none;transition:all .25s;box-shadow:0 4px 16px rgba(37,211,102,.25)}.bwa:hover{background:#20bd5a;transform:translateY(-2px)}
-.btg{display:inline-flex;align-items:center;gap:10px;background:var(--tg);color:white;padding:13px 24px;border-radius:50px;font-weight:700;font-size:.9rem;text-decoration:none;transition:all .25s;box-shadow:0 4px 16px rgba(34,158,217,.25)}.btg:hover{background:#1a8cc4;transform:translateY(-2px)}
-.bg{color:var(--t2);font-size:.88rem;font-weight:500;text-decoration:none;transition:color .2s}.bg:hover{color:var(--text)}
+.hero-btns{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:48px}
+.btn-wa{display:inline-flex;align-items:center;gap:10px;background:var(--wa);color:white;padding:14px 26px;border-radius:50px;font-weight:700;font-size:.92rem;text-decoration:none;transition:all .25s;box-shadow:0 4px 20px rgba(37,211,102,.3)}.btn-wa:hover{background:#20bd5a;transform:translateY(-2px)}
+.btn-tg{display:inline-flex;align-items:center;gap:10px;background:var(--tg);color:white;padding:14px 26px;border-radius:50px;font-weight:700;font-size:.92rem;text-decoration:none;transition:all .25s;box-shadow:0 4px 20px rgba(34,158,217,.25)}.btn-tg:hover{background:#1a8cc4;transform:translateY(-2px)}
+.btn-ghost{color:var(--t2);font-size:.88rem;font-weight:500;text-decoration:none;transition:color .2s}.btn-ghost:hover{color:var(--text)}
 
-.sts{display:flex;gap:32px;padding-top:32px;border-top:1px solid var(--border);flex-wrap:wrap}
-.sn{font-family:'Fraunces',serif;font-size:1.6rem;font-weight:700;letter-spacing:-.04em}.sl{font-size:.74rem;color:var(--t2);margin-top:2px}
+.hero-stats{display:flex;gap:32px;padding-top:28px;border-top:1px solid var(--border);flex-wrap:wrap}
+.stat-n{font-family:'Fraunces',serif;font-size:1.7rem;font-weight:700;letter-spacing:-.04em;color:var(--text)}
+.stat-l{font-size:.74rem;color:var(--t2);margin-top:2px}
 
-/* PHONE */
-.pw{position:relative;display:flex;justify-content:center}
-.ph{width:275px;background:var(--white);border-radius:40px;border:1px solid var(--border);padding:18px 14px 26px;box-shadow:0 32px 64px rgba(26,26,24,.1)}
-.pn{width:72px;height:22px;background:var(--text);border-radius:0 0 14px 14px;margin:0 auto 14px}
-.ct{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface);border-radius:12px;margin-bottom:14px}
-.ca{width:32px;height:32px;background:linear-gradient(135deg,var(--accent),var(--a2));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;color:white;font-family:'Fraunces',serif}
-.cn{font-size:.82rem;font-weight:600}.cs{font-size:.65rem;color:var(--accent)}
-.ms{display:flex;flex-direction:column;gap:8px;padding:0 2px}
-.b{padding:9px 12px;border-radius:14px;font-size:.76rem;line-height:1.5}
-.bot{background:var(--surface);border:1px solid var(--border);border-radius:3px 14px 14px 14px;color:var(--text);align-self:flex-start;max-width:90%}
-.usr{background:var(--wa);color:white;font-weight:500;border-radius:14px 14px 3px 14px;align-self:flex-end}
-.tx{margin-top:8px;background:var(--white);border:1px solid rgba(26,107,74,.15);border-radius:10px;padding:10px}
-.txg{font-size:.6rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
-.txa{font-family:'Fraunces',serif;font-size:1.2rem;font-weight:700;color:var(--text);margin:3px 0}
-.txt{font-size:.68rem;color:var(--t2)}.txo{font-size:.65rem;color:var(--accent);font-weight:600;margin-top:6px}
+/* PHONE MOCKUP */
+.phone-wrap{position:relative;display:flex;justify-content:center}
+.phone{width:275px;background:var(--white);border-radius:40px;border:1px solid var(--border);padding:18px 14px 26px;box-shadow:0 32px 64px rgba(26,26,24,.12)}
+.phone-notch{width:72px;height:22px;background:var(--text);border-radius:0 0 14px 14px;margin:0 auto 14px}
+.chat-header{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface);border-radius:12px;margin-bottom:14px}
+.chat-av{width:32px;height:32px;background:linear-gradient(135deg,var(--accent),var(--a2));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;color:white;font-family:'Fraunces',serif}
+.chat-name{font-size:.82rem;font-weight:600}.chat-status{font-size:.65rem;color:var(--accent)}
+.chat-messages{display:flex;flex-direction:column;gap:8px;padding:0 2px}
+.msg{padding:9px 12px;border-radius:14px;font-size:.76rem;line-height:1.5}
+.msg-bot{background:var(--surface);border:1px solid var(--border);border-radius:3px 14px 14px 14px;color:var(--text);align-self:flex-start;max-width:90%}
+.msg-user{background:var(--wa);color:white;font-weight:500;border-radius:14px 14px 3px 14px;align-self:flex-end}
+.transfer-card{margin-top:8px;background:var(--white);border:1px solid rgba(26,107,74,.15);border-radius:10px;padding:10px}
+.tc-label{font-size:.6rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.tc-amount{font-family:'Fraunces',serif;font-size:1.2rem;font-weight:700;color:var(--text);margin:3px 0}
+.tc-detail{font-size:.68rem;color:var(--t2)}.tc-status{font-size:.65rem;color:var(--accent);font-weight:600;margin-top:6px}
 
-/* Float badges */
-.fb{position:absolute;background:var(--white);border:1px solid var(--border);border-radius:12px;padding:10px 13px;font-size:.74rem;box-shadow:0 6px 20px rgba(26,26,24,.07)}
-.fb1{left:-80px;top:80px;animation:fy 4s ease-in-out infinite}
-.fb2{right:-70px;top:40px;animation:fy 4s ease-in-out infinite;animation-delay:1.5s}
-.fb3{right:-65px;bottom:80px;animation:fy 4s ease-in-out infinite;animation-delay:.8s}
-.fi{font-size:1rem;margin-bottom:3px}.fv{font-family:'Fraunces',serif;font-weight:700;font-size:.85rem}.fs{color:var(--t2);font-size:.66rem}
-@keyframes fy{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-
-/* MARKETS SECTION */
-.markets{padding:80px 48px;background:var(--white);border-top:1px solid var(--border)}
-.markets-inner{max-width:1140px;margin:0 auto}
-.markets-head{text-align:center;margin-bottom:48px}
-.markets-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
-.market-card{border-radius:24px;padding:36px;position:relative;overflow:hidden;transition:transform .3s}
-.market-card:hover{transform:translateY(-4px)}
-.market-card.uk{background:linear-gradient(135deg,#f0f7ff,#e8f4ed);border:1px solid rgba(26,107,74,.15)}
-.market-card.ng{background:linear-gradient(135deg,#fff8f0,#f0fff4);border:1px solid rgba(0,135,81,.15)}
-.market-flag{font-size:3rem;margin-bottom:16px;display:block}
-.market-title{font-family:'Fraunces',serif;font-size:1.4rem;font-weight:700;letter-spacing:-.02em;margin-bottom:8px}
-.market-sub{font-size:.88rem;color:var(--t2);line-height:1.65;margin-bottom:20px;font-weight:300}
-.market-features{display:flex;flex-direction:column;gap:8px;margin-bottom:24px}
-.mf{display:flex;align-items:center;gap:8px;font-size:.82rem}
-.mf-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
-.market-card.uk .mf-dot{background:var(--accent)}
-.market-card.ng .mf-dot{background:var(--ng)}
-.market-cta{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:50px;font-weight:600;font-size:.84rem;text-decoration:none;transition:all .2s}
-.market-card.uk .market-cta{background:var(--accent);color:white}.market-card.uk .market-cta:hover{background:#155a3d}
-.market-card.ng .market-cta{background:var(--ng);color:white}.market-card.ng .market-cta:hover{background:#006b40}
-.market-card-bg{position:absolute;right:-20px;top:-20px;font-size:8rem;opacity:.06;pointer-events:none}
+/* FLOATING BADGES */
+.float-badge{position:absolute;background:var(--white);border:1px solid var(--border);border-radius:12px;padding:10px 13px;font-size:.74rem;box-shadow:0 6px 20px rgba(26,26,24,.07)}
+.fb1{left:-70px;top:80px;animation:float 4s ease-in-out infinite}
+.fb2{right:-60px;top:40px;animation:float 4s ease-in-out infinite;animation-delay:1.5s}
+.fb3{right:-55px;bottom:80px;animation:float 4s ease-in-out infinite;animation-delay:.8s}
+.fbi{font-size:1rem;margin-bottom:3px}.fbv{font-family:'Fraunces',serif;font-weight:700;font-size:.85rem}.fbs{color:var(--t2);font-size:.66rem}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
 
 /* SECTIONS */
 section{padding:90px 48px}
-.inn{max-width:1140px;margin:0 auto}
-.sl2{font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:12px}
-h2{font-family:'Fraunces',serif;font-size:clamp(1.8rem,3vw,2.6rem);font-weight:700;letter-spacing:-.03em;line-height:1.1;max-width:480px}
+.section-inner{max-width:1140px;margin:0 auto}
+.section-tag{font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:12px}
+h2{font-family:'Fraunces',serif;font-size:clamp(1.8rem,3vw,2.6rem);font-weight:700;letter-spacing:-.03em;line-height:1.1;max-width:520px}
 
 /* HOW IT WORKS */
-.how{background:var(--bg);border-top:1px solid var(--border)}
-.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-top:48px}
-.step{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:26px 22px;transition:all .3s}.step:hover{border-color:rgba(26,107,74,.2);transform:translateY(-3px)}
-.stn{font-family:'Fraunces',serif;font-size:2.2rem;font-weight:700;color:rgba(26,107,74,.1);line-height:1;margin-bottom:12px}
-.sti{font-size:1.4rem;margin-bottom:10px}.stt{font-family:'Fraunces',serif;font-size:.95rem;font-weight:700;margin-bottom:6px}.std{font-size:.82rem;color:var(--t2);line-height:1.6;font-weight:300}
+.how{background:var(--white);border-top:1px solid var(--border)}
+.steps-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-top:48px}
+.step-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:26px 22px;transition:all .3s}.step-card:hover{border-color:rgba(26,107,74,.25);transform:translateY(-3px)}
+.step-num{font-family:'Fraunces',serif;font-size:2.2rem;font-weight:700;color:rgba(26,107,74,.12);line-height:1;margin-bottom:12px}
+.step-icon{font-size:1.4rem;margin-bottom:10px}.step-title{font-family:'Fraunces',serif;font-size:.95rem;font-weight:700;margin-bottom:6px}.step-desc{font-size:.82rem;color:var(--t2);line-height:1.6;font-weight:300}
 
-/* FEATURES */
-.feats{background:var(--white);border-top:1px solid var(--border)}
-.fh{margin-bottom:48px}
+/* FEATURES BENTO */
+.feats{background:var(--bg);border-top:1px solid var(--border)}
 .bento{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-.bc{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:28px;transition:all .3s}.bc:hover{border-color:rgba(26,107,74,.2);transform:translateY(-3px)}.bc.wide{grid-column:span 2}
-.bci{width:40px;height:40px;border-radius:10px;background:var(--al);display:flex;align-items:center;justify-content:center;font-size:1.1rem;margin-bottom:16px}
-.bct{font-family:'Fraunces',serif;font-size:1.05rem;font-weight:700;letter-spacing:-.02em;margin-bottom:7px}.bcd{font-size:.83rem;color:var(--t2);line-height:1.65;font-weight:300}
-.bars{margin-top:18px;display:flex;flex-direction:column;gap:8px}
-.br{display:flex;align-items:center;gap:10px}.bl{font-size:.7rem;color:var(--t2);width:58px}.bt{flex:1;height:5px;background:var(--surface);border-radius:3px;overflow:hidden}.bf{height:100%;background:linear-gradient(90deg,var(--accent),var(--a2));border-radius:3px}.bv{font-size:.7rem;font-weight:600;width:48px;text-align:right}
+.bcard{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:28px;transition:all .3s}.bcard:hover{border-color:rgba(26,107,74,.2);transform:translateY(-3px)}.bcard.wide{grid-column:span 2}
+.bcard-icon{width:42px;height:42px;border-radius:12px;background:var(--al);display:flex;align-items:center;justify-content:center;font-size:1.1rem;margin-bottom:16px}
+.bcard-title{font-family:'Fraunces',serif;font-size:1.05rem;font-weight:700;letter-spacing:-.02em;margin-bottom:8px}
+.bcard-desc{font-size:.83rem;color:var(--t2);line-height:1.65;font-weight:300}
+.spend-bars{margin-top:18px;display:flex;flex-direction:column;gap:8px}
+.spend-row{display:flex;align-items:center;gap:10px}
+.spend-label{font-size:.7rem;color:var(--t2);width:60px}
+.spend-track{flex:1;height:5px;background:var(--surface);border-radius:3px;overflow:hidden}
+.spend-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--a2));border-radius:3px}
+.spend-pct{font-size:.7rem;font-weight:600;width:32px;text-align:right}
 
 /* SECURITY */
-.sec{background:var(--bg);border-top:1px solid var(--border)}
-.sg{display:grid;grid-template-columns:1fr 1fr;gap:70px;align-items:center;margin-top:48px}
-.si{display:flex;flex-direction:column;gap:22px}
-.sit{display:flex;gap:14px;align-items:flex-start}
-.sic{width:38px;height:38px;background:var(--al);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:.95rem;flex-shrink:0}
-.sitt{font-family:'Fraunces',serif;font-size:.92rem;font-weight:700;margin-bottom:4px}.sitd{font-size:.81rem;color:var(--t2);line-height:1.6;font-weight:300}
-.sv{background:linear-gradient(135deg,var(--al),rgba(37,211,102,.06));border:1px solid rgba(26,107,74,.12);border-radius:28px;padding:44px;text-align:center}
-.sh{font-size:4.5rem;display:block;margin-bottom:14px}.svt{font-family:'Fraunces',serif;font-size:1.3rem;font-weight:700;color:var(--accent)}.svs{font-size:.82rem;color:var(--t2);margin-top:6px}
-.svb{display:flex;gap:7px;justify-content:center;margin-top:18px;flex-wrap:wrap}.svbi{padding:5px 13px;background:var(--white);border:1px solid rgba(26,107,74,.15);border-radius:50px;font-size:.7rem;font-weight:600;color:var(--accent)}
+.sec{background:var(--white);border-top:1px solid var(--border)}
+.sec-grid{display:grid;grid-template-columns:1fr 1fr;gap:70px;align-items:center;margin-top:48px}
+.sec-items{display:flex;flex-direction:column;gap:22px}
+.sec-item{display:flex;gap:14px;align-items:flex-start}
+.sec-icon{width:40px;height:40px;background:var(--al);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
+.sec-title{font-family:'Fraunces',serif;font-size:.92rem;font-weight:700;margin-bottom:4px}
+.sec-desc{font-size:.81rem;color:var(--t2);line-height:1.6;font-weight:300}
+.sec-visual{background:linear-gradient(135deg,var(--al),rgba(0,135,81,.06));border:1px solid rgba(26,107,74,.12);border-radius:28px;padding:44px;text-align:center}
+.sec-shield{font-size:4.5rem;display:block;margin-bottom:14px}
+.sec-visual-title{font-family:'Fraunces',serif;font-size:1.3rem;font-weight:700;color:var(--accent)}
+.sec-visual-sub{font-size:.82rem;color:var(--t2);margin-top:6px}
+.sec-badges{display:flex;gap:7px;justify-content:center;margin-top:18px;flex-wrap:wrap}
+.sec-badge{padding:5px 13px;background:var(--white);border:1px solid rgba(26,107,74,.15);border-radius:50px;font-size:.7rem;font-weight:600;color:var(--accent)}
 
 /* USE CASES */
-.uses{background:var(--white);border-top:1px solid var(--border)}
-.uh{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:40px}
-.ug{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
-.uc{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;transition:all .3s;cursor:pointer}.uc:hover{transform:translateY(-4px);border-color:rgba(26,107,74,.2)}
-.ui{height:120px;display:flex;align-items:center;justify-content:center;font-size:2.8rem;position:relative;background:var(--surface)}
-.up{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);background:var(--accent);color:white;border-radius:50px;padding:3px 11px;font-size:.65rem;font-weight:600;white-space:nowrap}
-.ub{padding:14px 16px 18px}.ut{font-family:'Fraunces',serif;font-size:.92rem;font-weight:700;margin-bottom:4px}.ud{font-size:.76rem;color:var(--t2);line-height:1.5}
+.uses{background:var(--bg);border-top:1px solid var(--border)}
+.uses-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:40px}
+.uses-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.use-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;transition:all .3s}.use-card:hover{transform:translateY(-4px);border-color:rgba(26,107,74,.2)}
+.use-img{height:120px;display:flex;align-items:center;justify-content:center;font-size:2.8rem;position:relative;background:var(--surface)}
+.use-tag{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);background:var(--accent);color:white;border-radius:50px;padding:3px 11px;font-size:.65rem;font-weight:600;white-space:nowrap}
+.use-body{padding:14px 16px 18px}
+.use-title{font-family:'Fraunces',serif;font-size:.92rem;font-weight:700;margin-bottom:4px}
+.use-desc{font-size:.76rem;color:var(--t2);line-height:1.5}
 
 /* TESTIMONIALS */
-.testi{background:var(--bg);border-top:1px solid var(--border);padding:90px 48px}
-.testi-inner{max-width:1140px;margin:0 auto}
+.testi{background:var(--white);border-top:1px solid var(--border)}
 .testi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:48px}
-.tcard{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:28px}
-.tcard-flag{font-size:1.2rem;margin-bottom:12px}
-.tcard-text{font-size:.88rem;color:var(--t2);line-height:1.7;font-weight:300;margin-bottom:16px;font-style:italic}
-.tcard-name{font-family:'Fraunces',serif;font-weight:700;font-size:.9rem}
-.tcard-role{font-size:.75rem;color:var(--t2)}
+.tcard{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:28px}
+.tcard-flag{font-size:1.4rem;margin-bottom:10px}
 .tcard-stars{color:#f59e0b;font-size:.85rem;margin-bottom:12px}
+.tcard-text{font-size:.88rem;color:var(--t2);line-height:1.75;font-weight:300;margin-bottom:16px;font-style:italic}
+.tcard-name{font-family:'Fraunces',serif;font-weight:700;font-size:.9rem}
+.tcard-role{font-size:.75rem;color:var(--t2);margin-top:2px}
 
-/* CTA */
-.ctas{padding:100px 48px;background:var(--accent);text-align:center;position:relative;overflow:hidden}
-.ctas::before{content:'';position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,.05) 1px,transparent 1px);background-size:26px 26px}
-.ctai{position:relative;z-index:2;max-width:580px;margin:0 auto}
-.ctat{font-family:'Fraunces',serif;font-size:clamp(1.8rem,3.5vw,2.8rem);font-weight:700;color:white;letter-spacing:-.03em;line-height:1.1;margin-bottom:14px}
-.ctas2{color:rgba(255,255,255,.72);font-size:.95rem;line-height:1.7;margin-bottom:36px;font-weight:300}
+/* CTA SECTION */
+.cta-section{padding:100px 48px;background:var(--ng);text-align:center;position:relative;overflow:hidden}
+.cta-section::before{content:'';position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,.04) 1px,transparent 1px);background-size:28px 28px}
+.cta-inner{position:relative;z-index:2;max-width:580px;margin:0 auto}
+.cta-title{font-family:'Fraunces',serif;font-size:clamp(1.8rem,3.5vw,2.8rem);font-weight:700;color:white;letter-spacing:-.03em;line-height:1.1;margin-bottom:14px}
+.cta-sub{color:rgba(255,255,255,.72);font-size:.95rem;line-height:1.75;margin-bottom:36px;font-weight:300}
 .cta-btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
-.bwh{display:inline-flex;align-items:center;gap:10px;background:white;color:var(--accent);padding:14px 28px;border-radius:50px;font-weight:700;font-size:.92rem;text-decoration:none;transition:all .25s;box-shadow:0 6px 24px rgba(0,0,0,.12)}.bwh:hover{transform:translateY(-2px)}
-.bth{display:inline-flex;align-items:center;gap:10px;background:rgba(255,255,255,.15);color:white;padding:14px 28px;border-radius:50px;font-weight:700;font-size:.92rem;text-decoration:none;border:2px solid rgba(255,255,255,.4);transition:all .25s}.bth:hover{background:rgba(255,255,255,.25);transform:translateY(-2px)}
+.cta-wa{display:inline-flex;align-items:center;gap:10px;background:white;color:var(--ng);padding:14px 28px;border-radius:50px;font-weight:700;font-size:.92rem;text-decoration:none;transition:all .25s;box-shadow:0 6px 24px rgba(0,0,0,.15)}.cta-wa:hover{transform:translateY(-2px)}
+.cta-tg{display:inline-flex;align-items:center;gap:10px;background:rgba(255,255,255,.15);color:white;padding:14px 28px;border-radius:50px;font-weight:700;font-size:.92rem;text-decoration:none;border:2px solid rgba(255,255,255,.4);transition:all .25s}.cta-tg:hover{background:rgba(255,255,255,.25);transform:translateY(-2px)}
 
 /* FOOTER */
-footer{background:var(--text);padding:48px;color:rgba(255,255,255,.5)}
-.fi2{max-width:1140px;margin:0 auto}
-.foot-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:40px;padding-bottom:32px;border-bottom:1px solid rgba(255,255,255,.08)}
-.foot-brand .fl{font-family:'Fraunces',serif;font-weight:700;font-size:1.4rem;color:white;letter-spacing:-.03em;display:block;margin-bottom:8px}.fl span{color:var(--a2)}
-.foot-brand p{font-size:.8rem;line-height:1.6;max-width:260px;margin-top:8px}
-.foot-cols{display:flex;gap:60px}
-.foot-col h4{font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.4);margin-bottom:14px}
-.foot-col a{display:block;color:rgba(255,255,255,.5);text-decoration:none;font-size:.82rem;margin-bottom:8px;transition:color .2s}.foot-col a:hover{color:white}
-.foot-bottom{display:flex;align-items:center;justify-content:space-between;font-size:.76rem}
-.foot-markets{display:flex;gap:16px}
-.foot-market{display:flex;align-items:center;gap:6px;font-size:.78rem;color:rgba(255,255,255,.4)}
+footer{background:#111;padding:56px 48px;color:rgba(255,255,255,.5)}
+.footer-inner{max-width:1140px;margin:0 auto}
+.footer-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:40px;padding-bottom:32px;border-bottom:1px solid rgba(255,255,255,.08)}
+.footer-logo{font-family:'Fraunces',serif;font-weight:700;font-size:1.4rem;color:white;letter-spacing:-.03em;display:block;margin-bottom:8px}
+.footer-logo span{color:var(--a2)}
+.footer-brand p{font-size:.8rem;line-height:1.65;max-width:240px;margin-top:6px}
+.footer-ng{display:inline-flex;align-items:center;gap:6px;font-size:.76rem;color:rgba(255,255,255,.35);margin-top:12px}
+.footer-cols{display:flex;gap:56px}
+.footer-col h4{font-size:.76rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.35);margin-bottom:14px}
+.footer-col a{display:block;color:rgba(255,255,255,.5);text-decoration:none;font-size:.82rem;margin-bottom:8px;transition:color .2s}.footer-col a:hover{color:white}
+.footer-bottom{display:flex;align-items:center;justify-content:space-between;font-size:.75rem}
 
-.ws{width:18px;height:18px;fill:currentColor}
-
+/* RESPONSIVE */
 @media(max-width:900px){
   nav{padding:14px 20px}.nav-links{display:none}
-  .country-bar{padding:10px 20px;gap:12px;margin-top:60px}
-  .hero{padding:60px 20px 60px}.hi{grid-template-columns:1fr}.pw{display:none}
-  section,.markets,.testi{padding:60px 20px}
-  .steps,.bento,.markets-grid,.tg,.ug,.testi-grid{grid-template-columns:1fr}.bc.wide{grid-column:span 1}
-  .sg{grid-template-columns:1fr}.sv{display:none}
-  .uh,.foot-top{flex-direction:column;gap:16px}
-  .foot-cols{flex-direction:column;gap:32px}
-  .foot-bottom{flex-direction:column;gap:12px;text-align:center}
-  .ctas{padding:70px 20px}
+  .hero{padding:100px 20px 60px}.hero-inner{grid-template-columns:1fr}
+  .phone-wrap{display:none}
+  section{padding:60px 20px}
+  .steps-grid,.bento,.testi-grid,.uses-grid{grid-template-columns:1fr}
+  .bcard.wide{grid-column:span 1}
+  .sec-grid{grid-template-columns:1fr}.sec-visual{display:none}
+  .uses-header{flex-direction:column;gap:14px}
+  .footer-top{flex-direction:column;gap:32px}
+  .footer-cols{flex-direction:column;gap:28px}
+  .footer-bottom{flex-direction:column;gap:10px;text-align:center}
+  .cta-section{padding:70px 20px}
   footer{padding:40px 20px}
 }
 </style>
 </head>
 <body>
 
+<!-- NAV -->
 <nav>
   <a href="/" class="logo">Ze<span>n</span>o</a>
   <ul class="nav-links">
-    <li><a href="#markets">Markets</a></li>
     <li><a href="#how">How it works</a></li>
     <li><a href="#features">Features</a></li>
     <li><a href="#security">Security</a></li>
@@ -217,99 +223,54 @@ footer{background:var(--text);padding:48px;color:rgba(255,255,255,.5)}
   </a>
 </nav>
 
-<!-- COUNTRY BAR -->
-<div class="country-bar">
-  <span class="country-bar-text">Available in:</span>
-  <a href="https://wa.me/447459233682?text=Hi%20Zeno" class="country-btn active" target="_blank">🇬🇧 United Kingdom</a>
-  <a href="https://wa.me/447459233682?text=Hi%20Zeno" class="country-btn" target="_blank">🇳🇬 Nigeria</a>
-  <span class="country-bar-text">· More markets coming soon</span>
-</div>
-
 <!-- HERO -->
 <section class="hero">
-  <div class="c1"></div><div class="c2"></div>
-  <div class="hi">
+  <div class="hero-bg1"></div><div class="hero-bg2"></div>
+  <div class="hero-inner">
     <div>
-      <div class="badge"><span class="bd"></span>Live in UK 🇬🇧 & Nigeria 🇳🇬</div>
-      <h1>Your money, managed by <em>AI</em> on WhatsApp</h1>
-      <p class="hs">Send money, check balances, and track spending through a natural conversation — in English or Pidgin. No new app. No wahala. Just chat.</p>
-      <div class="hb">
-        <a href="https://wa.me/447459233682?text=Hi%20Zeno" class="bwa" target="_blank">
+      <div class="hero-badge"><span class="badge-dot"></span>🇳🇬 Live in Nigeria</div>
+      <h1>Bank smarter with <em>AI</em> — on WhatsApp &amp; Telegram</h1>
+      <p class="hero-sub">Send money to any Nigerian bank, check your balance, pay bills and track your spending — just by chatting. No new app. No wahala. Powered by The 36th Company.</p>
+      <div class="hero-btns">
+        <a href="https://wa.me/447459233682?text=Hi%20Zeno" class="btn-wa" target="_blank">
           <svg class="ws" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.554 4.118 1.528 5.851L0 24l6.335-1.507A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.006-1.368l-.36-.213-3.72.885.936-3.618-.235-.373A9.818 9.818 0 1112 21.818z"/></svg>
           Start on WhatsApp
         </a>
-        <a href="https://t.me/ZenoUKbot" class="btg" target="_blank">
+        <a href="https://t.me/ZenoUKbot" class="btn-tg" target="_blank">
           <svg class="ws" viewBox="0 0 24 24"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.247l-1.97 9.289c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L8.48 14.17l-2.95-.924c-.641-.204-.654-.641.136-.953l11.527-4.445c.535-.194 1.003.131.37.399z"/></svg>
           Try on Telegram
         </a>
-        <a href="#how" class="bg">See how it works ↓</a>
+        <a href="#how" class="btn-ghost">See how it works ↓</a>
       </div>
-      <div class="sts">
-        <div><div class="sn">50+</div><div class="sl">UK banks</div></div>
-        <div><div class="sn">20+</div><div class="sl">Nigerian banks</div></div>
-        <div><div class="sn">&lt;3s</div><div class="sl">Transfer time</div></div>
-        <div><div class="sn">2</div><div class="sl">Countries live</div></div>
-      </div>
-    </div>
-    <div class="pw">
-      <div class="fb fb1"><div class="fi">💸</div><div class="fv">₦50,000 sent</div><div class="fs">Via GTBank</div></div>
-      <div class="fb fb2"><div class="fi">💷</div><div class="fv">£500 sent</div><div class="fs">Instantly</div></div>
-      <div class="fb fb3"><div class="fi">🔒</div><div class="fv">Verified</div><div class="fs">PIN secured</div></div>
-      <div class="ph">
-        <div class="pn"></div>
-        <div class="ct"><div class="ca">Z</div><div><div class="cn">Zeno AI</div><div class="cs">● Online now</div></div></div>
-        <div class="ms">
-          <div class="b bot">Hey! 👋 Wetin you wan do today?</div>
-          <div class="b usr">Send 5000 to Chidi, GTBank</div>
-          <div class="b bot">On it! Confirming transfer to Chidi.<div class="tx"><div class="txg">Transfer</div><div class="txa">₦5,000</div><div class="txt">→ Chidi · GTBank</div><div class="txo">✓ Sent successfully</div></div></div>
-        </div>
+      <div class="hero-stats">
+        <div><div class="stat-n">20+</div><div class="stat-l">Nigerian banks</div></div>
+        <div><div class="stat-n">&lt;3s</div><div class="stat-l">Transfer time</div></div>
+        <div><div class="stat-n">24/7</div><div class="stat-l">AI support</div></div>
+        <div><div class="stat-n">₦0</div><div class="stat-l">Setup fee</div></div>
       </div>
     </div>
-  </div>
-</section>
-
-<!-- MARKETS -->
-<section class="markets" id="markets">
-  <div class="markets-inner">
-    <div style="text-align:center;margin-bottom:48px">
-      <div class="sl2">Our Markets</div>
-      <h2 style="margin:0 auto">Built for two great nations</h2>
-      <p style="color:var(--t2);font-size:.95rem;margin-top:12px;font-weight:300">Same powerful AI. Different currencies, banks and local features.</p>
-    </div>
-    <div class="markets-grid">
-      <!-- UK -->
-      <div class="market-card uk">
-        <div class="market-card-bg">🇬🇧</div>
-        <span class="market-flag">🇬🇧</span>
-        <div class="market-title">United Kingdom</div>
-        <div class="market-sub">Full Open Banking integration with 50+ UK banks. Send money via Faster Payments, check real balances and track spending in pounds.</div>
-        <div class="market-features">
-          <div class="mf"><span class="mf-dot"></span>TrueLayer Open Banking</div>
-          <div class="mf"><span class="mf-dot"></span>UK Faster Payments</div>
-          <div class="mf"><span class="mf-dot"></span>Barclays, HSBC, Monzo, Starling & more</div>
-          <div class="mf"><span class="mf-dot"></span>GBP (£) transactions</div>
-          <div class="mf"><span class="mf-dot"></span>FCA-compliant KYC</div>
+    <div class="phone-wrap">
+      <div class="float-badge fb1"><div class="fbi">💸</div><div class="fbv">₦50,000 sent</div><div class="fbs">Via GTBank · 2s</div></div>
+      <div class="float-badge fb2"><div class="fbi">📊</div><div class="fbv">Balance updated</div><div class="fbs">Access Bank</div></div>
+      <div class="float-badge fb3"><div class="fbi">🔒</div><div class="fbv">PIN secured</div><div class="fbs">Transaction safe</div></div>
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="chat-header">
+          <div class="chat-av">Z</div>
+          <div><div class="chat-name">Zeno AI</div><div class="chat-status">● Online now</div></div>
         </div>
-        <a href="https://wa.me/447459233682?text=Hi%20Zeno" class="market-cta" target="_blank">
-          Start in UK →
-        </a>
-      </div>
-      <!-- Nigeria -->
-      <div class="market-card ng">
-        <div class="market-card-bg">🇳🇬</div>
-        <span class="market-flag">🇳🇬</span>
-        <div class="market-title">Nigeria</div>
-        <div class="market-sub">Powered by Mono Open Banking and Flutterwave payments. Send naira to any Nigerian bank, check your balance and track spending — in English or Pidgin.</div>
-        <div class="market-features">
-          <div class="mf"><span class="mf-dot"></span>Mono Open Banking</div>
-          <div class="mf"><span class="mf-dot"></span>Flutterwave bank transfers</div>
-          <div class="mf"><span class="mf-dot"></span>GTBank, Access, Zenith, UBA & more</div>
-          <div class="mf"><span class="mf-dot"></span>NGN (₦) transactions</div>
-          <div class="mf"><span class="mf-dot"></span>English & Pidgin supported</div>
+        <div class="chat-messages">
+          <div class="msg msg-bot">Hey! 👋 Wetin you wan do today?</div>
+          <div class="msg msg-user">Send 5000 to Chidi, GTBank</div>
+          <div class="msg msg-bot">On it! Confirming transfer to Chidi.
+            <div class="transfer-card">
+              <div class="tc-label">Transfer</div>
+              <div class="tc-amount">₦5,000</div>
+              <div class="tc-detail">→ Chidi · GTBank · 0123456789</div>
+              <div class="tc-status">✓ Sent successfully</div>
+            </div>
+          </div>
         </div>
-        <a href="https://wa.me/447459233682?text=Hi%20Zeno" class="market-cta" target="_blank">
-          Start in Nigeria →
-        </a>
       </div>
     </div>
   </div>
@@ -317,73 +278,162 @@ footer{background:var(--text);padding:48px;color:rgba(255,255,255,.5)}
 
 <!-- HOW IT WORKS -->
 <section class="how" id="how">
-  <div class="inn">
-    <div class="sl2">How it works</div>
+  <div class="section-inner">
+    <div class="section-tag">How it works</div>
     <h2>Banking in 4 simple steps</h2>
-    <div class="steps">
-      <div class="step"><div class="stn">01</div><div class="sti">💬</div><div class="stt">Open WhatsApp or Telegram</div><div class="std">No app to download. Message Zeno on any platform you already use.</div></div>
-      <div class="step"><div class="stn">02</div><div class="sti">📝</div><div class="stt">Register in 2 mins</div><div class="std">Tell Zeno your name, email, and set a PIN. Quick identity check to keep you safe.</div></div>
-      <div class="step"><div class="stn">03</div><div class="sti">🏦</div><div class="stt">Connect your bank</div><div class="std">UK users connect via Open Banking. Nigerian users connect via Mono. Read-only and secure.</div></div>
-      <div class="step"><div class="stn">04</div><div class="sti">🚀</div><div class="stt">Start banking</div><div class="std">Send money, check balances, track spending — just by typing naturally.</div></div>
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-num">01</div>
+        <div class="step-icon">💬</div>
+        <div class="step-title">Open WhatsApp or Telegram</div>
+        <div class="step-desc">No new app to download. Message Zeno on any platform you already use every day.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">02</div>
+        <div class="step-icon">📝</div>
+        <div class="step-title">Register in 2 minutes</div>
+        <div class="step-desc">Tell Zeno your name, email, and set a 4-digit PIN. Quick identity check to keep you safe.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">03</div>
+        <div class="step-icon">🏦</div>
+        <div class="step-title">Connect your Nigerian bank</div>
+        <div class="step-desc">Securely link your GTBank, Access, Zenith, UBA or 20+ other banks via Mono Open Banking.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">04</div>
+        <div class="step-icon">🚀</div>
+        <div class="step-title">Start banking</div>
+        <div class="step-desc">Send money, check your balance, pay bills — just by typing naturally in English or Pidgin.</div>
+      </div>
     </div>
   </div>
 </section>
 
 <!-- FEATURES -->
 <section class="feats" id="features">
-  <div class="inn">
-    <div class="fh"><div class="sl2">Features</div><h2>Everything you need, nothing you don't</h2></div>
+  <div class="section-inner">
+    <div style="margin-bottom:40px"><div class="section-tag">Features</div><h2>Everything your money needs</h2></div>
     <div class="bento">
-      <div class="bc wide"><div class="bci">💸</div><div class="bct">Instant Transfers</div><div class="bcd">UK: Send money via Faster Payments in seconds. Nigeria: Transfer naira to any bank via Flutterwave. Just say who and how much — Zeno handles the rest.</div></div>
-      <div class="bc"><div class="bci">📊</div><div class="bct">Spending Analysis</div><div class="bcd">Know exactly where your money goes with smart breakdowns in your local currency.</div><div class="bars"><div class="br"><span class="bl">Food</span><div class="bt"><div class="bf" style="width:75%"></div></div><span class="bv">75%</span></div><div class="br"><span class="bl">Transport</span><div class="bt"><div class="bf" style="width:45%"></div></div><span class="bv">45%</span></div><div class="br"><span class="bl">Bills</span><div class="bt"><div class="bf" style="width:30%"></div></div><span class="bv">30%</span></div></div></div>
-      <div class="bc"><div class="bci">🧠</div><div class="bct">Natural Language</div><div class="bcd">Say "send fifty quid to Sarah" or "send 5k to Chidi GTBank" — Zeno understands both!</div></div>
-      <div class="bc"><div class="bci">🇬🇧🇳🇬</div><div class="bct">Multi-Market</div><div class="bcd">One AI assistant, two countries. £ for UK users, ₦ for Nigerian users — automatically detected.</div></div>
-      <div class="bc wide"><div class="bci">🤖</div><div class="bct">24/7 AI Support</div><div class="bcd">No hold music, no call centres. Get instant answers to your banking questions any time — in English or Pidgin. Zeno troubleshoots issues and guides you through anything.</div></div>
+      <div class="bcard wide">
+        <div class="bcard-icon">💸</div>
+        <div class="bcard-title">Instant Naira Transfers</div>
+        <div class="bcard-desc">Transfer money to any Nigerian bank account in seconds — just say who and how much. GTBank, Access, Zenith, UBA, First Bank and 20+ more. Powered by Flutterwave.</div>
+      </div>
+      <div class="bcard">
+        <div class="bcard-icon">📊</div>
+        <div class="bcard-title">Spending Analysis</div>
+        <div class="bcard-desc">Know exactly where your naira goes with smart category breakdowns.</div>
+        <div class="spend-bars">
+          <div class="spend-row"><span class="spend-label">Food</span><div class="spend-track"><div class="spend-fill" style="width:72%"></div></div><span class="spend-pct">72%</span></div>
+          <div class="spend-row"><span class="spend-label">Transport</span><div class="spend-track"><div class="spend-fill" style="width:44%"></div></div><span class="spend-pct">44%</span></div>
+          <div class="spend-row"><span class="spend-label">Airtime</span><div class="spend-track"><div class="spend-fill" style="width:28%"></div></div><span class="spend-pct">28%</span></div>
+        </div>
+      </div>
+      <div class="bcard">
+        <div class="bcard-icon">🗣️</div>
+        <div class="bcard-title">English & Pidgin</div>
+        <div class="bcard-desc">Say "send 5k to Emeka" or "abeg check my balance" — Zeno understands both perfectly.</div>
+      </div>
+      <div class="bcard">
+        <div class="bcard-icon">📱</div>
+        <div class="bcard-title">Airtime & Bills</div>
+        <div class="bcard-desc">Buy airtime, data bundles, pay DSTV, NEPA electricity and more — all in one chat.</div>
+      </div>
+      <div class="bcard">
+        <div class="bcard-icon">💳</div>
+        <div class="bcard-title">Zeno Wallet</div>
+        <div class="bcard-desc">Get your own dedicated WEMA Bank account number. Fund it from any Nigerian bank instantly.</div>
+      </div>
+      <div class="bcard wide">
+        <div class="bcard-icon">🤖</div>
+        <div class="bcard-title">24/7 AI Banking Support</div>
+        <div class="bcard-desc">No hold music, no call centres. Get instant answers to any banking question, any time of day. Zeno speaks your language, understands your needs, and guides you through everything — from checking your Zenith balance to sending money to your people in Aba.</div>
+      </div>
     </div>
   </div>
 </section>
 
 <!-- SECURITY -->
 <section class="sec" id="security">
-  <div class="inn">
-    <div class="sl2">Security</div><h2>Built with security at every layer</h2>
-    <div class="sg">
-      <div class="si">
-        <div class="sit"><div class="sic">🔐</div><div><div class="sitt">PIN-Protected Payments</div><div class="sitd">Every transfer requires your personal PIN. You set it, you control it.</div></div></div>
-        <div class="sit"><div class="sic">🪪</div><div><div class="sitt">KYC Identity Verified</div><div class="sitd">All users complete identity verification powered by Veriff before accessing full features.</div></div></div>
-        <div class="sit"><div class="sic">🏦</div><div><div class="sitt">Open Banking (Read-Only)</div><div class="sitd">We never see your bank login. UK: TrueLayer. Nigeria: Mono. Both FCA/CBN aligned.</div></div></div>
-        <div class="sit"><div class="sic">❄️</div><div><div class="sitt">Instant Account Freeze</div><div class="sitd">Lost your phone? Freeze your Zeno account instantly from any device.</div></div></div>
+  <div class="section-inner">
+    <div class="section-tag">Security</div>
+    <h2>Your money is always safe</h2>
+    <div class="sec-grid">
+      <div class="sec-items">
+        <div class="sec-item">
+          <div class="sec-icon">🔐</div>
+          <div><div class="sec-title">PIN-Protected Every Time</div><div class="sec-desc">Every transfer needs your 4-digit PIN. After 3 wrong attempts, your account locks automatically for 24 hours.</div></div>
+        </div>
+        <div class="sec-item">
+          <div class="sec-icon">🪪</div>
+          <div><div class="sec-title">Stripe Identity Verification</div><div class="sec-desc">Every user completes KYC with government-issued ID (NIN, passport or driving licence) before accessing transfers.</div></div>
+        </div>
+        <div class="sec-item">
+          <div class="sec-icon">🏦</div>
+          <div><div class="sec-title">Read-Only Bank Access</div><div class="sec-desc">We connect to your bank via Mono Open Banking — read-only. We can't move money without your PIN confirmation.</div></div>
+        </div>
+        <div class="sec-item">
+          <div class="sec-icon">🛡️</div>
+          <div><div class="sec-title">256-bit TLS Encryption</div><div class="sec-desc">All data between your phone, our servers and your bank is fully encrypted end-to-end.</div></div>
+        </div>
       </div>
-      <div class="sv"><span class="sh">🛡️</span><div class="svt">Bank-Grade Security</div><div class="svs">Your money and data protected at every step</div><div class="svb"><span class="svbi">256-bit SSL</span><span class="svbi">KYC Verified</span><span class="svbi">PIN Protected</span><span class="svbi">Open Banking</span><span class="svbi">Veriff ID</span></div></div>
+      <div class="sec-visual">
+        <span class="sec-shield">🛡️</span>
+        <div class="sec-visual-title">Bank-Grade Security</div>
+        <div class="sec-visual-sub">Your money and data protected at every step</div>
+        <div class="sec-badges">
+          <span class="sec-badge">256-bit SSL</span>
+          <span class="sec-badge">Stripe KYC</span>
+          <span class="sec-badge">PIN Protected</span>
+          <span class="sec-badge">Mono Open Banking</span>
+          <span class="sec-badge">CBN Compliant</span>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
 <!-- USE CASES -->
 <section class="uses">
-  <div class="inn">
-    <div class="uh"><div><div class="sl2">Use Cases</div><h2>Where Zeno fits your life</h2></div><a href="https://wa.me/447459233682?text=Hi%20Zeno" class="bg" target="_blank">Try it now →</a></div>
-    <div class="ug">
-      <div class="uc"><div class="ui">🍕<div class="up">Split dinner</div></div><div class="ub"><div class="ut">Split Bills</div><div class="ud">Divide the bill with friends instantly — in pounds or naira.</div></div></div>
-      <div class="uc"><div class="ui">👨‍👩‍👧<div class="up">Send to family</div></div><div class="ub"><div class="ut">Family Transfers</div><div class="ud">Send money to mum, dad or siblings anywhere in Nigeria or the UK.</div></div></div>
-      <div class="uc"><div class="ui">🏠<div class="up">Pay rent</div></div><div class="ub"><div class="ut">Pay Rent</div><div class="ud">Monthly rent sorted in seconds. Just say the word.</div></div></div>
-      <div class="uc"><div class="ui">💡<div class="up">Pay bills</div></div><div class="ub"><div class="ut">Pay Bills</div><div class="ud">Electricity, broadband, DSTV, subscriptions — all handled.</div></div></div>
+  <div class="section-inner">
+    <div class="uses-header">
+      <div><div class="section-tag">Use Cases</div><h2>Where Zeno fits your life</h2></div>
+      <a href="https://wa.me/447459233682?text=Hi%20Zeno" style="color:var(--t2);font-size:.88rem;font-weight:500;text-decoration:none;transition:color .2s" target="_blank">Try it now →</a>
+    </div>
+    <div class="uses-grid">
+      <div class="use-card">
+        <div class="use-img">🛒<div class="use-tag">Market money</div></div>
+        <div class="use-body"><div class="use-title">Send to Family</div><div class="use-desc">Send money to your mum in the village, your brother in school, your sister in Abuja — instantly.</div></div>
+      </div>
+      <div class="use-card">
+        <div class="use-img">📱<div class="use-tag">Never go dark</div></div>
+        <div class="use-body"><div class="use-title">Buy Airtime & Data</div><div class="use-desc">Top up any Nigerian network — MTN, Airtel, Glo, 9mobile — just by saying the word.</div></div>
+      </div>
+      <div class="use-card">
+        <div class="use-img">💡<div class="use-tag">Pay bills</div></div>
+        <div class="use-body"><div class="use-title">Pay NEPA & DSTV</div><div class="use-desc">Electricity, cable TV, subscriptions — all paid in seconds without leaving your chat.</div></div>
+      </div>
+      <div class="use-card">
+        <div class="use-img">🍕<div class="use-tag">Split the bill</div></div>
+        <div class="use-body"><div class="use-title">Split with Friends</div><div class="use-desc">Divide the bill after owanbe or dinner — Zeno splits and sends to everyone instantly.</div></div>
+      </div>
     </div>
   </div>
 </section>
 
 <!-- TESTIMONIALS -->
 <section class="testi">
-  <div class="testi-inner">
+  <div class="section-inner">
     <div style="text-align:center;margin-bottom:48px">
-      <div class="sl2">Early Users</div>
-      <h2 style="margin:0 auto">What people are saying</h2>
+      <div class="section-tag">Early Users</div>
+      <h2 style="margin:0 auto;max-width:400px">What Nigerians are saying</h2>
     </div>
     <div class="testi-grid">
       <div class="tcard">
-        <div class="tcard-flag">🇬🇧</div>
+        <div class="tcard-flag">🇳🇬</div>
         <div class="tcard-stars">★★★★★</div>
-        <div class="tcard-text">"I just type 'send ₦5,000 to my flatmate' and it's done. No opening apps, no logging in. Absolute game changer."</div>
+        <div class="tcard-text">"I just type 'send ₦5,000 to Emeka GTBank' and e don go. No opening apps, no logging in. This thing na magic!"</div>
         <div class="tcard-name">Ade O.</div>
         <div class="tcard-role">Lagos, Nigeria</div>
       </div>
@@ -397,7 +447,7 @@ footer{background:var(--text);padding:48px;color:rgba(255,255,255,.5)}
       <div class="tcard">
         <div class="tcard-flag">🇳🇬</div>
         <div class="tcard-stars">★★★★★</div>
-        <div class="tcard-text">"Finally a banking app that speaks my language. Checking my GTBank balance on WhatsApp feels like the future."</div>
+        <div class="tcard-text">"Finally a banking tool that speaks my language. Checking my GTBank balance on WhatsApp feels like the future."</div>
         <div class="tcard-name">Amara N.</div>
         <div class="tcard-role">Abuja, Nigeria</div>
       </div>
@@ -406,16 +456,16 @@ footer{background:var(--text);padding:48px;color:rgba(255,255,255,.5)}
 </section>
 
 <!-- CTA -->
-<section class="ctas">
-  <div class="ctai">
-    <div class="ctat">Start banking smarter today</div>
-    <p class="ctas2">Join users across Nigeria managing their money through simple WhatsApp and Telegram conversations. Takes less than 3 minutes to get started.</p>
+<section class="cta-section">
+  <div class="cta-inner">
+    <div class="cta-title">Start banking smarter today</div>
+    <p class="cta-sub">Join Nigerians managing their money through simple WhatsApp and Telegram conversations. Takes less than 3 minutes to get started. Free forever.</p>
     <div class="cta-btns">
-      <a href="https://wa.me/447459233682?text=Hi%20Zeno" class="bwh" target="_blank">
+      <a href="https://wa.me/447459233682?text=Hi%20Zeno" class="cta-wa" target="_blank">
         <svg class="ws" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.554 4.118 1.528 5.851L0 24l6.335-1.507A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.006-1.368l-.36-.213-3.72.885.936-3.618-.235-.373A9.818 9.818 0 1112 21.818z"/></svg>
         Open WhatsApp
       </a>
-      <a href="https://t.me/ZenoUKbot" class="bth" target="_blank">
+      <a href="https://t.me/ZenoUKbot" class="cta-tg" target="_blank">
         <svg class="ws" viewBox="0 0 24 24"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.247l-1.97 9.289c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L8.48 14.17l-2.95-.924c-.641-.204-.654-.641.136-.953l11.527-4.445c.535-.194 1.003.131.37.399z"/></svg>
         Open Telegram
       </a>
@@ -425,45 +475,37 @@ footer{background:var(--text);padding:48px;color:rgba(255,255,255,.5)}
 
 <!-- FOOTER -->
 <footer>
-  <div class="fi2">
-    <div class="foot-top">
-      <div class="foot-brand">
-        <span class="fl">Ze<span>n</span>o</span>
-        <p>AI-powered banking assistant on WhatsApp and Telegram. Available in Nigeria.</p>
-        <div class="foot-markets" style="margin-top:16px">
-          
-          <span class="foot-market">🇳🇬 Nigeria</span>
-        </div>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <span class="footer-logo">Ze<span>n</span>o</span>
+        <p>Nigeria's AI-powered banking assistant on WhatsApp and Telegram.</p>
+        <div class="footer-ng">🇳🇬 Nigeria</div>
       </div>
-      <div class="foot-cols">
-        <div class="foot-col">
+      <div class="footer-cols">
+        <div class="footer-col">
           <h4>Product</h4>
           <a href="#how">How it works</a>
           <a href="#features">Features</a>
           <a href="#security">Security</a>
-          <a href="#markets">Markets</a>
         </div>
-        <div class="foot-col">
+        <div class="footer-col">
           <h4>Legal</h4>
           <a href="/terms">Terms of Service</a>
           <a href="/privacy">Privacy Policy</a>
           <a href="/security">Security</a>
         </div>
-        <div class="foot-col">
-          <h4>Company</h4>
-          <a href="https://wa.me/447459233682" target="_blank">Contact Us</a>
-          <a href="https://t.me/ZenoUKbot" target="_blank">Telegram</a>
-          <a href="https://wa.me/447459233682?text=Hi%20Zeno" target="_blank">WhatsApp</a>
+        <div class="footer-col">
+          <h4>Contact</h4>
+          <a href="https://wa.me/2349037745486" target="_blank">WhatsApp Support</a>
+          <a href="https://t.me/ZenoUKbot" target="_blank">Telegram Bot</a>
+          <a href="mailto:hello@joinzeno.co.uk">hello@joinzeno.co.uk</a>
         </div>
       </div>
     </div>
-    <div class="foot-bottom">
-      <div style="font-size:.76rem">
-        © 2026 Zeno by The 36th Company Ltd · RC:  9440452
-      </div>
-      <div style="font-size:.76rem;color:rgba(255,255,255,.3)">
-        Built with ❤️ for 🇳🇬 Nigeria
-      </div>
+    <div class="footer-bottom">
+      <div>© 2026 Zeno by The 36th Company Ltd · RC: 9415701</div>
+      <div style="color:rgba(255,255,255,.25)">Built with ❤️ for 🇳🇬 Nigeria</div>
     </div>
   </div>
 </footer>

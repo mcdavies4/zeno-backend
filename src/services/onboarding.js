@@ -1,5 +1,5 @@
 /**
- * Onboarding Service — with country selection and Veriff KYC
+ * Onboarding Service — Nigeria focused
  */
 
 const messenger = require('./messenger');
@@ -37,12 +37,11 @@ async function startOnboarding(from) {
   await sessionStore.update(from, { onboardingStep: STEPS.TERMS });
   await messenger.sendText(from,
     `👋 *Welcome to Zeno!*\n\n` +
-    `I'm your AI banking assistant. I can help you:\n` +
+    `I'm your AI banking assistant by The 36th Company. I can help you:\n` +
     `💸 Send money instantly\n` +
     `💰 Check your balance\n` +
     `📊 Track your spending\n` +
     `📱 Pay bills & airtime\n\n` +
-    `Available in 🇬🇧 UK and 🇳🇬 Nigeria.\n\n` +
     `Before we start, please read and accept our terms:\n` +
     `📋 Terms: https://www.joinzeno.co.uk/terms\n` +
     `🔒 Privacy: https://www.joinzeno.co.uk/privacy\n\n` +
@@ -195,7 +194,7 @@ async function handleStep(from, session, input) {
       welcomeMsg +=
         `*One last step* — verify your identity to stay secure.\n\n` +
         `You'll need:\n` +
-        `📄 ${isNigeria ? 'A valid ID (NIN, passport or driving licence)' : 'A valid UK ID (passport or driving licence)'}\n` +
+        `📄 A valid ID (NIN, passport or driving licence)\n` +
         `🤳 A selfie\n\n` +
         `Getting your verification link...`;
 
@@ -221,7 +220,7 @@ async function handleStep(from, session, input) {
         logger.error('KYC session creation failed:', e.message);
         await messenger.sendText(from,
           `You can start using Zeno now!\n\n` +
-          `${isNigeria ? '💸 *Send money* — "Send ₦5000 to John"\n💰 *Check balance* — "What\'s my balance?"' : '💸 *Send money* — "Send £50 to John"\n💰 *Check balance* — "What\'s my balance?"'}\n\n` +
+          `💸 *Send money* — "Send ₦5000 to John"\n💰 *Check balance* — "What\'s my balance?"\n\n` +
           `Type *"verify my identity"* to complete verification later.`
         );
       }

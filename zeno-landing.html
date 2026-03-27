@@ -4,40 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Zeno — AI Banking on WhatsApp & Telegram | Nigeria</title>
-<meta name="description" content="Zeno is an AI-powered banking assistant on WhatsApp and Telegram. Send money, check balances and track spending — just by chatting. No app needed. 🇳🇬">
-<meta name="keywords" content="AI banking Nigeria, WhatsApp banking Nigeria, send money WhatsApp, Telegram banking Nigeria, Mono open banking, Flutterwave transfers, Zeno banking">
-<meta name="author" content="The 36th Company Ltd">
+<meta name="description" content="Zeno is an AI-powered banking assistant on WhatsApp and Telegram. Send money, check balances and track spending — just by chatting. Available in the Nigeria 🇳🇬. No app needed.">
+<meta name="keywords" content="AI banking Nigeria, WhatsApp banking Nigeria, Telegram banking Nigeria, send money Nigeria, Mono Nigeria, Flutterwave transfers, The 36th Company">
+<meta name="author" content="Zeno">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://www.joinzeno.co.uk/">
-
-<!-- Open Graph -->
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://www.joinzeno.co.uk/">
-<meta property="og:site_name" content="Zeno">
-<meta property="og:title" content="Zeno — AI Banking on WhatsApp & Telegram 🇳🇬">
-<meta property="og:description" content="Send money, check your balance and track spending — all through a chat. No app needed. Available in Nigeria 🇳🇬.">
+<meta property="og:title" content="Zeno — AI Banking on WhatsApp & Telegram">
+<meta property="og:description" content="Send money, check balances and track spending — all through a chat. Available in Nigeria 🇳🇬.">
 <meta property="og:image" content="https://www.joinzeno.co.uk/og-image.png">
-<meta property="og:image:secure_url" content="https://www.joinzeno.co.uk/og-image.png">
-<meta property="og:image:type" content="image/png">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Zeno AI Banking Assistant — WhatsApp and Telegram for Nigeria">
-<meta property="og:locale" content="en_NG">
-
-<!-- Twitter / X Card -->
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:site" content="@joinzeno">
-<meta name="twitter:title" content="Zeno — AI Banking on WhatsApp & Telegram 🇳🇬">
-<meta name="twitter:description" content="Send money, check your balance and track spending — all through a chat. No app needed. Nigeria 🇳🇬.">
-<meta name="twitter:image" content="https://www.joinzeno.co.uk/og-image.png">
-<meta name="twitter:image:alt" content="Zeno AI Banking Assistant — Nigeria">
-
-<!-- Schema.org -->
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"FinancialService","name":"Zeno","description":"AI-powered banking assistant on WhatsApp and Telegram for Nigerian users.","url":"https://www.joinzeno.co.uk","image":"https://www.joinzeno.co.uk/og-image.png","areaServed":[{"@type":"Country","name":"Nigeria"}],"serviceType":"Banking Assistant","offers":{"@type":"Offer","price":"0","priceCurrency":"NGN"}}</script>
-
+<meta property="og:site_name" content="Zeno">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FinancialService","name":"Zeno","description":"AI-powered banking assistant on WhatsApp and Telegram for Nigerian users.","url":"https://www.joinzeno.co.uk","areaServed":[{"@type":"Country","name":"Nigeria"},{"@type":"Country","name":"Nigeria"}],"serviceType":"Banking Assistant","offers":{"@type":"Offer","price":"0","priceCurrency":"GBP"}}</script>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<link rel="icon" type="image/png" href="/og-image.png">
-<link rel="apple-touch-icon" href="/og-image.png">
 <meta name="theme-color" content="#1a6b4a">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -54,8 +33,14 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
 .nav-links{display:flex;gap:32px;list-style:none}.nav-links a{text-decoration:none;color:var(--t2);font-size:.88rem;font-weight:500;transition:color .2s}.nav-links a:hover{color:var(--text)}
 .nav-cta{display:inline-flex;align-items:center;gap:8px;background:var(--wa);color:white;padding:10px 20px;border-radius:50px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:.85rem;text-decoration:none;transition:all .2s}.nav-cta:hover{background:#20bd5a;transform:translateY(-1px)}
 
+/* COUNTRY SWITCHER */
+.country-bar{background:var(--accent);padding:10px 48px;display:flex;align-items:center;justify-content:center;gap:24px;margin-top:73px}
+.country-btn{display:inline-flex;align-items:center;gap:8px;padding:6px 18px;border-radius:50px;font-size:.82rem;font-weight:600;cursor:pointer;transition:all .2s;border:2px solid transparent;text-decoration:none;color:rgba(255,255,255,0.7)}
+.country-btn:hover,.country-btn.active{background:rgba(255,255,255,0.15);color:white;border-color:rgba(255,255,255,0.3)}
+.country-bar-text{font-size:.8rem;color:rgba(255,255,255,0.6)}
+
 /* HERO */
-.hero{min-height:100vh;display:flex;align-items:center;padding:100px 48px 80px;position:relative;overflow:hidden;margin-top:0}
+.hero{min-height:calc(100vh - 113px);display:flex;align-items:center;padding:80px 48px 80px;position:relative;overflow:hidden}
 .c1{position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(26,107,74,.07),transparent 70%);top:-150px;right:-100px;pointer-events:none}
 .c2{position:absolute;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(37,211,102,.05),transparent 70%);bottom:-100px;left:-50px;pointer-events:none}
 .hi{max-width:1140px;margin:0 auto;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;position:relative;z-index:2}
@@ -71,6 +56,7 @@ h1 em{font-style:italic;color:var(--accent)}
 .hb{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:48px}
 .bwa{display:inline-flex;align-items:center;gap:10px;background:var(--wa);color:white;padding:13px 24px;border-radius:50px;font-weight:700;font-size:.9rem;text-decoration:none;transition:all .25s;box-shadow:0 4px 16px rgba(37,211,102,.25)}.bwa:hover{background:#20bd5a;transform:translateY(-2px)}
 .btg{display:inline-flex;align-items:center;gap:10px;background:var(--tg);color:white;padding:13px 24px;border-radius:50px;font-weight:700;font-size:.9rem;text-decoration:none;transition:all .25s;box-shadow:0 4px 16px rgba(34,158,217,.25)}.btg:hover{background:#1a8cc4;transform:translateY(-2px)}
+.bg{color:var(--t2);font-size:.88rem;font-weight:500;text-decoration:none;transition:color .2s}.bg:hover{color:var(--text)}
 
 .sts{display:flex;gap:32px;padding-top:32px;border-top:1px solid var(--border);flex-wrap:wrap}
 .sn{font-family:'Fraunces',serif;font-size:1.6rem;font-weight:700;letter-spacing:-.04em}.sl{font-size:.74rem;color:var(--t2);margin-top:2px}
@@ -91,12 +77,35 @@ h1 em{font-style:italic;color:var(--accent)}
 .txa{font-family:'Fraunces',serif;font-size:1.2rem;font-weight:700;color:var(--text);margin:3px 0}
 .txt{font-size:.68rem;color:var(--t2)}.txo{font-size:.65rem;color:var(--accent);font-weight:600;margin-top:6px}
 
+/* Float badges */
 .fb{position:absolute;background:var(--white);border:1px solid var(--border);border-radius:12px;padding:10px 13px;font-size:.74rem;box-shadow:0 6px 20px rgba(26,26,24,.07)}
 .fb1{left:-80px;top:80px;animation:fy 4s ease-in-out infinite}
 .fb2{right:-70px;top:40px;animation:fy 4s ease-in-out infinite;animation-delay:1.5s}
 .fb3{right:-65px;bottom:80px;animation:fy 4s ease-in-out infinite;animation-delay:.8s}
 .fi{font-size:1rem;margin-bottom:3px}.fv{font-family:'Fraunces',serif;font-weight:700;font-size:.85rem}.fs{color:var(--t2);font-size:.66rem}
 @keyframes fy{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+
+/* MARKETS SECTION */
+.markets{padding:80px 48px;background:var(--white);border-top:1px solid var(--border)}
+.markets-inner{max-width:1140px;margin:0 auto}
+.markets-head{text-align:center;margin-bottom:48px}
+.markets-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.market-card{border-radius:24px;padding:36px;position:relative;overflow:hidden;transition:transform .3s}
+.market-card:hover{transform:translateY(-4px)}
+.market-card.uk{background:linear-gradient(135deg,#f0f7ff,#e8f4ed);border:1px solid rgba(26,107,74,.15)}
+.market-card.ng{background:linear-gradient(135deg,#fff8f0,#f0fff4);border:1px solid rgba(0,135,81,.15)}
+.market-flag{font-size:3rem;margin-bottom:16px;display:block}
+.market-title{font-family:'Fraunces',serif;font-size:1.4rem;font-weight:700;letter-spacing:-.02em;margin-bottom:8px}
+.market-sub{font-size:.88rem;color:var(--t2);line-height:1.65;margin-bottom:20px;font-weight:300}
+.market-features{display:flex;flex-direction:column;gap:8px;margin-bottom:24px}
+.mf{display:flex;align-items:center;gap:8px;font-size:.82rem}
+.mf-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.market-card.uk .mf-dot{background:var(--accent)}
+.market-card.ng .mf-dot{background:var(--ng)}
+.market-cta{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:50px;font-weight:600;font-size:.84rem;text-decoration:none;transition:all .2s}
+.market-card.uk .market-cta{background:var(--accent);color:white}.market-card.uk .market-cta:hover{background:#155a3d}
+.market-card.ng .market-cta{background:var(--ng);color:white}.market-card.ng .market-cta:hover{background:#006b40}
+.market-card-bg{position:absolute;right:-20px;top:-20px;font-size:8rem;opacity:.06;pointer-events:none}
 
 /* SECTIONS */
 section{padding:90px 48px}
@@ -172,13 +181,17 @@ footer{background:var(--text);padding:48px;color:rgba(255,255,255,.5)}
 .foot-col h4{font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.4);margin-bottom:14px}
 .foot-col a{display:block;color:rgba(255,255,255,.5);text-decoration:none;font-size:.82rem;margin-bottom:8px;transition:color .2s}.foot-col a:hover{color:white}
 .foot-bottom{display:flex;align-items:center;justify-content:space-between;font-size:.76rem}
+.foot-markets{display:flex;gap:16px}
+.foot-market{display:flex;align-items:center;gap:6px;font-size:.78rem;color:rgba(255,255,255,.4)}
+
 .ws{width:18px;height:18px;fill:currentColor}
 
 @media(max-width:900px){
   nav{padding:14px 20px}.nav-links{display:none}
-  .hero{padding:100px 20px 60px}.hi{grid-template-columns:1fr}.pw{display:none}
-  section,.testi{padding:60px 20px}
-  .steps,.bento,.ug,.testi-grid{grid-template-columns:1fr}.bc.wide{grid-column:span 1}
+  .country-bar{padding:10px 20px;gap:12px;margin-top:60px}
+  .hero{padding:60px 20px 60px}.hi{grid-template-columns:1fr}.pw{display:none}
+  section,.markets,.testi{padding:60px 20px}
+  .steps,.bento,.markets-grid,.tg,.ug,.testi-grid{grid-template-columns:1fr}.bc.wide{grid-column:span 1}
   .sg{grid-template-columns:1fr}.sv{display:none}
   .uh,.foot-top{flex-direction:column;gap:16px}
   .foot-cols{flex-direction:column;gap:32px}
@@ -193,65 +206,111 @@ footer{background:var(--text);padding:48px;color:rgba(255,255,255,.5)}
 <nav>
   <a href="/" class="logo">Ze<span>n</span>o</a>
   <ul class="nav-links">
+    <li><a href="#markets">Markets</a></li>
     <li><a href="#how">How it works</a></li>
     <li><a href="#features">Features</a></li>
     <li><a href="#security">Security</a></li>
   </ul>
   <a href="https://wa.me/447459233682?text=Hi%20Zeno" class="nav-cta" target="_blank">
     <svg class="ws" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.554 4.118 1.528 5.851L0 24l6.335-1.507A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.006-1.368l-.36-.213-3.72.885.936-3.618-.235-.373A9.818 9.818 0 1112 21.818z"/></svg>
-    Start on WhatsApp
+    Start Free
   </a>
 </nav>
+
+<!-- COUNTRY BAR -->
+<div class="country-bar">
+  <span class="country-bar-text">Available in:</span>
+  <a href="https://wa.me/447459233682?text=Hi%20Zeno" class="country-btn active" target="_blank">🇬🇧 United Kingdom</a>
+  <a href="https://wa.me/447459233682?text=Hi%20Zeno" class="country-btn" target="_blank">🇳🇬 Nigeria</a>
+  <span class="country-bar-text">· More markets coming soon</span>
+</div>
 
 <!-- HERO -->
 <section class="hero">
   <div class="c1"></div><div class="c2"></div>
   <div class="hi">
     <div>
-      <div class="badge"><span class="bd"></span>Now live in Nigeria 🇳🇬</div>
-      <h1>Banking that speaks your <em>language</em></h1>
-      <p class="hs">Send money, check your balance and track spending — right on WhatsApp or Telegram. No app download. No long queues. Just chat.</p>
+      <div class="badge"><span class="bd"></span>Live in UK 🇬🇧 & Nigeria 🇳🇬</div>
+      <h1>Your money, managed by <em>AI</em> on WhatsApp</h1>
+      <p class="hs">Send money, check balances, and track spending through a natural conversation — in English or Pidgin. No new app. No wahala. Just chat.</p>
       <div class="hb">
         <a href="https://wa.me/447459233682?text=Hi%20Zeno" class="bwa" target="_blank">
           <svg class="ws" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.554 4.118 1.528 5.851L0 24l6.335-1.507A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.006-1.368l-.36-.213-3.72.885.936-3.618-.235-.373A9.818 9.818 0 1112 21.818z"/></svg>
-          Open WhatsApp
+          Start on WhatsApp
         </a>
         <a href="https://t.me/ZenoUKbot" class="btg" target="_blank">
           <svg class="ws" viewBox="0 0 24 24"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.247l-1.97 9.289c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L8.48 14.17l-2.95-.924c-.641-.204-.654-.641.136-.953l11.527-4.445c.535-.194 1.003.131.37.399z"/></svg>
-          Open Telegram
+          Try on Telegram
         </a>
+        <a href="#how" class="bg">See how it works ↓</a>
       </div>
       <div class="sts">
-        <div><div class="sn">45+</div><div class="sl">Nigerian banks supported</div></div>
-        <div><div class="sn">₦0</div><div class="sl">Monthly fees</div></div>
-        <div><div class="sn">24/7</div><div class="sl">Always available</div></div>
+        <div><div class="sn">50+</div><div class="sl">UK banks</div></div>
+        <div><div class="sn">20+</div><div class="sl">Nigerian banks</div></div>
+        <div><div class="sn">&lt;3s</div><div class="sl">Transfer time</div></div>
+        <div><div class="sn">2</div><div class="sl">Countries live</div></div>
       </div>
     </div>
     <div class="pw">
+      <div class="fb fb1"><div class="fi">💸</div><div class="fv">₦50,000 sent</div><div class="fs">Via GTBank</div></div>
+      <div class="fb fb2"><div class="fi">💷</div><div class="fv">£500 sent</div><div class="fs">Instantly</div></div>
+      <div class="fb fb3"><div class="fi">🔒</div><div class="fv">Verified</div><div class="fs">PIN secured</div></div>
       <div class="ph">
         <div class="pn"></div>
-        <div class="ct">
-          <div class="ca">Z</div>
-          <div><div class="cn">Zeno</div><div class="cs">● Online</div></div>
-        </div>
+        <div class="ct"><div class="ca">Z</div><div><div class="cn">Zeno AI</div><div class="cs">● Online now</div></div></div>
         <div class="ms">
-          <div class="b bot">Hey Emeka! 👋 Welcome to Zeno. How can I help you today?</div>
-          <div class="b usr">What's my GTBank balance?</div>
-          <div class="b bot">Checking your GTBank account...
-            <div class="tx">
-              <div class="txg">Balance</div>
-              <div class="txa">₦142,500</div>
-              <div class="txt">GTBank · Savings · ****4821</div>
-              <div class="txo">Updated just now ✓</div>
-            </div>
-          </div>
+          <div class="b bot">Hey! 👋 Wetin you wan do today?</div>
           <div class="b usr">Send 5000 to Chidi, GTBank</div>
-          <div class="b bot">Done! ✅<div class="tx"><div class="txg">Transfer</div><div class="txa">₦5,000</div><div class="txt">→ Chidi · GTBank</div><div class="txo">Sent successfully</div></div></div>
+          <div class="b bot">On it! Confirming transfer to Chidi.<div class="tx"><div class="txg">Transfer</div><div class="txa">₦5,000</div><div class="txt">→ Chidi · GTBank</div><div class="txo">✓ Sent successfully</div></div></div>
         </div>
       </div>
-      <div class="fb fb1"><div class="fi">💸</div><div class="fv">₦50,000 sent</div><div class="fs">To Mama · Access Bank</div></div>
-      <div class="fb fb2"><div class="fi">📊</div><div class="fv">Balance: ₦142k</div><div class="fs">GTBank · Live</div></div>
-      <div class="fb fb3"><div class="fi">✅</div><div class="fv">Airtime topped up</div><div class="fs">MTN · ₦1,000</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- MARKETS -->
+<section class="markets" id="markets">
+  <div class="markets-inner">
+    <div style="text-align:center;margin-bottom:48px">
+      <div class="sl2">Our Markets</div>
+      <h2 style="margin:0 auto">Built for two great nations</h2>
+      <p style="color:var(--t2);font-size:.95rem;margin-top:12px;font-weight:300">Same powerful AI. Different currencies, banks and local features.</p>
+    </div>
+    <div class="markets-grid">
+      <!-- UK -->
+      <div class="market-card uk">
+        <div class="market-card-bg">🇬🇧</div>
+        <span class="market-flag">🇬🇧</span>
+        <div class="market-title">United Kingdom</div>
+        <div class="market-sub">Full Open Banking integration with 50+ UK banks. Send money via Faster Payments, check real balances and track spending in pounds.</div>
+        <div class="market-features">
+          <div class="mf"><span class="mf-dot"></span>TrueLayer Open Banking</div>
+          <div class="mf"><span class="mf-dot"></span>UK Faster Payments</div>
+          <div class="mf"><span class="mf-dot"></span>Barclays, HSBC, Monzo, Starling & more</div>
+          <div class="mf"><span class="mf-dot"></span>GBP (£) transactions</div>
+          <div class="mf"><span class="mf-dot"></span>FCA-compliant KYC</div>
+        </div>
+        <a href="https://wa.me/447459233682?text=Hi%20Zeno" class="market-cta" target="_blank">
+          Start in UK →
+        </a>
+      </div>
+      <!-- Nigeria -->
+      <div class="market-card ng">
+        <div class="market-card-bg">🇳🇬</div>
+        <span class="market-flag">🇳🇬</span>
+        <div class="market-title">Nigeria</div>
+        <div class="market-sub">Powered by Mono Open Banking and Flutterwave payments. Send naira to any Nigerian bank, check your balance and track spending — in English or Pidgin.</div>
+        <div class="market-features">
+          <div class="mf"><span class="mf-dot"></span>Mono Open Banking</div>
+          <div class="mf"><span class="mf-dot"></span>Flutterwave bank transfers</div>
+          <div class="mf"><span class="mf-dot"></span>GTBank, Access, Zenith, UBA & more</div>
+          <div class="mf"><span class="mf-dot"></span>NGN (₦) transactions</div>
+          <div class="mf"><span class="mf-dot"></span>English & Pidgin supported</div>
+        </div>
+        <a href="https://wa.me/447459233682?text=Hi%20Zeno" class="market-cta" target="_blank">
+          Start in Nigeria →
+        </a>
+      </div>
     </div>
   </div>
 </section>
@@ -260,12 +319,12 @@ footer{background:var(--text);padding:48px;color:rgba(255,255,255,.5)}
 <section class="how" id="how">
   <div class="inn">
     <div class="sl2">How it works</div>
-    <h2>Up and running in under 3 minutes</h2>
+    <h2>Banking in 4 simple steps</h2>
     <div class="steps">
-      <div class="step"><div class="stn">01</div><div class="sti">💬</div><div class="stt">Message Zeno</div><div class="std">Open WhatsApp or Telegram and send "Hi" to Zeno. No app to download.</div></div>
-      <div class="step"><div class="stn">02</div><div class="sti">📝</div><div class="stt">Quick Registration</div><div class="std">Enter your name, email and set a 4-digit PIN. Takes less than 2 minutes.</div></div>
-      <div class="step"><div class="stn">03</div><div class="sti">🏦</div><div class="stt">Connect Your Bank</div><div class="std">Link your GTBank, Access, Zenith, UBA or any Nigerian bank via Mono Open Banking.</div></div>
-      <div class="step"><div class="stn">04</div><div class="sti">🚀</div><div class="stt">Start Banking</div><div class="std">Send money, check balances, buy airtime, pay bills — just by typing naturally.</div></div>
+      <div class="step"><div class="stn">01</div><div class="sti">💬</div><div class="stt">Open WhatsApp or Telegram</div><div class="std">No app to download. Message Zeno on any platform you already use.</div></div>
+      <div class="step"><div class="stn">02</div><div class="sti">📝</div><div class="stt">Register in 2 mins</div><div class="std">Tell Zeno your name, email, and set a PIN. Quick identity check to keep you safe.</div></div>
+      <div class="step"><div class="stn">03</div><div class="sti">🏦</div><div class="stt">Connect your bank</div><div class="std">UK users connect via Open Banking. Nigerian users connect via Mono. Read-only and secure.</div></div>
+      <div class="step"><div class="stn">04</div><div class="sti">🚀</div><div class="stt">Start banking</div><div class="std">Send money, check balances, track spending — just by typing naturally.</div></div>
     </div>
   </div>
 </section>
@@ -275,11 +334,11 @@ footer{background:var(--text);padding:48px;color:rgba(255,255,255,.5)}
   <div class="inn">
     <div class="fh"><div class="sl2">Features</div><h2>Everything you need, nothing you don't</h2></div>
     <div class="bento">
-      <div class="bc wide"><div class="bci">💸</div><div class="bct">Instant Bank Transfers</div><div class="bcd">Send naira to any Nigerian bank account instantly. Just say "send 10k to Chidi GTBank" and Zeno handles the rest. Powered by Flutterwave.</div></div>
-      <div class="bc"><div class="bci">📊</div><div class="bct">Spending Analysis</div><div class="bcd">Know exactly where your money goes with smart breakdowns in naira.</div><div class="bars"><div class="br"><span class="bl">Food</span><div class="bt"><div class="bf" style="width:75%"></div></div><span class="bv">75%</span></div><div class="br"><span class="bl">Transport</span><div class="bt"><div class="bf" style="width:45%"></div></div><span class="bv">45%</span></div><div class="br"><span class="bl">Bills</span><div class="bt"><div class="bf" style="width:30%"></div></div><span class="bv">30%</span></div></div></div>
-      <div class="bc"><div class="bci">🧠</div><div class="bct">Understands Pidgin</div><div class="bcd">"Send 5k to my guy" or "check my balance" — Zeno understands English and Nigerian Pidgin!</div></div>
-      <div class="bc"><div class="bci">📱</div><div class="bct">Airtime & Data</div><div class="bcd">Buy MTN, Airtel, Glo or 9mobile airtime and data bundles instantly from the chat.</div></div>
-      <div class="bc wide"><div class="bci">💡</div><div class="bct">Pay Bills Instantly</div><div class="bcd">Electricity (NEPA/PHCN), DSTV, GOtv, water bills — all paid from your WhatsApp or Telegram chat. No queues, no stress.</div></div>
+      <div class="bc wide"><div class="bci">💸</div><div class="bct">Instant Transfers</div><div class="bcd">UK: Send money via Faster Payments in seconds. Nigeria: Transfer naira to any bank via Flutterwave. Just say who and how much — Zeno handles the rest.</div></div>
+      <div class="bc"><div class="bci">📊</div><div class="bct">Spending Analysis</div><div class="bcd">Know exactly where your money goes with smart breakdowns in your local currency.</div><div class="bars"><div class="br"><span class="bl">Food</span><div class="bt"><div class="bf" style="width:75%"></div></div><span class="bv">75%</span></div><div class="br"><span class="bl">Transport</span><div class="bt"><div class="bf" style="width:45%"></div></div><span class="bv">45%</span></div><div class="br"><span class="bl">Bills</span><div class="bt"><div class="bf" style="width:30%"></div></div><span class="bv">30%</span></div></div></div>
+      <div class="bc"><div class="bci">🧠</div><div class="bct">Natural Language</div><div class="bcd">Say "send fifty quid to Sarah" or "send 5k to Chidi GTBank" — Zeno understands both!</div></div>
+      <div class="bc"><div class="bci">🇬🇧🇳🇬</div><div class="bct">Multi-Market</div><div class="bcd">One AI assistant, two countries. £ for UK users, ₦ for Nigerian users — automatically detected.</div></div>
+      <div class="bc wide"><div class="bci">🤖</div><div class="bct">24/7 AI Support</div><div class="bcd">No hold music, no call centres. Get instant answers to your banking questions any time — in English or Pidgin. Zeno troubleshoots issues and guides you through anything.</div></div>
     </div>
   </div>
 </section>
@@ -287,15 +346,15 @@ footer{background:var(--text);padding:48px;color:rgba(255,255,255,.5)}
 <!-- SECURITY -->
 <section class="sec" id="security">
   <div class="inn">
-    <div class="sl2">Security</div><h2>Your money is safe with us</h2>
+    <div class="sl2">Security</div><h2>Built with security at every layer</h2>
     <div class="sg">
       <div class="si">
-        <div class="sit"><div class="sic">🔐</div><div><div class="sitt">PIN-Protected Payments</div><div class="sitd">Every transfer requires your personal 4-digit PIN. 3 wrong attempts locks your account for 24 hours.</div></div></div>
-        <div class="sit"><div class="sic">🪪</div><div><div class="sitt">Identity Verified</div><div class="sitd">All users complete identity verification via Stripe Identity before accessing transfers.</div></div></div>
-        <div class="sit"><div class="sic">🏦</div><div><div class="sitt">Open Banking (Read-Only)</div><div class="sitd">We never see your bank login credentials. Powered by Mono — CBN-aligned open banking for Nigeria.</div></div></div>
-        <div class="sit"><div class="sic">❄️</div><div><div class="sitt">Instant Account Freeze</div><div class="sitd">Lost your phone? Message Zeno "freeze my account" to lock everything instantly.</div></div></div>
+        <div class="sit"><div class="sic">🔐</div><div><div class="sitt">PIN-Protected Payments</div><div class="sitd">Every transfer requires your personal PIN. You set it, you control it.</div></div></div>
+        <div class="sit"><div class="sic">🪪</div><div><div class="sitt">KYC Identity Verified</div><div class="sitd">All users complete identity verification powered by Veriff before accessing full features.</div></div></div>
+        <div class="sit"><div class="sic">🏦</div><div><div class="sitt">Open Banking (Read-Only)</div><div class="sitd">We never see your bank login. UK: TrueLayer. Nigeria: Mono. Both FCA/CBN aligned.</div></div></div>
+        <div class="sit"><div class="sic">❄️</div><div><div class="sitt">Instant Account Freeze</div><div class="sitd">Lost your phone? Freeze your Zeno account instantly from any device.</div></div></div>
       </div>
-      <div class="sv"><span class="sh">🛡️</span><div class="svt">Bank-Grade Security</div><div class="svs">Your money and data protected at every step</div><div class="svb"><span class="svbi">256-bit SSL</span><span class="svbi">KYC Verified</span><span class="svbi">PIN Protected</span><span class="svbi">Mono Open Banking</span><span class="svbi">CBN-Aligned</span></div></div>
+      <div class="sv"><span class="sh">🛡️</span><div class="svt">Bank-Grade Security</div><div class="svs">Your money and data protected at every step</div><div class="svb"><span class="svbi">256-bit SSL</span><span class="svbi">KYC Verified</span><span class="svbi">PIN Protected</span><span class="svbi">Open Banking</span><span class="svbi">Veriff ID</span></div></div>
     </div>
   </div>
 </section>
@@ -303,12 +362,12 @@ footer{background:var(--text);padding:48px;color:rgba(255,255,255,.5)}
 <!-- USE CASES -->
 <section class="uses">
   <div class="inn">
-    <div class="uh"><div><div class="sl2">Use Cases</div><h2>Where Zeno fits your life</h2></div><a href="https://wa.me/447459233682?text=Hi%20Zeno" style="color:var(--t2);font-size:.88rem;font-weight:500;text-decoration:none;" target="_blank">Try it now →</a></div>
+    <div class="uh"><div><div class="sl2">Use Cases</div><h2>Where Zeno fits your life</h2></div><a href="https://wa.me/447459233682?text=Hi%20Zeno" class="bg" target="_blank">Try it now →</a></div>
     <div class="ug">
-      <div class="uc"><div class="ui">💸<div class="up">Send money</div></div><div class="ub"><div class="ut">Bank Transfers</div><div class="ud">Send naira to any Nigerian bank instantly — GTBank, Access, Zenith, UBA and more.</div></div></div>
-      <div class="uc"><div class="ui">🍕<div class="up">Split bills</div></div><div class="ub"><div class="ut">Split the Bill</div><div class="ud">Divide restaurant bills or group expenses with friends instantly in naira.</div></div></div>
-      <div class="uc"><div class="ui">👨‍👩‍👧<div class="up">Family transfers</div></div><div class="ub"><div class="ut">Send to Family</div><div class="ud">Send money to mum, dad or siblings anywhere in Nigeria — fast and free.</div></div></div>
-      <div class="uc"><div class="ui">💡<div class="up">Pay bills</div></div><div class="ub"><div class="ut">Pay Bills</div><div class="ud">Electricity, DSTV, airtime, data — all handled from your chat.</div></div></div>
+      <div class="uc"><div class="ui">🍕<div class="up">Split dinner</div></div><div class="ub"><div class="ut">Split Bills</div><div class="ud">Divide the bill with friends instantly — in pounds or naira.</div></div></div>
+      <div class="uc"><div class="ui">👨‍👩‍👧<div class="up">Send to family</div></div><div class="ub"><div class="ut">Family Transfers</div><div class="ud">Send money to mum, dad or siblings anywhere in Nigeria or the UK.</div></div></div>
+      <div class="uc"><div class="ui">🏠<div class="up">Pay rent</div></div><div class="ub"><div class="ut">Pay Rent</div><div class="ud">Monthly rent sorted in seconds. Just say the word.</div></div></div>
+      <div class="uc"><div class="ui">💡<div class="up">Pay bills</div></div><div class="ub"><div class="ut">Pay Bills</div><div class="ud">Electricity, broadband, DSTV, subscriptions — all handled.</div></div></div>
     </div>
   </div>
 </section>
@@ -322,6 +381,13 @@ footer{background:var(--text);padding:48px;color:rgba(255,255,255,.5)}
     </div>
     <div class="testi-grid">
       <div class="tcard">
+        <div class="tcard-flag">🇬🇧</div>
+        <div class="tcard-stars">★★★★★</div>
+        <div class="tcard-text">"I just type 'send ₦5,000 to my flatmate' and it's done. No opening apps, no logging in. Absolute game changer."</div>
+        <div class="tcard-name">Ade O.</div>
+        <div class="tcard-role">Lagos, Nigeria</div>
+      </div>
+      <div class="tcard">
         <div class="tcard-flag">🇳🇬</div>
         <div class="tcard-stars">★★★★★</div>
         <div class="tcard-text">"E dey simple pass I think. I just tell Zeno make e send 10k to my guy and e just do am. No stress, no wahala!"</div>
@@ -331,16 +397,9 @@ footer{background:var(--text);padding:48px;color:rgba(255,255,255,.5)}
       <div class="tcard">
         <div class="tcard-flag">🇳🇬</div>
         <div class="tcard-stars">★★★★★</div>
-        <div class="tcard-text">"Finally a banking assistant that speaks my language. Checking my GTBank balance on WhatsApp feels like the future."</div>
+        <div class="tcard-text">"Finally a banking app that speaks my language. Checking my GTBank balance on WhatsApp feels like the future."</div>
         <div class="tcard-name">Amara N.</div>
         <div class="tcard-role">Abuja, Nigeria</div>
-      </div>
-      <div class="tcard">
-        <div class="tcard-flag">🇳🇬</div>
-        <div class="tcard-stars">★★★★★</div>
-        <div class="tcard-text">"I paid my NEPA bill and bought airtime without leaving WhatsApp. This is exactly what Nigeria needed!"</div>
-        <div class="tcard-name">Tunde O.</div>
-        <div class="tcard-role">Port Harcourt, Nigeria</div>
       </div>
     </div>
   </div>
@@ -350,7 +409,7 @@ footer{background:var(--text);padding:48px;color:rgba(255,255,255,.5)}
 <section class="ctas">
   <div class="ctai">
     <div class="ctat">Start banking smarter today</div>
-    <p class="ctas2">Join Nigerians managing their money through simple WhatsApp and Telegram conversations. Takes less than 3 minutes to get started — no app needed.</p>
+    <p class="ctas2">Join users across Nigeria managing their money through simple WhatsApp and Telegram conversations. Takes less than 3 minutes to get started.</p>
     <div class="cta-btns">
       <a href="https://wa.me/447459233682?text=Hi%20Zeno" class="bwh" target="_blank">
         <svg class="ws" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.554 4.118 1.528 5.851L0 24l6.335-1.507A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.006-1.368l-.36-.213-3.72.885.936-3.618-.235-.373A9.818 9.818 0 1112 21.818z"/></svg>
@@ -370,8 +429,11 @@ footer{background:var(--text);padding:48px;color:rgba(255,255,255,.5)}
     <div class="foot-top">
       <div class="foot-brand">
         <span class="fl">Ze<span>n</span>o</span>
-        <p>AI-powered banking assistant on WhatsApp and Telegram. Built for Nigeria 🇳🇬.</p>
-        <div style="margin-top:16px;font-size:.78rem;color:rgba(255,255,255,.4)">🇳🇬 Nigeria</div>
+        <p>AI-powered banking assistant on WhatsApp and Telegram. Available in Nigeria.</p>
+        <div class="foot-markets" style="margin-top:16px">
+          
+          <span class="foot-market">🇳🇬 Nigeria</span>
+        </div>
       </div>
       <div class="foot-cols">
         <div class="foot-col">
@@ -379,6 +441,7 @@ footer{background:var(--text);padding:48px;color:rgba(255,255,255,.5)}
           <a href="#how">How it works</a>
           <a href="#features">Features</a>
           <a href="#security">Security</a>
+          <a href="#markets">Markets</a>
         </div>
         <div class="foot-col">
           <h4>Legal</h4>
@@ -387,19 +450,19 @@ footer{background:var(--text);padding:48px;color:rgba(255,255,255,.5)}
           <a href="/security">Security</a>
         </div>
         <div class="foot-col">
-          <h4>Contact</h4>
-          <a href="https://wa.me/2349037745486" target="_blank">WhatsApp Support</a>
+          <h4>Company</h4>
+          <a href="https://wa.me/447459233682" target="_blank">Contact Us</a>
           <a href="https://t.me/ZenoUKbot" target="_blank">Telegram</a>
-          <a href="https://wa.me/447459233682?text=Hi%20Zeno" target="_blank">Start Banking</a>
+          <a href="https://wa.me/447459233682?text=Hi%20Zeno" target="_blank">WhatsApp</a>
         </div>
       </div>
     </div>
     <div class="foot-bottom">
       <div style="font-size:.76rem">
-        © 2026 Zeno · The 36th Company Ltd (RC: 9415701) · Nigeria
+        © 2026 Zeno by The 36th Company Ltd · RC: 9415701
       </div>
       <div style="font-size:.76rem;color:rgba(255,255,255,.3)">
-        Built with ❤️ for 🇳🇬
+        Built with ❤️ for 🇳🇬 Nigeria
       </div>
     </div>
   </div>

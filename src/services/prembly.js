@@ -1,7 +1,6 @@
 /**
  * Prembly (IdentityPass) KYC Service
- * Nigeria-focused: NIN, BVN, document verification
- * API: https://api.myidentitypay.com
+ * Nigeria: NIN and BVN verification
  */
 
 const axios = require('axios');
@@ -16,64 +15,64 @@ function getHeaders() {
   };
 }
 
-// ─── VERIFY BVN ──────────────────────────────────────
-async function verifyBVN(bvn) {
-  try {
-    const response = await axios.post(
-      `${BASE_URL}/api/v2/biometrics/merchant/data/verification/bvn_advance`,
-      { number: bvn },
-      { headers: getHeaders(), timeout: 30000 }
-    );
-    const data = response.data;
-    logger.info(`Prembly BVN verify: ${data.detail}`);
-    return {
-      success: data.status === true,
-      message: data.detail,
-      data: data.data || null,
-    };
-  } catch (err) {
-    logger.error('Prembly BVN error:', JSON.stringify(err.response?.data || err.message));
-    logger.error('Prembly BVN status:', err.response?.status);
-    logger.error('Prembly API key set:', !!process.env.PREMBLY_API_KEY);
-    throw err;
-  }
-}
-
 // ─── VERIFY NIN ──────────────────────────────────────
 async function verifyNIN(nin) {
   try {
+    logger.info(`Prembly: verifying NIN, key prefix: ${(process.env.PREMBLY_API_KEY || '').substring(0, 8)}`);
     const response = await axios.post(
       `${BASE_URL}/api/v2/biometrics/merchant/data/verification/nin`,
       { number: nin },
       { headers: getHeaders(), timeout: 30000 }
     );
     const data = response.data;
-    logger.info(`Prembly NIN verify: ${data.detail}`);
+    logger.info(`Prembly NIN response: ${JSON.stringify(data).substring(0, 200)}`);
     return {
       success: data.status === true,
       message: data.detail,
       data: data.data || null,
     };
   } catch (err) {
-    logger.error('Prembly NIN error:', JSON.stringify(err.response?.data || err.message));
-    logger.error('Prembly NIN status:', err.response?.status);
-    logger.error('Prembly API key set:', !!process.env.PREMBLY_API_KEY);
+    logger.error(`Prembly NIN error: ${err.message}`);
+    logger.error(`Prembly NIN status: ${err.response?.status}`);
+    logger.error(`Prembly NIN response: ${JSON.stringify(err.response?.data)}`);
+    logger.error(`Prembly API key: ${(process.env.PREMBLY_API_KEY || 'NOT SET').substring(0, 12)}...`);
     throw err;
   }
 }
 
-// ─── PARSE KYC INPUT ─────────────────────────────────
-// Detect whether user entered a BVN (11 digits) or NIN (11 digits)
-// BVN starts with 2, NIN has different prefix patterns
+// ─── VERIFY BVN ──────────────────────────────────────
+async function verifyBVN(bvn) {
+  try {
+    logger.info(`Prembly: verifying BVN, key prefix: ${(process.env.PREMBLY_API_KEY || '').substring(0, 8)}`);
+    const response = await axios.post(
+      `${BASE_URL}/api/v2/biometrics/merchant/data/verification/bvn_advance`,
+      { number: bvn },
+      { headers: getHeaders(), timeout: 30000 }
+    );
+    const data = response.data;
+    logger.info(`Prembly BVN response: ${JSON.stringify(data).substring(0, 200)}`);
+    return {
+      success: data.status === true,
+      message: data.detail,
+      data: data.data || null,
+    };
+  } catch (err) {
+    logger.error(`Prembly BVN error: ${err.message}`);
+    logger.error(`Prembly BVN status: ${err.response?.status}`);
+    logger.error(`Prembly BVN response: ${JSON.stringify(err.response?.data)}`);
+    throw err;
+  }
+}
+
+// ─── DETECT ID TYPE ───────────────────────────────────
 function detectIdType(number) {
-  const clean = number.replace(/\s/g, '');
+  const clean = String(number).replace(/\s/g, '');
   if (!/^\d{11}$/.test(clean)) return null;
-  // BVN always starts with 2
   if (clean.startsWith('2')) return 'BVN';
   return 'NIN';
 }
 
-// ─── FORMAT VERIFICATION RESULT ──────────────────────
+// ─── FORMAT RESULT ────────────────────────────────────
 function formatVerificationMessage(result, idType) {
   if (!result.success) {
     return {
@@ -85,18 +84,18 @@ function formatVerificationMessage(result, idType) {
     };
   }
 
-  const d = result.data;
-  const name = [d?.firstName || d?.firstname, d?.lastName || d?.surname]
+  const d = result.data || {};
+  const name = [d.firstName || d.firstname, d.lastName || d.surname]
     .filter(Boolean).join(' ') || 'Verified';
 
   return {
     text:
       `✅ *Identity Verified!*\n\n` +
-      `Welcome, *${name}*! Your ${idType} has been verified successfully.\n\n` +
+      `Welcome, *${name}*! Your ${idType} has been verified.\n\n` +
       `You now have full access to Zeno:\n` +
       `💸 Send money\n` +
-      `💰 Check your balance\n` +
-      `📊 Track your spending\n` +
+      `💰 Check balance\n` +
+      `📊 Track spending\n` +
       `📱 Pay bills & airtime\n\n` +
       `Welcome to Zeno! 🎉`,
     verified: true,
@@ -104,23 +103,17 @@ function formatVerificationMessage(result, idType) {
   };
 }
 
-// ─── KYC PROMPT MESSAGE ──────────────────────────────
+// ─── KYC PROMPT ───────────────────────────────────────
 function getKYCPromptMessage() {
   return (
     `🪪 *Verify Your Identity*\n\n` +
-    `To keep your account secure and comply with CBN regulations, please verify your identity.\n\n` +
-    `Simply reply with your:\n` +
+    `To keep your account secure, please verify your identity.\n\n` +
+    `Reply with your:\n` +
     `• *BVN* (11-digit Bank Verification Number), or\n` +
     `• *NIN* (11-digit National Identity Number)\n\n` +
     `Example: *22345678901*\n\n` +
-    `🔒 Your information is encrypted and never shared.`
+    `🔒 Encrypted and never shared.`
   );
 }
 
-module.exports = {
-  verifyBVN,
-  verifyNIN,
-  detectIdType,
-  formatVerificationMessage,
-  getKYCPromptMessage,
-};
+module.exports = { verifyBVN, verifyNIN, detectIdType, formatVerificationMessage, getKYCPromptMessage };

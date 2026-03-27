@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Security — Zeno</title>
+<title>Security — Zeno | Nigeria</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
@@ -38,11 +38,8 @@ h2{font-family:'Fraunces',serif;font-size:1.6rem;font-weight:700;letter-spacing:
 .btn{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:white;padding:12px 22px;border-radius:50px;font-weight:600;font-size:.85rem;text-decoration:none;white-space:nowrap;transition:all .2s}.btn:hover{background:#155a3d}
 @media(max-width:700px){.grid{grid-template-columns:1fr}nav{padding:14px 20px}.hero{padding:60px 20px}.page{padding:40px 20px 80px}.report{flex-direction:column}}
 </style>
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
-<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-XXXXXXXXXX');</script>
 </head>
 <body>
-
 <nav>
   <a href="/" class="logo">Ze<span>n</span>o</a>
   <a href="/" class="back">← Back to home</a>
@@ -61,27 +58,27 @@ h2{font-family:'Fraunces',serif;font-size:1.6rem;font-weight:700;letter-spacing:
       <div class="card">
         <span class="card-icon">🔐</span>
         <h3>PIN-Protected Transactions</h3>
-        <p>Every payment requires your 4-digit PIN. Your PIN is hashed using bcrypt — even we cannot see it. After 3 incorrect attempts, your account is automatically locked.</p>
+        <p>Every payment requires your 4-digit PIN. Your PIN is hashed using bcrypt — even we cannot see it. After 3 incorrect attempts, your account is automatically locked for 24 hours.</p>
       </div>
       <div class="card">
         <span class="card-icon">🛡️</span>
         <h3>256-bit TLS Encryption</h3>
-        <p>All data transmitted between your WhatsApp, our servers, and your bank is encrypted using industry-standard TLS 1.3. Your data is unreadable in transit.</p>
+        <p>All data transmitted between your WhatsApp or Telegram, our servers, and your bank is encrypted using industry-standard TLS 1.3. Your data is unreadable in transit.</p>
       </div>
       <div class="card">
         <span class="card-icon">🏦</span>
         <h3>Open Banking — Read Only</h3>
-        <p>We connect to your bank via FCA-regulated Open Banking. This gives us read-only access to your balance and transactions. We cannot move money without your explicit instruction and PIN.</p>
+        <p>We connect to your Nigerian bank via Mono Open Banking. This gives us read-only access to your balance and transactions. We cannot move money without your explicit instruction and PIN.</p>
       </div>
       <div class="card">
         <span class="card-icon">🪪</span>
         <h3>Identity Verification</h3>
-        <p>Every Zeno user completes KYC verification via Veriff. We verify your government-issued ID and perform a liveness check to prevent identity fraud.</p>
+        <p>Every Zeno user completes KYC verification via Stripe Identity. We verify your government-issued ID (NIN, passport or driving licence) and perform a liveness check to prevent fraud.</p>
       </div>
       <div class="card">
         <span class="card-icon">❄️</span>
         <h3>Instant Account Freeze</h3>
-        <p>If your phone is lost or stolen, you can freeze your Zeno account instantly by messaging us from any device. All payment activity stops immediately.</p>
+        <p>If your phone is lost or stolen, you can freeze your Zeno account instantly by messaging our support team. All payment activity stops immediately.</p>
       </div>
       <div class="card">
         <span class="card-icon">🔍</span>
@@ -94,22 +91,22 @@ h2{font-family:'Fraunces',serif;font-size:1.6rem;font-weight:700;letter-spacing:
   <div style="margin-bottom:48px">
     <h2>What happens when you make a payment</h2>
     <div class="steps">
-      <div class="step"><div class="step-n">1</div><div><h4>You request a payment</h4><p>You send a natural language message to Zeno, e.g. "Send £50 to John Smith".</p></div></div>
-      <div class="step"><div class="step-n">2</div><div><h4>Zeno confirms the details</h4><p>We show you a summary of the transfer — recipient, amount, bank, and reference — before anything happens.</p></div></div>
+      <div class="step"><div class="step-n">1</div><div><h4>You request a payment</h4><p>You send a natural language message to Zeno, e.g. "Send ₦5,000 to Emeka".</p></div></div>
+      <div class="step"><div class="step-n">2</div><div><h4>Zeno confirms the details</h4><p>We show you a summary of the transfer — recipient name, account number, bank, and amount — before anything happens.</p></div></div>
       <div class="step"><div class="step-n">3</div><div><h4>You enter your PIN</h4><p>You must enter your 4-digit PIN to authorise the payment. No PIN, no payment.</p></div></div>
-      <div class="step"><div class="step-n">4</div><div><h4>Payment is processed</h4><p>Only after PIN confirmation do we submit the payment via Faster Payments. You receive a confirmation with a transaction ID.</p></div></div>
+      <div class="step"><div class="step-n">4</div><div><h4>Payment is processed</h4><p>Only after PIN confirmation do we submit the payment via Flutterwave. You receive a confirmation with a transaction ID.</p></div></div>
       <div class="step"><div class="step-n">5</div><div><h4>You get a receipt</h4><p>We send you a full transaction receipt including the new balance and a unique transaction reference.</p></div></div>
     </div>
   </div>
 
   <div style="margin-bottom:48px">
-    <h2>Our security certifications</h2>
+    <h2>Our security standards</h2>
     <div class="badges">
-      <div class="badge"><span class="badge-i">🏛️</span><div><div class="badge-t">FCA Regulated</div><div class="badge-s">Financial Conduct Authority</div></div></div>
+      <div class="badge"><span class="badge-i">🏛️</span><div><div class="badge-t">CBN Compliant</div><div class="badge-s">Central Bank of Nigeria</div></div></div>
       <div class="badge"><span class="badge-i">🔒</span><div><div class="badge-t">TLS 1.3 Encrypted</div><div class="badge-s">All data in transit</div></div></div>
-      <div class="badge"><span class="badge-i">🌐</span><div><div class="badge-t">Open Banking</div><div class="badge-s">FCA-regulated access</div></div></div>
-      <div class="badge"><span class="badge-i">🪪</span><div><div class="badge-t">KYC Verified</div><div class="badge-s">Powered by Veriff</div></div></div>
-      <div class="badge"><span class="badge-i">📋</span><div><div class="badge-t">ICO Registered</div><div class="badge-s">UK Data Protection</div></div></div>
+      <div class="badge"><span class="badge-i">🌐</span><div><div class="badge-t">Open Banking</div><div class="badge-s">Powered by Mono</div></div></div>
+      <div class="badge"><span class="badge-i">🪪</span><div><div class="badge-t">KYC Verified</div><div class="badge-s">Powered by Stripe Identity</div></div></div>
+      <div class="badge"><span class="badge-i">💳</span><div><div class="badge-t">Flutterwave Payments</div><div class="badge-s">PCI-DSS Compliant</div></div></div>
       <div class="badge"><span class="badge-i">🛡️</span><div><div class="badge-t">bcrypt PIN Hashing</div><div class="badge-s">Military-grade security</div></div></div>
     </div>
   </div>
@@ -118,9 +115,9 @@ h2{font-family:'Fraunces',serif;font-size:1.6rem;font-weight:700;letter-spacing:
     <h2>Tips to keep your account safe</h2>
     <div class="steps">
       <div class="step"><div class="step-n">✓</div><div><h4>Never share your PIN</h4><p>Zeno staff will never ask for your PIN. Anyone asking for it is attempting fraud.</p></div></div>
-      <div class="step"><div class="step-n">✓</div><div><h4>Lock your WhatsApp</h4><p>Enable WhatsApp's built-in fingerprint or face ID lock in Settings → Privacy → Screen Lock.</p></div></div>
-      <div class="step"><div class="step-n">✓</div><div><h4>Check payment details carefully</h4><p>Always verify the recipient name, sort code and account number before confirming a payment.</p></div></div>
-      <div class="step"><div class="step-n">✓</div><div><h4>Report suspicious activity</h4><p>If you notice transactions you don't recognise, contact us immediately at <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="d6a5b3b5a3a4bfa2af96bcb9bfb8acb3b8b9f8b5b9f8a3bd">[email&#160;protected]</a>.</p></div></div>
+      <div class="step"><div class="step-n">✓</div><div><h4>Lock your WhatsApp or Telegram</h4><p>Enable fingerprint or face ID lock in your app settings for extra protection.</p></div></div>
+      <div class="step"><div class="step-n">✓</div><div><h4>Check payment details carefully</h4><p>Always verify the recipient name and account number before confirming a payment.</p></div></div>
+      <div class="step"><div class="step-n">✓</div><div><h4>Report suspicious activity</h4><p>If you notice transactions you don't recognise, contact us immediately at <a href="mailto:security@joinzeno.co.uk">security@joinzeno.co.uk</a>.</p></div></div>
     </div>
   </div>
 
@@ -128,4 +125,13 @@ h2{font-family:'Fraunces',serif;font-size:1.6rem;font-weight:700;letter-spacing:
     <div>
       <h3>Found a security issue?</h3>
       <p>We take security reports seriously. If you've discovered a vulnerability in Zeno, please contact our security team responsibly and we'll investigate promptly.</p>
-    </d
+    </div>
+    <a href="mailto:security@joinzeno.co.uk" class="btn">Report a Vulnerability</a>
+  </div>
+
+  <div style="margin-top:48px;padding-top:32px;border-top:1px solid var(--border);font-size:.8rem;color:var(--t2);text-align:center">
+    © 2026 Zeno by The 36th Company Ltd · RC:  9440452
+  </div>
+</div>
+</body>
+</html>

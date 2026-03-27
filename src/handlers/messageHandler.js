@@ -590,35 +590,15 @@ async function handleAIResponse({ from, aiResponse, session, text }) {
       break;
 
     case 'KYC': {
-      // Send Stripe Identity verification link
       if (session.kycVerified) {
         await whatsappService.sendText(from,
           `✅ *You're already verified!*\n\nYour identity has been confirmed. You have full access to all Zeno features.`
         );
         break;
       }
-      try {
-        const stripeService = require('../services/stripe');
-const premblyService = require('../services/prembly');
-        const nameParts = (session.name || session.userName || 'Zeno User').split(' ');
-        const kycSession = await stripeService.createIdentitySession({
-          phoneNumber: from,
-          firstName: nameParts[0],
-          lastName: nameParts.slice(1).join(' ') || '',
-        });
-        await sessionStore.update(from, { kycSessionId: kycSession.sessionId });
-        await whatsappService.sendText(from,
-          `🔐 *Verify Your Identity*\n\n` +
-          `Tap the link below to complete verification:\n\n` +
-          `${kycSession.url}\n\n` +
-          `Takes less than 2 minutes. Fully encrypted and secure.`
-        );
-      } catch (err) {
-        logger.error('KYC session error:', err.message);
-        await whatsappService.sendText(from,
-          `⚠️ Couldn't generate verification link. Please try again in a moment.`
-        );
-      }
+      const prembly = require('../services/prembly');
+      await sessionStore.update(from, { onboardingStep: 'awaiting_kyc' });
+      await whatsappService.sendText(from, prembly.getKYCPromptMessage());
       break;
     }
 

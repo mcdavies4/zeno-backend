@@ -218,31 +218,9 @@ Contact support: https://wa.me/2349037745486`
 
 Your identity has been confirmed. You have full access to all Zeno features.`);
       } else {
-        try {
-          const stripeService = require('../services/stripe');
-const premblyService = require('../services/prembly');
-          const nameParts = (session.userName || 'User').split(' ');
-          const kycSession = await stripeService.createIdentitySession({
-            phoneNumber: chatId,
-            firstName: nameParts[0],
-            lastName: nameParts.slice(1).join(' ') || '',
-          });
-          await sessionStore.update(chatId, { kycSessionId: kycSession.sessionId });
-          await telegramService.sendText(chatId,
-            `🔐 *Verify Your Identity*
-
-` +
-            `Tap the link below:
-
-${kycSession.url}
-
-` +
-            `Takes less than 2 minutes. Fully encrypted and secure.`
-          );
-        } catch (err) {
-          logger.error('KYC session error:', err.message);
-          await telegramService.sendText(chatId, `⚠️ Couldn't generate verification link. Please try again.`);
-        }
+        const prembly = require('../services/prembly');
+        await sessionStore.update(chatId, { onboardingStep: 'awaiting_kyc' });
+        await telegramService.sendText(chatId, prembly.getKYCPromptMessage());
       }
       return;
     }
@@ -505,26 +483,9 @@ async function handleAIResponse({ chatId, aiResponse, session }) {
         );
         break;
       }
-      try {
-        const stripeService = require('../services/stripe');
-const premblyService = require('../services/prembly');
-        const nameParts = (session.name || session.userName || 'Zeno User').split(' ');
-        const kycSession = await stripeService.createIdentitySession({
-          phoneNumber: chatId,
-          firstName: nameParts[0],
-          lastName: nameParts.slice(1).join(' ') || '',
-        });
-        await sessionStore.update(chatId, { kycSessionId: kycSession.sessionId });
-        await telegramService.sendText(chatId,
-          `🔐 *Verify Your Identity*\n\n` +
-          `🔐 *Verify Your Identity*\n\nTap the link below:\n\n${kycSession.url}\n\n` +
-          `Takes less than 2 minutes. Fully encrypted and secure.`
-        );
-      } catch (err) {
-        await telegramService.sendText(chatId,
-          `⚠️ Couldn't generate verification link. Please try again.`
-        );
-      }
+      const prembly = require('../services/prembly');
+      await sessionStore.update(chatId, { onboardingStep: 'awaiting_kyc' });
+      await telegramService.sendText(chatId, prembly.getKYCPromptMessage());
       break;
     }
 

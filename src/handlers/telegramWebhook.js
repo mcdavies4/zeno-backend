@@ -568,7 +568,7 @@ async function handleSupport({ id, session, sendFn }) {
 ` +
       `📱 *WhatsApp:* https://wa.me/447883305130
 ` +
-      `📞 *Call/Text:* +44 7883 305130
+      `📞 *Call/Text:* +234 903 774 5486
 
 ` +
       `Tap the link above to start a chat — we typically reply within a few minutes.`

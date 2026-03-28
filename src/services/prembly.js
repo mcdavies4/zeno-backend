@@ -21,7 +21,7 @@ async function verifyNIN(nin) {
     logger.info(`Prembly: verifying NIN: ${nin}, key prefix: ${(process.env.PREMBLY_API_KEY || '').substring(0, 8)}`);
     const response = await axios.post(
       `${BASE_URL}/identitypass/verification/nin`,
-      { number: nin },
+      { number_nin: nin },
       { headers: getHeaders(), timeout: 30000 }
     );
     const data = response.data;
@@ -34,7 +34,6 @@ async function verifyNIN(nin) {
   } catch (err) {
     logger.error(`Prembly NIN error: ${err.message}`);
     logger.error(`Prembly NIN status: ${err.response?.status}`);
-    logger.error(`Prembly NIN response: ${JSON.stringify(err.response?.data)}`);
     logger.error(`Prembly NIN response: ${JSON.stringify(err.response?.data)}`);
     logger.error(`Prembly API key: ${(process.env.PREMBLY_API_KEY || 'NOT SET').substring(0, 12)}...`);
     throw err;

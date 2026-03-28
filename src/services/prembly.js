@@ -35,6 +35,7 @@ async function verifyNIN(nin) {
     logger.error(`Prembly NIN error: ${err.message}`);
     logger.error(`Prembly NIN status: ${err.response?.status}`);
     logger.error(`Prembly NIN response: ${JSON.stringify(err.response?.data)}`);
+    logger.error(`Prembly NIN response: ${JSON.stringify(err.response?.data)}`);
     logger.error(`Prembly API key: ${(process.env.PREMBLY_API_KEY || 'NOT SET').substring(0, 12)}...`);
     throw err;
   }

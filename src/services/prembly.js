@@ -18,7 +18,7 @@ function getHeaders() {
 // ─── VERIFY NIN ──────────────────────────────────────
 async function verifyNIN(nin) {
   try {
-    logger.info(`Prembly: verifying NIN, key prefix: ${(process.env.PREMBLY_API_KEY || '').substring(0, 8)}`);
+    logger.info(`Prembly: verifying NIN: ${nin}, key prefix: ${(process.env.PREMBLY_API_KEY || '').substring(0, 8)}`);
     const response = await axios.post(
       `${BASE_URL}/identitypass/verification/nin`,
       { number: nin },
@@ -43,7 +43,7 @@ async function verifyNIN(nin) {
 // ─── VERIFY BVN ──────────────────────────────────────
 async function verifyBVN(bvn) {
   try {
-    logger.info(`Prembly: verifying BVN, key prefix: ${(process.env.PREMBLY_API_KEY || '').substring(0, 8)}`);
+    logger.info(`Prembly: verifying BVN: ${bvn}, key prefix: ${(process.env.PREMBLY_API_KEY || '').substring(0, 8)}`);
     const response = await axios.post(
       `${BASE_URL}/identitypass/verification/bvn`,
       { number: bvn },
@@ -60,6 +60,7 @@ async function verifyBVN(bvn) {
     logger.error(`Prembly BVN error: ${err.message}`);
     logger.error(`Prembly BVN status: ${err.response?.status}`);
     logger.error(`Prembly BVN response: ${JSON.stringify(err.response?.data)}`);
+    logger.error(`Prembly BVN request body: ${JSON.stringify({ number: bvn })}`);
     throw err;
   }
 }

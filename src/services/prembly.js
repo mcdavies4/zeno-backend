@@ -21,7 +21,7 @@ async function verifyNIN(nin) {
     logger.info(`Prembly: verifying NIN, key prefix: ${(process.env.PREMBLY_API_KEY || '').substring(0, 8)}`);
     const response = await axios.post(
       `${BASE_URL}/identitypass/verification/nin`,
-      { number: nin },
+      { id: nin },
       { headers: getHeaders(), timeout: 30000 }
     );
     const data = response.data;
@@ -45,8 +45,8 @@ async function verifyBVN(bvn) {
   try {
     logger.info(`Prembly: verifying BVN, key prefix: ${(process.env.PREMBLY_API_KEY || '').substring(0, 8)}`);
     const response = await axios.post(
-      `${BASE_URL}/identitypass/verification/bvn_advance`,
-      { number: bvn },
+      `${BASE_URL}/identitypass/verification/bvn`,
+      { id: bvn },
       { headers: getHeaders(), timeout: 30000 }
     );
     const data = response.data;

@@ -59,7 +59,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     service: 'Zeno WhatsApp Banking AI',
-    markets: ['UK 🇬🇧', 'Nigeria 🇳🇬'],
+    markets: ['Nigeria 🇳🇬'],
     kyc: 'Stripe Identity', ukBanking: 'Stripe', ngBanking: 'Mono',
     database: database.isReady() ? 'postgresql' : 'unavailable',
     timestamp: new Date().toISOString(),
@@ -71,8 +71,8 @@ async function start() {
   await database.init();
   app.listen(PORT, async () => {
     logger.info(`Zeno backend running on port ${PORT}`);
-    logger.info(`Markets: UK 🇬🇧 Nigeria 🇳🇬`);
-    logger.info('KYC: Stripe Identity');
+    logger.info('Market: Nigeria 🇳🇬');
+    logger.info('KYC: Prembly (BVN/NIN)');
     logger.info(`Database: ${database.isReady() ? 'PostgreSQL' : 'unavailable'}`);
 
     if (process.env.TELEGRAM_BOT_TOKEN) {

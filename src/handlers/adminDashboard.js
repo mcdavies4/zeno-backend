@@ -90,7 +90,7 @@ router.get('/', adminAuth, async (req, res) => {
 function renderDashboard(stats, key, search) {
   const fmt = (d) => d ? new Date(d).toLocaleString('en-GB', { timeZone: 'Europe/London', dateStyle: 'short', timeStyle: 'short' }) : '—';
   const mask = (p) => p ? p.slice(0, 5) + '••••' + p.slice(-2) : '—';
-  const bal = (b, country) => { if (!b) return '—'; const s = country === 'NG' ? '₦' : '£'; return `${s}${parseFloat(b).toLocaleString('en', {minimumFractionDigits:2, maximumFractionDigits:2})}`; };
+  const bal = (b, country) => { if (!b && b !== 0) return '—'; const s = '₦'; return `${s}${parseFloat(b || 0).toLocaleString('en', {minimumFractionDigits:2, maximumFractionDigits:2})}`; };
   const tokenExpiry = (t) => {
     if (!t) return '—';
     const diff = t - Date.now();
@@ -237,7 +237,7 @@ code{font-family:monospace;font-size:.8rem;background:#0f172a;padding:2px 6px;bo
         <tr>
           <td><code>${mask(t.phone_number)}</code></td>
           <td>${t.type}</td>
-          <td>${t.currency === 'NGN' || t.amount_currency === 'NGN' ? '₦' : '£'}${parseFloat(t.amount).toFixed(2)}</td>
+          <td>₦${parseFloat(t.amount || 0).toFixed(2)}</td>
           <td>${t.recipient_name || '—'}</td>
           <td>${t.recipient_sort_code || '—'}</td>
           <td>${t.reference || '—'}</td>
@@ -366,6 +366,44 @@ router.get('/verify-user', adminAuth, async (req, res) => {
     </body></html>`);
   } catch(err) {
     res.send(`Error: ${err.message}`);
+  }
+});
+
+
+// ─── CHECK USER BALANCE (ADMIN) ──────────────────────
+router.get('/check-balance', adminAuth, async (req, res) => {
+  const { phone } = req.query;
+  if (!phone) return res.json({ error: 'phone required' });
+
+  try {
+    const sessionStore = require('../services/sessionStore');
+    const banking = require('../services/banking');
+    const session = await sessionStore.get(phone);
+
+    if (!session.isOnboarded) {
+      return res.json({ error: 'User not onboarded' });
+    }
+
+    const result = await banking.getBalance(phone, session);
+
+    if (result.success && result.balances?.length) {
+      const b = result.balances[0];
+      const balance = b.available || b.current || 0;
+      // Update stored balance
+      await sessionStore.update(phone, { balance });
+      return res.json({
+        success: true,
+        phone,
+        name: session.name,
+        balance: `₦${parseFloat(balance).toLocaleString('en', { minimumFractionDigits: 2 })}`,
+        bank: b.name || session.bankName || 'Unknown',
+        lastChecked: new Date().toISOString(),
+      });
+    }
+
+    res.json({ success: false, error: result.error || 'Could not fetch balance' });
+  } catch(err) {
+    res.json({ error: err.message });
   }
 });
 

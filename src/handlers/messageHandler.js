@@ -315,7 +315,14 @@ async function initiateTransfer({ from, session }) {
   const fee = transfer.fee || feesService.calculateFee(transfer.amount, country.code);
   const totalWithFee = (Number(transfer.amount) + fee.totalFee).toLocaleString('en', { minimumFractionDigits: 2 });
   await whatsappService.sendText(from,
-    `🔐 *Security Check*\n\nEnter your 4-digit Zeno PIN to authorise:\n• *${symbol}${Number(transfer.amount).toLocaleString('en', { minimumFractionDigits: 2 })}* to *${transfer.recipientName}*\n• Fee: *${symbol}${fee.totalFee.toFixed(2)}*\n• Total: *${symbol}${totalWithFee}*\n\nNever share your PIN with anyone, including Zeno support.`
+    `🔐 *Security Check*\n\n` +
+        `• Amount: *${symbol}${Number(transfer.amount).toLocaleString('en', { minimumFractionDigits: 2 })}*\n` +
+        `• To: *${transfer.recipientName}*\n` +
+        `• Fee: *${symbol}${fee.totalFee.toFixed(2)}*\n` +
+        `• Total: *${symbol}${totalWithFee}*\n\n` +
+        `Enter your 4-digit PIN to authorise.\n\n` +
+        `⚠️ *Delete this message after sending your PIN.*\n` +
+        `🚫 Zeno staff will NEVER ask for your PIN.`
   );
 }
 
@@ -1075,7 +1082,7 @@ async function handleBillPayment({ from, session, text, country }) {
     `${summary}
 
 ` +
-    `🔐 Enter your PIN to confirm:`
+    `🔐 Enter your PIN to confirm.\n\n⚠️ *Delete this message after sending your PIN.*`
   );
 }
 

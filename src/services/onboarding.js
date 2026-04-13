@@ -103,7 +103,12 @@ async function handleStep(from, session, input) {
         onboardingData: { ...session.onboardingData, email },
       });
       await messenger.sendText(from,
-        `✅ Got it!\n\nNow create a *4-digit PIN* to secure your account.\n\n🔐 You'll use this to authorise every payment.\n\nNever share your PIN with anyone.`
+        `✅ Got it!\n\n` +
+        `Now create a *4-digit PIN* to secure your account.\n\n` +
+        `🔐 This PIN will authorise every payment you make.\n\n` +
+        `⚠️ *Security tip:* After sending your PIN, please *delete the message* from your chat immediately.\n\n` +
+        `🚫 Zeno staff will *NEVER* ask for your PIN.\n\n` +
+        `Please enter your 4-digit PIN:`
       );
       break;
     }
@@ -121,7 +126,11 @@ async function handleStep(from, session, input) {
         onboardingStep: STEPS.PIN_CONFIRM,
         onboardingData: { ...session.onboardingData, tempPin: text },
       });
-      await messenger.sendText(from, "Please *confirm your PIN* by entering it again:");
+      await messenger.sendText(from,
+        `✅ PIN set!\n\n` +
+        `Please *confirm your PIN* by entering it again.\n\n` +
+        `⚠️ Remember to delete this message after sending.`
+      );
       break;
     }
 
@@ -129,7 +138,9 @@ async function handleStep(from, session, input) {
       const tempPin = session.onboardingData?.tempPin;
       if (text !== tempPin) {
         await sessionStore.update(from, { onboardingStep: STEPS.PIN });
-        await messenger.sendText(from, "❌ PINs don't match. Please enter your *4-digit PIN* again:");
+        await messenger.sendText(from,
+          `❌ PINs don't match.\n\nPlease enter your *4-digit PIN* again:\n\n⚠️ Delete the message after sending.`
+        );
         return;
       }
 
